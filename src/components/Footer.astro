@@ -1,0 +1,106 @@
+---
+import { css } from 'styled-system/css';
+import { site } from '../data/site';
+
+const columns = [
+  {
+    title: 'つくる',
+    links: [
+      { label: 'エディタ', href: '/docs/create/editor/' },
+      { label: 'World as Code', href: '/docs/create/world-as-code/' },
+      { label: 'mod SDK', href: '/docs/mods/sdk/' },
+      { label: 'CLI', href: '/docs/mods/cli/' },
+    ],
+  },
+  {
+    title: '分散',
+    links: [
+      { label: '連合', href: '/docs/servers/federation/' },
+      { label: 'セルフホスト', href: '/docs/servers/self-hosting/' },
+      { label: '作者署名', href: '/docs/publish/' },
+    ],
+  },
+  {
+    title: 'コミュニティ',
+    links: [
+      { label: 'GitHub', href: site.repo },
+      { label: 'コントリビュート', href: '/docs/internals/contributing/' },
+      { label: 'リリースノート', href: '/docs/releases/cli/' },
+    ],
+  },
+];
+
+const footer = css({
+  marginTop: 'clamp(80px, 10vw, 140px)',
+  padding: '64px 0 40px',
+  borderTop: '1px solid {colors.border}',
+});
+const inner = css({ width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))', marginInline: 'auto' });
+const grid = css({
+  display: 'grid',
+  gridTemplateColumns: '1.4fr repeat(3, 1fr)',
+  gap: '32px',
+  mdDown: { gridTemplateColumns: '1fr 1fr', '& > :first-child': { gridColumn: 'span 2' } },
+  smDown: { gridTemplateColumns: '1fr', '& > :first-child': { gridColumn: 'auto' } },
+});
+const brand = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  fontFamily: 'heading',
+  fontWeight: '900',
+  fontSize: '21px',
+  '& img': { width: '26px' },
+});
+const tagline = css({ marginTop: '14px', textStyle: 'small', color: 'fg.muted', maxWidth: '22em' });
+const h4 = css({
+  marginBottom: '12px',
+  textStyle: 'eyebrow',
+  fontSize: '12px',
+  letterSpacing: '0.12em',
+  color: 'fg.subtle',
+});
+const list = css({ display: 'grid', gap: '8px', fontSize: '14px', '& a:hover': { color: 'link' } });
+const bottom = css({
+  marginTop: '48px',
+  paddingTop: '24px',
+  borderTop: '1px solid {colors.border}',
+  display: 'flex',
+  justifyContent: 'space-between',
+  flexWrap: 'wrap',
+  gap: '16px',
+  fontSize: '12.5px',
+  color: 'fg.muted',
+});
+---
+
+<footer class={footer}>
+  <div class={inner}>
+    <div class={grid}>
+      <div>
+        <a class={brand} href="/"><img src="/logo/logo-transparent-sm.png" alt="" width="26" height="30" />{site.name}</a>
+        <p class={tagline}>{site.tagline}</p>
+      </div>
+      {
+        columns.map((col) => (
+          <div>
+            <h4 class={h4}>{col.title}</h4>
+            <ul class={list}>
+              {col.links.map((l) => (
+                <li>
+                  <a href={l.href} rel={l.href.startsWith('http') ? 'noopener' : undefined}>
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+    </div>
+    <div class={bottom}>
+      <span>© {new Date().getFullYear()} Ubichill Project · AGPL-3.0-only</span>
+      <a href={site.hubRepo} rel="noopener">このサイトのソース</a>
+    </div>
+  </div>
+</footer>

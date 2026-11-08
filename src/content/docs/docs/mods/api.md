@@ -1,0 +1,413 @@
+---
+title: "API リファレンス（Ubi.*）"
+description: "Ubi.state / event / entity / ui / media / canvas / player の一覧。"
+source: "docs/API.md"
+editUrl: "https://github.com/ubichill/ubichill/edit/main/docs/API.md"
+sidebar:
+  order: 4
+---
+
+:::note[ubichill 本体から同期]
+このページは [`docs/API.md`](https://github.com/ubichill/ubichill/blob/main/docs/API.md) を `pnpm sync-docs` で取り込んだもの。直すときは本体リポジトリへ。
+:::
+
+> **🚧 API 安定性: alpha (v1.0.0 未満)**
+>
+> `@ubichill/sdk` は現在 v1 リリース前です。**ネームスペース構造とメソッド名は変わる可能性があります**。
+> 直近で実施した breaking change の例: `Ubi.network → Ubi.event`, `Ubi.world → Ubi.entity()`,
+> `Ubi.state.persistent / persistMine / shared / topLevel → Ubi.state.sync(value, options)`。
+>
+> **安定度の目安**:
+> - 🟢 **コア設計思想** (Ubi.state による宣言的同期 / `watchScope` 階層スコープ /
+>   `Ubi.event.emit` クロス Worker) は確定済み。これは変えない方針
+> - 🟡 **隔離の単位** — 現状は「1 Component = 1 Worker」だが**確定ではない**。信頼境界は本来
+>   **mod (mod) 単位**であるべき（ユーザーはmodを単位に信頼/不信を判断し、権限の
+>   grant も既に modId 単位で記憶している）。コンポーネント数に比例して Worker が増える
+>   スケール問題 (`PERF_WORKER_LIMIT_REACHED`) もあるため、将来「1 mod = 1 Worker」への
+>   統合や Worker プーリングに変わり得る。modコードはこの粒度に依存しないこと
+> - 🟡 **ネームスペース構造** (`Ubi.state` / `.entity` / `.event` / `.ui` / `.media` / `.canvas` / `.player`) は
+>   役割分担として合理的だが、追加/分割/rename はあり得る
+> - 🔴 **個別メソッド名** (`Ubi.entity().spawn` 等) は使い込みで変わる可能性
+> - 🔴 **内部プロトコル** (`ModGuestCommand` / `ModHostEvent`) は実装都合で随時変わる。
+>   modからは **必ず SDK 経由**でアクセスし、コマンド型を直接 import しないこと
+>
+> API 変更時は本ファイル + [`design/ecs-migration.md`](https://github.com/ubichill/ubichill/blob/main/docs/design/ecs-migration.md) に履歴を残します。
+> v1.0.0 リリース後は SemVer の breaking change ポリシーに従います。
+
+## Mod SDK — `Ubi.*`
+
+API surface は意図的にコンパクト (ネームスペース + 数個のトップレベル shortcut):
+
+```ts
+// ──── 状態管理 (declarative)  ────────────────────────────
+Ubi.state.define(schema)                          // EntityState<T> を返す。詳細は次セクション
+Ubi.state.sync<T>(default, options?)              // 1 つの sync() で全スコープを表現:
+//   default:                  全員共有 + DB 永続化 (entity.data)
+//   { perUser: true }         全員共有 + per-user namespace
+//   { ephemeral: true }       揮発性 broadcast (presence 経由)
+//   { topLevel: 'lockedBy' }  ComponentInstance top-level (lockedBy / ownerId)
+
+// ──── イベント (型付き registry — 推奨) ──────────────────
+const MyEvents = Ubi.event.define<{
+    'mod:event:type': { payload: ... };           // type ↔ payload を 1 箇所に宣言
+    'cross:user:msg':    { ... };
+}>();
+MyEvents.emit(type, data, { ref: 'screen' })        // 参照フィールドで作者が指した相手へ（推奨。下の「Component の参照」）
+MyEvents.emit(type, data, { scope, targetType? })   // Entity の階層で相手を決める
+MyEvents.broadcast(type, data)                       // 他ユーザーの同 entity Worker へ (volatile)
+MyEvents.sendToHost(type, data)                      // 自 Host (React 側) へ
+MyEvents.on(type, (data) => {...})                   // emit / sendToHost / SDK 由来 (input:* / entity:* など) を受信
+MyEvents.onBroadcast(type, (userId, data) => {...})  // broadcast を受信 (envelope を unwrap)
+
+// ──── トリガー (untyped escape hatch — 互換用) ──────────
+Ubi.event.sendToHost<T>(type, data)
+Ubi.event.broadcast<T>(type, data)
+Ubi.event.emit(type, data, { ref | scope, targetType? })
+//   ref:   自分の参照フィールド（config.dataFields の entityRef / entityRefArray）の名前
+//   scope: 'siblings' | 'parent' | 'children' | 'subtree' | 'world' | 'referrers'
+//   targetType: 受信側 Component type ("modId:componentName")
+
+// ──── 自分中心の階層 CRUD ────────────────────────────────
+await Ubi.entity().update(patch)                  // 自 ComponentInstance を更新
+await Ubi.entity().destroy()                      // 自分を削除
+await Ubi.entity().spawn(child)                   // 自 Entity の子として spawn
+
+// ──── UI ─────────────────────────────────────────────────
+Ubi.ui.render(factory, targetId?)
+Ubi.ui.showToast(text)
+Ubi.ui.unmount(targetId?)
+
+// ──── メディア (video / HLS) ─────────────────────────────
+Ubi.media.load(url, targetId, mediaType?)
+Ubi.media.play(targetId) / Ubi.media.pause(targetId)
+Ubi.media.seek(time, targetId)
+Ubi.media.setVolume(v, targetId) / Ubi.media.setVisible(visible, targetId)
+
+// ──── canvas 描画 ────────────────────────────────────────
+Ubi.canvas.frame(targetId, { activeStroke, cursor })
+Ubi.canvas.commitStroke(targetId, strokeData)
+Ubi.canvas.replaceStrokes(targetId, strokes)   // 永続レイヤーを消してこの順で描き直す（順番を正すとき）
+
+// ──── プレイヤー (presence) ──────────────────────────────
+Ubi.player.others() / .all() / .scroll() / .syncCursor({ throttleMs })
+
+// ──── 掴む / 持つ (排他オーナーシップ) ────────────────────
+const grip = Ubi.grip.exclusive()  // 世界中の同 Component type で 1 ユーザー 1 つだけ
+grip.acquire()                      // 掴む (別 subtree でも自分が持ってる同種があれば自動で離す)
+grip.release()                      // 離す
+grip.holder                         // string | null
+grip.isMine                         // boolean
+grip.onChange((next, prev) => ...)  // 占有者の変化を監視
+// 必要 capability: 'scene:update' (lockedBy 同期) + 'event:emit' (世界横断の調停 emit)
+
+// ──── エンティティ (callable + static) ──────────────────
+Ubi.entity()                                       // SelfEntityRef (自分自身)
+Ubi.entity(id)                                     // OtherEntityRef (他 id)
+await Ubi.entity().update(patch)                   // 自 ComponentInstance を更新
+await Ubi.entity().destroy()                       // 自分を削除
+await Ubi.entity().spawn(child)                    // 自 Entity の子として spawn
+await Ubi.entity(otherId).update(patch)            // 他 id を更新 (escape hatch)
+await Ubi.entity(otherId).destroy()                // 他 id を削除
+await Ubi.entity.query<T>(type)                    // type 検索
+await Ubi.entity.get<T>(id)                        // id で取得
+await Ubi.entity.spawn(entity)                     // 親を明示指定して自由 spawn
+
+// ──── 同梱アセット・WASM（→ MOD_RUNTIME.md）────────────
+await Ubi.asset.bytes(path, { signal? })           // assets/ のファイル（manifest の integrity と照合済み）
+await Ubi.asset.text(path)                         // UTF-8 として読む
+await Ubi.asset.wasm(path)                         // WebAssembly.Module（同じパスは 1 回だけコンパイル）
+Ubi.runtime.supports(feature)                      // 'wasm' | 'wasm:simd' | 'wasm:exceptions' | 'wasm:threads' | 'wasm:jspi' | 'fetch:binary' | 'asset' | 'identity' | 'event:ref' | 'media:surface' | 'canvas:erase'
+Ubi.runtime.require(feature)                       // 使えなければ UNSUPPORTED_FEATURE の UbiError
+await Ubi.identity.token(audience, { signal? })    // 外部サービスへの身元証明（短命の JWT）。→ SERVICE_TOKEN.md
+
+// ──── その他 ──────────────────────────────────────────
+await Ubi.fetch(url, options?)                     // HTTP (外部はドメインごとにユーザー承認)
+//   options: { method, headers, body (string | ArrayBuffer | Uint8Array),
+//              responseType: 'text' | 'arrayBuffer', maxBytes, timeoutMs, signal }
+//   失敗は res.ok === false と res.error.code（取り消しだけは FETCH_ABORTED で reject）
+Ubi.registerSystem((entities, deltaTimeMs, events) => {...}) // ECS System 登録。deltaTimeMs はミリ秒（秒ではない）
+Ubi.log(message, level?)                           // ログ ('debug' | 'info' | 'warn' | 'error')
+
+// ──── 読み取り専用プロパティ (初期化後に自動セット) ──────
+Ubi.worldId               // string | undefined
+Ubi.myUserId              // string | undefined
+Ubi.modId              // string | undefined
+Ubi.componentInstanceId   // string | undefined — 自 Worker (Component インスタンス) の flat ID
+Ubi.entityId              // string | undefined — 自 Worker が乗っている Entity (GameObject) の id
+Ubi.componentType         // string | undefined — "modId:componentName"
+Ubi.modBase            // string — modアセットのバージョン付きベース URL
+```
+
+**設計方針:**
+- 基本は `Ubi.state.local.x = v` で宣言的に書く。`onChange` で副作用を局所化
+- 他コンポーネント宛のトリガーは `Ubi.event.emit` / `broadcast` / `sendToHost`
+- 自エンティティの CRUD は `Ubi.entity()`。他は `Ubi.entity(id)` (escape hatch)
+- 新規 Entity は `Ubi.entity().spawn(child)` (自分の子) または `Ubi.entity.spawn(...)` (parent 明示)
+- 「ユーザーが今このエンティティを掴んでいる」状態は `Ubi.grip.exclusive()`。
+  lockedBy + 1 ユーザー 1 本ルールを毎回書かない (競合条件取りこぼし防止)
+
+> 命名規約: ubichill では **Entity == GameObject** (Pure ECS 標準)。Worker からは
+> `Ubi.entityId` が GameObject の id を指す。Worker 自身 (= 1 Component インスタンス)
+> を識別する flat ID は `Ubi.componentInstanceId`。詳細は
+> [design/ecs-migration.md](https://github.com/ubichill/ubichill/blob/main/docs/design/ecs-migration.md) を参照。
+
+---
+
+## Ubi.state — 宣言的リアクティブ状態
+
+ubichill の Worker で状態を扱う第一の手段。`updateEntity` / `applyEntityData` を直接書く代わりに、
+schema 宣言で同期スコープを指定し、`state.local.x = v` で透過的に同期させる。
+
+### スキーマ宣言
+
+```ts
+const state = Ubi.state.define({
+    // マーカーなし = Worker 内ローカル (同期しない)
+    loaded:       false,
+    localTime:    0,
+
+    // ─── Ubi.state.sync(value, options?) で同期スコープを指定 ───
+    color:        Ubi.state.sync('#1a1a1a'),                                // 全員共有 + DB 永続化
+    strokeWidth:  Ubi.state.sync(4),
+    myVolume:     Ubi.state.sync(0.7, { perUser: true }),                   // per-user namespace
+    cursorState:  Ubi.state.sync<'default' | 'pen'>('default', { ephemeral: true }),  // 揮発性 broadcast
+    lockedBy:     Ubi.state.sync<string | null>(null, { topLevel: 'lockedBy' }),       // top-level field
+});
+
+// 読み取り
+state.local.color;          // 現在値 (proxy 経由)
+
+// 書き込み (スコープに応じて自動で flush)
+state.local.color = '#ff0000';   // → updateEntity でリモート伝搬
+
+// リアクティブ購読
+state.onChange('color', (next, prev) => { /* ... */ });
+
+// 他ユーザーの値を見る (perUser / ephemeral 用)
+state.for('user-123').myVolume;
+
+// 複数 set を 1 トランザクションに集約 (onChange は最新値で 1 回ずつ発火、render の二重発火を防ぐ)
+state.batch(() => {
+    state.local.currentTime = 0;
+    state.local.duration = 0;
+    state.local.lastSyncedTime = 0;
+});
+```
+
+### スコープの違い (重要)
+
+| マーカー | 同期範囲 | 永続化 | バックエンド表現 | 用途 |
+|---|---|---|---|---|
+| `Ubi.state.sync(v)` | **全員共有** (同 entity を見てる全員に同じ値) | ✅ DB | `entity.data.<key>` | playlist / 色設定 / 再生中フラグ |
+| `Ubi.state.sync(v, { perUser: true })` | **全員共有 + per-user namespace** | ✅ DB | `entity.data.<key>:<userId>` | 音量 / 個人のスタイル設定 |
+| `Ubi.state.sync(v, { ephemeral: true })` | **揮発性 broadcast** (Reliable 永続化なし) | ❌ | `presence:sharedState` | カーソル状態 / 描画中ストローク |
+| `Ubi.state.sync(v, { topLevel: 'lockedBy' })` | **全員共有** (ComponentInstance top-level) | ✅ DB | `entity.lockedBy` | 占有ロック |
+| マーカーなし | **Worker ローカルのみ** | ❌ | — | 内部キャッシュ / 一時値 |
+
+**頻出する誤解:**
+
+- "sync = 親と共有" は誤り。「同じ Entity を target にしている全 Worker (全ユーザー含む) と共有」が正確。
+- 別 Component を覗き見たい場合 (例: 子 controls が親 screen.data を読みたい) は、`watchEntityTypes: [parentType]` + `watchScope: 'parent'` を設定し、その Worker の `Ubi.state.sync` が parent を target にする。
+
+### Target Entity 解決ルール
+
+`Ubi.state.sync(...)` 経由で書き込んだとき、**どの ComponentInstance を更新するか** は以下で決まる:
+
+1. **自 Component を watch している場合** (`watchEntityTypes.includes(Ubi.componentType)`)
+   → 自分自身の Component インスタンスを target に。
+   `find(e => e.entityId === Ubi.entityId && e.type === Ubi.componentType)` で解決。
+2. **他 Component を覗き見ている場合**
+   → `watchEntityTypes[0]` の type に最初に一致する Component を target に。
+   `watchScope` (`entity` / `subtree` / `parent` / `world`) で可視範囲を制限する。
+
+target が見つかるまでは flush は遅延される (次の tick で再試行)。
+
+### onChange タイミング
+
+- 初期反映: modコード実行**前**に Ubi.state が initialEntities から target を解決し state を埋める。なので `state.onChange` の listener は初期値変化では発火しない。
+- 外部から target Component が更新されたとき: `EVT_ENTITY_WATCH` 受信 → `applyEntity` → 差分検知 → `onChange` 発火。
+- 自分が書き込んだとき: ローカルでは即時 `onChange` 発火 + tick 終了時に updateEntity flush。
+
+### よくあるバグ
+
+- **Ubi.componentInstanceId が undefined**: sandbox.worker.ts での代入忘れ。修正済みだが今後の SDK 改修時に注意。
+- **targetEntityId が GameObject id になっている**: 内部の updateEntity 経路 (`Ubi.entity(id).update`) は ComponentInstance.id (flat) を要求。GameObject id を渡しても backend は見つけられず黙殺される。
+
+---
+
+### Entity メソッド
+
+```ts
+entity.setComponent(name, data)   // void
+entity.getComponent<T>(name)      // T | null
+entity.hasComponent(name)         // boolean
+entity.removeComponent(name)      // void
+```
+
+### Component の参照（型付きの配線）
+
+別の Component と連携するときは、相手の置き場所（親子・兄弟などの階層）を作者に暗黙に求めず、
+**参照フィールド**で「どの型の相手が必要か」を宣言する。作者は World Editor の Inspector で、その枠に
+Hierarchy から Entity をドロップする（Unity の型付きフィールドに Component を入れるのと同じ）。
+
+```ts
+export const config: ComponentConfig = {
+    dataFields: {
+        // video-player:screen を持つ Entity を 1 つ。未設定ならエディタと `ubichill dev` が知らせる
+        screen: { type: 'entityRef', component: 'video-player:screen', required: true, label: 'スクリーン' },
+        // 複数なら entityRefArray（required は 1 つ以上）
+        playlists: { type: 'entityRefArray', component: 'video-player:playlist', label: 'プレイリスト' },
+    },
+};
+
+Events.emit('vp:media:play', {}, { ref: 'screen' });          // 作者が指した Entity の video-player:screen にだけ届く
+Events.emit('vp:media:state', state, { scope: 'referrers' }); // 参照で自分を指している Component へ返す
+```
+
+- `ref` は、送った時点の data の参照フィールドが指す相手に届く。未設定・宣言の無いフィールド名なら誰にも届かない。
+- `component` を宣言した参照は、その型の Component だけに届く。`targetType` で型を広げることはできない。宣言しなければ、指した Entity の全 Component に届く。
+- **配線は作者の意図を伝える仕組みで、届く範囲を守る仕組みではない**。参照フィールドは data の一部なので、mod 自身（自分の data の更新）も、
+  部屋の参加者（`entity:patch`）も書き換えられる。`scope: 'world'` を使えば配線と関係なく全 Worker に届く。受け手は、届いたイベントの中身を
+  信頼せずに検証する（送り手を確かめる必要があるなら、その仕組みを別に持つ）。
+- 参照で watchScope の外の相手を読めるのは、指した Entity の Component だけ。書けるのは `access: 'write'` のフィールドが指した相手だけ。
+  どちらも `component` を宣言していればその型の Component に限る（data の id を書き換えられても、宣言の外の型には届かない）。
+- `scope: 'referrers'` は、参照フィールドで自分の Entity を指している Component に届く。相手の参照が `component` を宣言していれば、それが自分の型のときだけ。
+- 相手は同じ Entity でも、別の木の奥でもよい。階層の形は問わない。
+- `component: 'core:media'` の `entityRef`（単体）は**動画の描画先**になる。フィールドの名前を `Ubi.media.*` の targetId に使うと、
+  `<video>` は参照先の `core:media` の Entity の位置・大きさで描かれる（URL の許可・同期・状態はこの mod のもの）。
+  動画を出すだけの Worker を別に作らなくてよい。`entityRefArray` は `core:media` を指しても描画先にならない（1 つのフィールドに `<video>` は 1 つ）。
+- `mediaTargets`（自分の枠に描く動画）と同じ名前のフィールドは使えない（ビルドが止まる。Host は参照の方を使う）。
+- **1 つの動画面に出力できるのは 1 つだけ**（Component のインスタンス × 参照フィールド）。同じ mod の Component が 2 つでも、
+  1 つのインスタンスの 2 つのフィールドでも競合する。競合した面（と core:media を 2 つ持つ Entity）には誰の動画も描かず、
+  World Editor と `ubichill dev` が知らせる（読み込みの順で勝ち負けを決めると、ブラウザごとに結果が変わるため）。
+  操作パネルを複数置くときは、再生を担当する Component を 1 つ決め、ほかのパネルからは参照で指示を送る。
+- 動画面に描けるのは**ワールド定義に置いた Component** の出力だけ。部屋の中で作られた Component（`Ubi.entity.spawn` や参加者の
+  `entity:create`）は、面を指しても描かず、競合にも数えない（参加者が面を指す Component を作って、ほかの人の動画を消せないように）。
+
+  ```ts
+  export const config: ComponentConfig = {
+      dataFields: { screen: { type: 'entityRef', component: 'core:media', required: true, label: 'スクリーン' } },
+  };
+  Ubi.media.setVisible(true, 'screen');
+  Ubi.media.load({ targetId: 'screen', source, sync: 'shared' });
+  Events.on('media:stateChange', (state) => { /* state.targetId === 'screen' */ });
+  ```
+- 判定は World Editor（Hierarchy の印と Inspector）・`ubichill dev`（ターミナルの「参照の問題」）・Host の配送で同じ（`@ubichill/shared` の `findReferenceProblems` / `resolveRefs`）。
+- `ref`・`scope: 'referrers'` と `core:media` の描画先はプロトコル v6 から。古い Host はエラーにせず黙って捨てるので、
+  古い Host でも動かしたい mod は `Ubi.runtime?.supports('event:ref')`・`supports('media:surface')` で確かめて、階層の `scope` や自分の枠（`mediaTargets`）に切り替える。
+- `config` はビルド時にリテラルとして読む。`component` に定数や式を書くと読めないので、文字列で書く。
+
+### Worker 内で届くイベント
+
+`Ubi.event.define<TMap>()` の `on(type, ...)` で型付き受信できる。`TMap` の key には以下の組み込み type も入れて OK。
+
+| type 文字列 | payload | 由来 |
+|---|---|---|
+| `input:mouse_move` | `{ x, y, viewportX, viewportY, buttons }` | DOM mousemove |
+| `input:mouse_down` | `{ x, y, button }` | DOM mousedown |
+| `input:mouse_up` | `{ x, y, button }` | DOM mouseup |
+| `input:key_down` | `{ key, code }` | DOM keydown（Esc はホストがランチパッドにも使う。下の注意） |
+| `input:key_up` | `{ key, code }` | DOM keyup |
+| `input:cursor_style` | `{ style: string }` | カーソル CSS 変化 |
+| `input:scroll` | `{ x, y }` | ワールドスクロール |
+| `input:resize` | `{ width, height }` | ウィンドウリサイズ |
+| `player:joined` | `User` | 新規ユーザー参加 |
+| `player:left` | `userId: string` | ユーザー退出 |
+| `player:cursor_moved` | `{ userId, position }` | リモートカーソル移動 |
+| `entity:updated` | `ComponentInstance` | エンティティ更新 (any) |
+| `entity:<modId>:<componentName>` | `ComponentInstance` | `watchEntityTypes` に登録した型の更新 |
+| `media:timeUpdate` | `{ targetId, currentTime, duration }` | `<video>` timeupdate |
+| `media:loaded` | `{ targetId, duration }` | `<video>` loadedmetadata |
+| `media:ended` | `{ targetId }` | `<video>` ended |
+| `media:error` | `{ targetId, message }` | `<video>` error |
+| `<custom>` (emit/sendToWorker で指定した type) | 指定した payload | `Ubi.event.emit` / Host の `sendToWorker` |
+
+Esc はホスト（ubichill の SNS）がランチパッドの開け閉めに使う。`input:key_down` の Escape は mod にも届くので、
+Esc で何かを閉じる mod は、ランチパッドも同時に開くことがある。乗り物（`Ubi.ride`）に乗っている間だけは
+ホストが Esc を譲り、ランチパッドを開かない（「Esc で降りる」を先に通す）。
+
+`onBroadcast(type, (userId, data) => ...)` 専用:
+
+| type 文字列 | payload (data) | 由来 |
+|---|---|---|
+| `<custom>` (broadcast で指定した type) | 指定した payload (envelope `{ userId, data }` は自動 unwrap) | `Ubi.event.broadcast` (cross-user) |
+
+---
+
+## React Hooks — `@ubichill/react`
+
+```ts
+// mod Worker を起動・管理
+const { sendEvent } = useModWorker<TPayloadMap>(options)
+
+// useModWorker + World エンティティ CRUD を自動配線
+const { sendEvent } = useWorldMod<TPayloadMap>(options)
+
+// カーソルオーバーレイを re-render ゼロで更新
+const { divRef, onCursorUpdate } = useCursorPosition({ hotspot?: { x, y } })
+
+// ワールドのエンティティ状態と CRUD
+const { entities, createEntity, patchEntity, deleteEntity } = useWorld()
+
+// 特定エンティティの状態変化を監視
+const entity = useEntity(entityId)
+```
+
+---
+
+## 権限 (Capability)
+
+**mod開発者は権限を宣言しない。** 使用している `Ubi.*` API からビルド時に capability を
+自動生成し、実際の許可はユーザーが読み込み時に一括承認する。ゼロトラストで、信頼境界は
+Worker→Host の postMessage 一点。
+
+権限の全一覧（危険度・発生元 API・許可コマンド）と同意モデル（読み込み時一括承認・fetch の
+ドメイン単位 on-demand・シールドレベル）の詳細は **[CAPABILITIES.md](/docs/mods/capabilities/)** を参照。
+この doc は唯一の定義元 [`capability.ts`](https://github.com/ubichill/ubichill/blob/main/packages/shared/src/mod/capability.ts) の
+`CAPABILITY_CATALOG` から自動生成される（`pnpm docs:capabilities`）。
+
+---
+
+## WebSocket イベント（フロントエンド向け）
+
+Goインスタンスサーバーの `/realtime/v1/ws` に接続する。
+SNS運用では `POST /api/v1/instances/:id/join` で参加チケットを取得し、最初の `world:join` フレームに渡す。
+HTTP契約・型生成はOpenAPI、WebSocket契約はAsyncAPI。詳細は
+[インスタンスプロトコル](https://github.com/ubichill/ubichill/blob/main/protocol/instance/README.md) と [`ARCHITECTURE.md`](/docs/internals/architecture/) を参照。
+
+**Client → Server**: `world:join` / `cursor:move` / `entity:create` / `entity:patch` / `entity:ephemeral` / `entity:delete`
+
+**Server → Client**: `world:snapshot` / `user:joined` / `user:left` / `entity:created` / `entity:patched` / `entity:deleted` / `server:notice`（その場だけの知らせ。今は切断の予告 `{kind:"disconnect",at}` だけ。知らない kind は読み飛ばす）
+
+---
+
+## HTTP REST API — `/api/v1`
+
+全エンドポイント認証必須。
+
+| リソース | GET | POST | PUT / DELETE |
+|---|---|---|---|
+| `/worlds` | 一覧・詳細 | 作成 | 更新・削除（**作成者のみ**） |
+| `/instances` | 一覧・詳細（見る人が入れるかを `canJoin` に付ける） | 作成（10件/h） | 削除（**リーダーのみ**） |
+| `/instances/:id/invites` | `/instances/:id/invite-candidates`: 招待の画面に出すフレンド（送れるか・どこかにいるか） | 招待（`{userIds, message?}`、1 人ずつの結果。30回/分/人） | — |
+| `/social/invite-requests` | — | リクエストインバイト（`{userId}`）・`/:userId/accept`（招待で答える） | DELETE `/:userId`: 断る（どれも 20回/分/人） |
+| `/users/me` | 自分の情報 | — | — |
+| `/users/me/home` | ホームの設定とワールド | `/instance`: ホームの部屋を新しく作る（`?fallback=default` で既定のワールド。10回/分/人） | PUT: `{worldRef?: string\|null, accessType?}`（20回/分/人） |
+| `/notifications` | 一覧（`?cursor=&limit=`、お知らせを含む新しい順）・`/unread-count` | `/read`（`{ids}` か `{all:true}`） | — |
+| `/notifications/stream` | SSE（`notification`・`read`・`removed`、25 秒ごとに keep-alive、15 分で閉じる） | — | — |
+| `/notifications/announcements` | 一覧 | 作成（**公式アカウントのみ**、20件/h） | — |
+| `/instances/:id/visit` | — | ほかのサーバーの部屋（`<部屋 ID>@<ドメイン>`）にいる間の知らせ（30 秒ごと） | DELETE: 来訪をやめる |
+| `/federation` | 連合しているか・このサーバーのドメイン（誰でも） | — | — |
+| `/federation/servers` | 知っているほかのサーバーと配送の調子（**管理者**） | — | — |
+| `/federation/policies` | ほかのサーバーとの付き合い方（**管理者**） | — | PUT `/:domain`（`{policy: 'limit'\|'block'}`）・DELETE `/:domain` |
+
+ほかのサーバーの部屋・人（連合）は、このサーバーのものと同じ API で扱う。部屋の ID の代わりに住所（`<部屋 ID>@<ドメイン>`）を、
+ユーザー ID の代わりに actor の URL を渡す（`/instances/:id`・`/instances/:id/join`・`/instances/:id/invites`・`/social/friends`・
+`/social/users/:id`・`/social/invite-requests`）。ほかのサーバーの部屋は `Instance.remote`（`{domain, url}`）、
+ほかのサーバーの人は `UserSummary.domain` が付く。検索は `@ID@ドメイン` で、そのサーバーに WebFinger で問い合わせる。
+サーバー間の API は [design/federation.md](https://github.com/ubichill/ubichill/blob/main/docs/design/federation.md)。
+
+通知の形は ActivityStreams 2.0 に寄せる（`shared/notification/activity.ts`）。フレンド申請 = `Follow`、承認 = `Accept`、
+ワールドのお気に入り = `Like`（object は拡張の型 `World`）、招待 = `Invite`（object は拡張の型 `Instance`、content は一言、
+endTime は期限）、リクエストインバイト = `Join`（object は頼まれた人、endTime は答えられる期限）、運営のお知らせ = `Announce`（object は `Note`）。
+SSE は取りこぼしがあり得る（Redis の障害・切断中）ので、クライアントは繋ぎ直すたびに一覧を取り直す。

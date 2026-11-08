@@ -1,0 +1,23 @@
+{
+  "repo": "https://github.com/ubichill/ubichill",
+  "commit": "4eb6d329",
+  "syncedAt": "2026-11-08",
+  "files": {
+    "create/world-as-code.md": "docs/worlds/WORLD_AS_CODE.md",
+    "create/world-format.md": "docs/worlds/FORMAT.md",
+    "mods/sdk.md": "packages/sdk/README.md",
+    "mods/cli.md": "packages/cli/README.md",
+    "mods/api.md": "docs/API.md",
+    "mods/package.md": "docs/MOD.md",
+    "mods/runtime.md": "docs/MOD_RUNTIME.md",
+    "mods/capabilities.md": "docs/CAPABILITIES.md",
+    "servers/self-hosting.md": "charts/ubichill/README.md",
+    "servers/troubleshooting.md": "docs/Troubleshooting.md",
+    "internals/architecture.md": "docs/ARCHITECTURE.md",
+    "internals/protocols.md": "docs/PROTOCOLS.md",
+    "internals/service-token.md": "docs/SERVICE_TOKEN.md",
+    "internals/contributing.md": "CONTRIBUTING.md",
+    "releases/cli.md": "packages/cli/CHANGELOG.md",
+    "releases/sdk.md": "packages/sdk/CHANGELOG.md"
+  }
+}

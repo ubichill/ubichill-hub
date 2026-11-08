@@ -1,0 +1,49 @@
+---
+import { cva, cx } from 'styled-system/css';
+import Icon, { type IconName } from './Icon.astro';
+
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary' | 'inverse';
+  size?: 'md' | 'sm';
+  icon?: IconName;
+  class?: string;
+}
+
+const button = cva({
+  base: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    borderRadius: 'full',
+    fontWeight: '700',
+    whiteSpace: 'nowrap',
+    transition: 'transform 150ms ease, background 150ms ease, box-shadow 150ms ease',
+    _hover: { transform: 'translateY(-1px)' },
+  },
+  variants: {
+    variant: {
+      primary: { bg: 'accent', color: 'accent.fg', boxShadow: 'button', _hover: { bg: 'accent.hover' } },
+      secondary: { bg: 'bg.surface', color: 'fg', boxShadow: 'inset 0 0 0 1px {colors.border}' },
+      inverse: { bg: 'white', color: 'navy.900' },
+    },
+    size: {
+      md: { height: '48px', paddingInline: '26px', fontSize: '15px' },
+      sm: { height: '38px', paddingInline: '16px', fontSize: '13.5px' },
+    },
+  },
+  defaultVariants: { variant: 'primary', size: 'md' },
+});
+
+const { href, variant, size, icon, class: className } = Astro.props;
+const external = href.startsWith('http');
+---
+
+<a
+  class={cx(button({ variant, size }), className)}
+  href={href}
+  rel={external ? 'noopener' : undefined}
+>
+  <slot />
+  {icon && <Icon name={icon} size={16} />}
+</a>

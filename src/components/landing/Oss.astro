@@ -1,0 +1,51 @@
+---
+import { css } from 'styled-system/css';
+import { site } from '../../data/site';
+import Button from '../Button.astro';
+import Icon from '../Icon.astro';
+import Logo3D from '../Logo3D.astro';
+
+const box = css({
+  position: 'relative',
+  overflow: 'hidden',
+  width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
+  marginInline: 'auto',
+  marginTop: 'clamp(80px, 10vw, 140px)',
+  borderRadius: 'xl',
+  padding: 'clamp(48px, 7vw, 88px)',
+  backgroundImage: '{gradients.brandSoft}',
+  color: 'navy.900',
+  display: 'grid',
+  gridTemplateColumns: '1.3fr 1fr',
+  gap: '40px',
+  alignItems: 'center',
+  mdDown: { gridTemplateColumns: '1fr' },
+  smDown: { borderRadius: '28px', padding: '36px 24px' },
+  _before: {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1.3px, transparent 1.4px)',
+    backgroundSize: '24px 24px',
+    maskImage: 'linear-gradient(90deg, transparent, #000)',
+  },
+  '& > *': { position: 'relative' },
+  '& h2': { textStyle: 'h2' },
+  '& p': { marginTop: '16px', maxWidth: '34em' },
+  '& .cta': { marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '12px' },
+});
+const logo = css({ justifySelf: 'center', width: 'min(260px, 70%)' });
+const inverseBtn = css({ bg: 'navy.900', color: 'navy.50', _hover: { bg: 'navy.700' } });
+---
+
+<section class={box} aria-labelledby="oss-title">
+  <div>
+    <h2 id="oss-title">オープンソース。</h2>
+    <p>AGPL-3.0。PR は日本語でも歓迎。</p>
+    <div class="cta">
+      <Button href={site.repo} class={inverseBtn}><Icon name="github" size={16} />GitHub</Button>
+      <Button href="/docs/internals/contributing/" variant="inverse">コントリビュート</Button>
+    </div>
+  </div>
+  <Logo3D class={logo} depth={22} thickness={10} tilt={14} shadow={false} />
+</section>

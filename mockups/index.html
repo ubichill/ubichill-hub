@@ -1,0 +1,121 @@
+<!doctype html>
+<!--
+  hub.ubichill.com デザイン案ギャラリー
+  各案は 1 ファイル完結の HTML。サムネイルは shots/<id>.png（node /tmp/ubihub-tools/shot.mjs で撮影）
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ubichill Hub — デザイン案一覧</title>
+<link rel="icon" href="./assets/logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --colors-navy-800: #1b2a44;
+    --colors-cream-50: #fffdf9;
+    --colors-cream-100: #faf6f0;
+    --colors-cream-200: #f5ecdf;
+    --colors-cream-400: #cebca2;
+    --colors-sky-300: #bde1fb;
+    --colors-periwinkle-300: #9ab2f8;
+    --colors-lavender-300: #ceb0fa;
+    --colors-bg: var(--colors-cream-100);
+    --colors-bg-surface: var(--colors-cream-50);
+    --colors-fg: var(--colors-navy-800);
+    --colors-fg-muted: #56627a;
+    --colors-border: #e6d7c4;
+    --radii-lg: 16px;
+    --radii-xl: 22px;
+    --shadows-card: 0 8px 24px rgba(27, 42, 68, 0.08);
+    --shadows-raised: 0 18px 40px rgba(27, 42, 68, 0.14);
+    --fonts-sans: "Inter", "Noto Sans JP", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--colors-bg); color: var(--colors-fg); font-family: var(--fonts-sans); line-height: 1.7; }
+  a { color: inherit; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
+  header { padding: 56px 0 28px; display: grid; grid-template-columns: auto 1fr; gap: 24px; align-items: center; }
+  header img { width: 64px; height: auto; }
+  h1 { margin: 0; font-size: clamp(1.6rem, 3vw, 2.3rem); line-height: 1.25; font-weight: 900; letter-spacing: -0.01em; }
+  header p { margin: 6px 0 0; color: var(--colors-fg-muted); }
+  .meta { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 28px; }
+  .meta a { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-size: 0.85rem; font-weight: 600; text-decoration: none; }
+  .meta a:hover { border-color: var(--colors-cream-400); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 24px; padding-bottom: 80px; }
+  .card { display: flex; flex-direction: column; background: var(--colors-bg-surface); border: 1px solid var(--colors-border); border-radius: var(--radii-xl); overflow: hidden; text-decoration: none; box-shadow: var(--shadows-card); transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .card--featured { grid-column: 1 / -1; display: grid; grid-template-columns: 1.4fr 1fr; border: 2px solid #9ab2f8; }
+  .card--featured .thumb { aspect-ratio: auto; min-height: 320px; border-bottom: 0; border-right: 1px solid var(--colors-border); }
+  .card--featured .body { justify-content: center; padding: 28px; }
+  .card--featured .name { font-size: 1.6rem; }
+  @media (max-width: 760px) { .card--featured { grid-template-columns: 1fr; } .card--featured .thumb { aspect-ratio: 16 / 10; min-height: 0; border-right: 0; border-bottom: 1px solid var(--colors-border); } }
+  .card:hover { transform: translateY(-4px); box-shadow: var(--shadows-raised); }
+  .card:focus-visible { outline: 3px solid #4352c9; outline-offset: 3px; }
+  .thumb { aspect-ratio: 16 / 10; background: linear-gradient(135deg, var(--colors-sky-300), var(--colors-periwinkle-300), var(--colors-lavender-300)); position: relative; overflow: hidden; border-bottom: 1px solid var(--colors-border); }
+  .thumb img { position: relative; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: top; display: block; }
+  .thumb .fallback { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 1.4rem; color: var(--colors-navy-800); opacity: 0.7; }
+  .body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 6px; }
+  .tag { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; color: var(--colors-fg-muted); }
+  .name { font-size: 1.15rem; font-weight: 800; margin: 0; }
+  .desc { margin: 0; color: var(--colors-fg-muted); font-size: 0.9rem; }
+  .font { margin: 0; font-size: 0.78rem; font-weight: 600; color: var(--colors-fg-muted); opacity: 0.85; }
+  .swatches { display: flex; gap: 6px; margin-top: 6px; }
+  .swatches i { width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(27, 42, 68, 0.15); display: block; }
+  footer { padding: 24px 0 48px; color: var(--colors-fg-muted); font-size: 0.85rem; border-top: 1px solid var(--colors-border); }
+  @media (max-width: 480px) { header { grid-template-columns: 1fr; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="./assets/logo-transparent-sm.png" alt="Ubichill ロゴ" />
+    <div>
+      <h1>hub.ubichill.com デザイン案</h1>
+      <p>Misskey Hub を参考に、ヒーローに「実際の画面」と「3D ロゴ」を置いた 10 案と、A と J を統合した案 K。</p>
+    </div>
+  </header>
+  <nav class="meta" aria-label="資料">
+    <a href="./BRIEF.md">制作ブリーフ（共通コピー・ルール）</a>
+    <a href="../docs/DESIGN.md">設計ドキュメント（Astro / PandaCSS）</a>
+    <a href="./_test.html">共有部品のテスト（3D ロゴ・ワールド）</a>
+  </nav>
+
+  <main class="grid" id="grid"></main>
+
+  <footer>モックは 1 ファイル完結の HTML。各ファイル冒頭の <code>:root</code> が PandaCSS のトークン候補です。</footer>
+</div>
+<script>
+  const VARIANTS = [
+    { id: 'k-own-your-world', tag: '案 K · A × J の統合案（最新）', name: 'Own Your World', desc: 'A のシンプルなヒーロー（見出し＋動画の枠＋3D ロゴ）に、「ワールドも mod も自分で持てる」と分散を載せた。文章は見出し＋一言まで、カーソルの演出なし。', font: 'Nunito + M PLUS Rounded 1c', sw: ['#faf6f0', '#1b2a44', '#bde1fb', '#9ab2f8', '#ceb0fa', '#1e7e46'], featured: true },
+    { id: 'a-hub-classic', tag: '案 A', name: 'Hub Classic', desc: 'Misskey Hub に一番近い。角丸の大きなヒーロー、パステルの円、傾けた実画面に 3D ロゴを重ね、柱カードがヒーロー下端に食い込む。', font: 'Nunito + M PLUS Rounded 1c', sw: ['#faf6f0', '#1b2a44', '#bde1fb', '#9ab2f8', '#ceb0fa'] },
+    { id: 'b-live-world', tag: '案 B', name: 'Live World', desc: 'ヒーロー全面が動くワールド。訪問者のカーソルも「あなた」として参加し、ドラッグで描ける。ページ全体をエディタのエンティティ風に統一。', font: 'Inter + Noto Sans JP / JetBrains Mono', sw: ['#F0F8FF', '#1b2a44', '#4780e0', '#9ab2f8', '#ceb0fa'] },
+    { id: 'c-pastel-dream', tag: '案 C', name: 'Pastel Dream', desc: 'ロゴ 3 色が漂うメッシュグラデーションとすりガラス。中央に大きな 3D ロゴ、スクロールで起き上がる実画面。', font: 'Outfit + Zen Maru Gothic', sw: ['#f3f1fd', '#1b2a44', '#5d78e6', '#9ab2f8', '#ceb0fa', '#f4a7c9'] },
+    { id: 'd-night-chill', tag: '案 D', name: 'Night Chill', desc: '星とオーロラの夜、発光するロゴ。「再生中」ウィジェットや曲順リスト風の「はじめる」で lo-fi な夜の作業通話。', font: 'Sora + Zen Kaku Gothic New / DM Mono', sw: ['#0a1120', '#f2f4fb', '#9ab2f8', '#ceb0fa', '#ffd9a0'] },
+    { id: 'e-bento', tag: '案 E', name: 'Bento', desc: 'ヒーローからタイルの集合。見出し・3D ロゴ・動くワールド・数字・連合図を 1 画面に整理し、以降もすべてタイル。', font: 'Plus Jakarta Sans + Zen Kaku Gothic New', sw: ['#faf6f0', '#fffdf9', '#1b2a44', '#121c30', '#9ab2f8', '#ceb0fa'] },
+    { id: 'f-editorial', tag: '案 F', name: 'Editorial', desc: '生成りの紙に明朝の縦書き見出し。番号付きの章、ある一日のタイムライン、索引、奥付まである「読みもの」。', font: 'Shippori Mincho B1 + Noto Serif JP', sw: ['#f3eee4', '#1d2230', '#4657be', '#ceb0fa'] },
+    { id: 'g-developer', tag: '案 G', name: 'Developer', desc: '黒地にグリッド線。YAML / SDK / ターミナルをタブで切り替えるコードが主役、その結果として動くワールドを下に。', font: 'Inter + Noto Sans JP / JetBrains Mono', sw: ['#0a0c11', '#3a4258', '#e8ebf3', '#9ab2f8', '#8ad29b'] },
+    { id: 'h-playful', tag: '案 H', name: 'Playful', desc: '紺の太い輪郭線とずらした影のステッカー。手描きの下線、マーキー帯、ポラロイドの実画面、「ここに描いてみて」。', font: 'M PLUS Rounded 1c + Zen Maru Gothic', sw: ['#fffaf1', '#1b2a44', '#ffe08a', '#f4a7c1', '#9ab2f8'] },
+    { id: 'i-minimal', tag: '案 I', name: 'Minimal', desc: '白基調・余白多め・アクセント 1 色。小さな 3D ロゴの下に大きな実画面、スクロールで静かにフェードイン。', font: 'Inter + Noto Sans JP', sw: ['#ffffff', '#141b2b', '#5b7ae8', '#e9eefe'] },
+    { id: 'j-federation', tag: '案 J', name: 'Federation', desc: '明るい青図に、中心のないサーバーの網。カーソルがノード間を旅する。住所の分解図・入室シーケンス・サーバー一覧付き。', font: 'Outfit + Zen Kaku Gothic New', sw: ['#f0f7ff', '#13203a', '#4780e0', '#9ab2f8', '#ceb0fa'] },
+  ];
+  const grid = document.getElementById('grid');
+  for (const v of VARIANTS) {
+    const a = document.createElement('a');
+    a.className = v.featured ? 'card card--featured' : 'card';
+    a.href = `./${v.id}.html`;
+    a.innerHTML = `
+      <div class="thumb"><span class="fallback">${v.name}</span><img src="./shots/${v.id}.png" alt="${v.name} のスクリーンショット" loading="lazy" onerror="this.remove()" /></div>
+      <div class="body">
+        <span class="tag">${v.tag}</span>
+        <h2 class="name">${v.name}</h2>
+        <p class="desc">${v.desc}</p>
+        <p class="font">${v.font}</p>
+        <div class="swatches" aria-hidden="true">${v.sw.map((c) => `<i style="background:${c}"></i>`).join('')}</div>
+      </div>`;
+    grid.appendChild(a);
+  }
+</script>
+</body>
+</html>

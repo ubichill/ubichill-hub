@@ -1,0 +1,69 @@
+---
+title: "コントリビュート"
+description: "設計思想と PR の出し方。"
+source: "CONTRIBUTING.md"
+editUrl: "https://github.com/ubichill/ubichill/edit/main/CONTRIBUTING.md"
+sidebar:
+  order: 9
+---
+
+:::note[ubichill 本体から同期]
+このページは [`CONTRIBUTING.md`](https://github.com/ubichill/ubichill/blob/main/CONTRIBUTING.md) を `pnpm sync-docs` で取り込んだもの。直すときは本体リポジトリへ。
+:::
+
+Ubichill への貢献ありがとうございます。バグ報告・提案は Issue、変更は Pull Request で歓迎します。
+コーディング規約の詳細は [CLAUDE.md](https://github.com/ubichill/ubichill/blob/main/CLAUDE.md) にまとまっているので、ここでは**設計思想**を共有します。
+
+## 設計思想
+
+### 基盤（コア）とmodを分ける
+
+- **コアがやること**: modを安全に動かす基盤、ユーザーの同期処理、認証、ワールドの
+  ロード・編集の土台。つまり「みんなが共通で必要とする仕組み」。
+- **modがやること**: 具体的な機能（ペン・動画・付箋…）。**機能はコアに足さず、
+  modで実装する**のが原則です。コアは薄く汎用に保ちます。
+
+### ワールド作成は「誰でも」、mod開発は「エンジニア向け」
+
+- **ワールド作成/編集画面**は非エンジニアでも直感的に使えることを目指します（迷わない UI）。
+- **mod開発**はエンジニア向け。SDK は**内部をできるだけ隠蔽**し、少ないコードで
+  書けるようにしつつ、**自由度・拡張性**を損なわないバランスを狙います。
+
+### 宣言的に、副作用と状態依存を避ける
+
+- ロジックは**宣言的**に書く。命令的な手続きや、暗黙の**副作用・可変状態への依存**を避ける。
+- modの状態は `Ubi.state` に集約し、純粋関数で組み立てる（`let` を避ける）。
+
+### 過度な DRY / 複雑化を避ける
+
+- 「共通化のための共通化」や早すぎる抽象化はしない。**まず素直で読みやすいこと**を優先。
+- 重複が“痛み”になってから畳む。将来の仮定でレイヤーを増やさない。
+
+## 開発の始め方
+
+前提: [mise](https://mise.jdx.dev/) と Docker。Node / pnpm のバージョンは `package.json`（`devEngines.runtime` / `packageManager`）が真実源。
+
+```bash
+mise install        # Node / pnpm を導入（mise.lock でチェックサム検証）
+pnpm install
+pnpm dev            # 開発サーバー（Docker 含む）
+pnpm lint           # コミット前に必須（自動整形は pnpm lint:fix）
+pnpm typecheck
+pnpm build:workers  # mod Worker のバンドル
+```
+
+規約（named export のみ / `any` 禁止 / PandaCSS / SVG アイコン 等）は [CLAUDE.md](https://github.com/ubichill/ubichill/blob/main/CLAUDE.md) を参照。
+
+## ブランチ / コミット / PR
+
+- `main` から作業ブランチを切る（`feat/...` / `fix/...` / `chore/...`）。
+- コミット・PR は**日本語**、[Conventional Commits](https://www.conventionalcommits.org/)。
+- CI（lint / typecheck）を通す。squash merge 推奨。
+- **プレビュー環境**: メンテナが PR に `preview` ラベルを付けると、`pr-<番号>.ubichill.com` に
+  PR ごとのプレビューが払い出されます（未検証コードを勝手にデプロイしないためラベル制）。
+
+## ライセンス / 行動規範
+
+- 本プロジェクトは **AGPL-3.0**（＋mod例外、[COPYING](https://github.com/ubichill/ubichill/blob/main/COPYING) / [LICENSE](https://github.com/ubichill/ubichill/blob/main/LICENSE)）。
+  PR 提出をもって同ライセンスでの配布に同意したものとみなします。
+- 参加者は [行動規範](https://github.com/ubichill/ubichill/blob/main/CODE_OF_CONDUCT.md) に従ってください。

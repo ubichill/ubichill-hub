@@ -1,0 +1,40 @@
+---
+/**
+ * 本文。既定のものに Mermaid の描画を足す。
+ * scripts/sync-docs.mjs が ```mermaid を <pre class="mermaid"> に変えているので、
+ * そういう要素があるページだけ mermaid を読み込む。
+ */
+import Default from '@astrojs/starlight/components/MarkdownContent.astro';
+---
+
+<Default><slot /></Default>
+
+<script>
+  const nodes = document.querySelectorAll<HTMLElement>('pre.mermaid');
+  if (nodes.length > 0) {
+    const { default: mermaid } = await import('mermaid');
+    const dark = document.documentElement.dataset.theme === 'dark';
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: dark ? 'dark' : 'neutral',
+      fontFamily: 'inherit',
+    });
+    await mermaid.run({ nodes: Array.from(nodes) });
+  }
+</script>
+
+<style is:global>
+  pre.mermaid {
+    display: flex;
+    justify-content: center;
+    padding: 1rem;
+    overflow-x: auto;
+    background: var(--colors-bg-surface);
+    border: 1px solid var(--colors-border);
+    border-radius: 12px;
+  }
+  pre.mermaid svg {
+    max-width: 100%;
+    height: auto;
+  }
+</style>

@@ -1,0 +1,172 @@
+---
+import { css } from 'styled-system/css';
+import Icon, { type IconName } from '../Icon.astro';
+
+const points: { icon: IconName; title: string; text: string; tint: string }[] = [
+  { icon: 'link', title: 'ワールド＝URL', text: '開けば、だれでも入れる。', tint: 'sky' },
+  { icon: 'key', title: '鍵は手元に', text: 'サーバーは秘密鍵を預からない。', tint: 'periwinkle' },
+  { icon: 'badge-check', title: '作者署名', text: '改ざんとなりすましを見分ける。', tint: 'lavender' },
+  { icon: 'git', title: 'ただのファイル', text: 'Git で管理して、持ち出せる。', tint: 'green' },
+];
+
+const section = css({ paddingTop: 'clamp(80px, 10vw, 140px)' });
+const inner = css({
+  width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
+  marginInline: 'auto',
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.05fr)',
+  gap: '56px',
+  alignItems: 'center',
+  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
+});
+const eyebrow = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  textStyle: 'eyebrow',
+  color: 'highlight',
+  _before: { content: '""', width: '18px', height: '2px', borderRadius: '2px', bg: 'currentColor' },
+});
+const h2 = css({ marginTop: '12px', textStyle: 'h2' });
+const lead = css({ marginTop: '16px', color: 'fg.muted' });
+const list = css({ marginTop: '32px', display: 'grid', gap: '16px' });
+const point = css({
+  display: 'grid',
+  gridTemplateColumns: '44px 1fr',
+  gap: '14px',
+  alignItems: 'center',
+  '& h3': { fontSize: '16px', fontWeight: '800', lineHeight: '1.4' },
+  '& p': { textStyle: 'small', color: 'fg.muted' },
+});
+const iconBox = css({ width: '44px', height: '44px', borderRadius: '14px', display: 'grid', placeItems: 'center' });
+const tints: Record<string, string> = {
+  sky: css({ bg: 'tint.sky' }),
+  periwinkle: css({ bg: 'tint.periwinkle' }),
+  lavender: css({ bg: 'tint.lavender' }),
+  green: css({ bg: 'tint.green' }),
+};
+const art = css({
+  position: 'relative',
+  padding: '28px 0 28px 28px',
+  mdDown: { paddingLeft: 0 },
+  _before: {
+    content: '""',
+    position: 'absolute',
+    inset: '0 -40px 0 0',
+    borderRadius: 'xl',
+    backgroundImage: '{gradients.brandSoft}',
+    opacity: 0.55,
+    _dark: { opacity: 0.25 },
+    mdDown: { inset: '0 -20px' },
+  },
+});
+const card = css({
+  position: 'relative',
+  borderRadius: 'lg',
+  bg: 'bg.surface',
+  boxShadow: 'float',
+  overflow: 'hidden',
+  '& .head': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '16px 20px',
+    borderBottom: '1px solid {colors.border}',
+    fontFamily: 'mono',
+    fontSize: '13.5px',
+  },
+  '& dl': {
+    margin: 0,
+    padding: '6px 20px 4px',
+    display: 'grid',
+    gridTemplateColumns: 'auto minmax(0, 1fr)',
+    columnGap: '18px',
+  },
+  '& dt, & dd': { padding: '11px 0', borderBottom: '1px dashed {colors.border}' },
+  '& dt': { fontSize: '12.5px', color: 'fg.muted', whiteSpace: 'nowrap' },
+  '& dd': {
+    margin: 0,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+    minWidth: 0,
+    fontFamily: 'mono',
+    fontSize: '12.5px',
+    overflowWrap: 'anywhere',
+  },
+  '& dl > :nth-last-child(-n+2)': { borderBottom: 0 },
+  '& .ok': { color: 'status.ok', display: 'inline-flex' },
+  '& .hosts': { padding: '16px 20px 18px', bg: 'bg.subtle', display: 'flex', flexWrap: 'wrap', gap: '8px' },
+});
+const badge = css({
+  marginLeft: 'auto',
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '5px',
+  fontSize: '11.5px',
+  fontWeight: '800',
+  padding: '3px 10px',
+  borderRadius: 'full',
+  bg: 'status.okBg',
+  color: 'status.ok',
+  whiteSpace: 'nowrap',
+  fontFamily: 'body',
+});
+const host = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  padding: '6px 12px',
+  borderRadius: 'full',
+  bg: 'bg.surface',
+  boxShadow: 'inset 0 0 0 1px {colors.border}',
+  fontFamily: 'mono',
+  fontSize: '12px',
+  '&[data-on]': { bg: 'accent', color: 'accent.fg', boxShadow: 'none' },
+});
+---
+
+<section class={section} id="own" aria-labelledby="own-title">
+  <div class={inner}>
+    <div>
+      <span class={eyebrow}>Own</span>
+      <h2 class={h2} id="own-title">作ったものは、<br />自分の場所に。</h2>
+      <p class={lead}>ワールドも mod も URL。どこに置いても、署名で本物とわかる。</p>
+      <ul class={list}>
+        {
+          points.map((p) => (
+            <li class={point}>
+              <span class:list={[iconBox, tints[p.tint]]}>
+                <Icon name={p.icon} />
+              </span>
+              <div>
+                <h3>{p.title}</h3>
+                <p>{p.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+    <div class={art}>
+      <article class={card} aria-label="署名されたワールドの例">
+        <div class="head">
+          <Icon name="file-code" />chill-room.yaml
+          <span class={badge}><Icon name="badge-check" size={14} />作者署名あり</span>
+        </div>
+        <dl>
+          <dt>作者</dt><dd>@yokan@yokan.example</dd>
+          <dt>置き場所</dt><dd>yokan.github.io/worlds/chill-room.yaml</dd>
+          <dt>署名</dt><dd>ed25519<span class="ok"><Icon name="check" size={14} /></span></dd>
+          <dt>内容</dt><dd>sha256-9f2c…e41a<span class="ok"><Icon name="check" size={14} /></span></dd>
+        </dl>
+        <div class="hosts">
+          <span class={host}>Ubichill</span>
+          <span class={host} data-on>GitHub Pages</span>
+          <span class={host}>自分のサーバー</span>
+          <span class={host}>S3</span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,132 @@
+---
+title: "プロトコルと互換の規則"
+description: "約束ごとを 4 種類に分け、互換の扱いを決める。"
+source: "docs/PROTOCOLS.md"
+editUrl: "https://github.com/ubichill/ubichill/edit/main/docs/PROTOCOLS.md"
+sidebar:
+  order: 2
+---
+
+:::note[ubichill 本体から同期]
+このページは [`docs/PROTOCOLS.md`](https://github.com/ubichill/ubichill/blob/main/docs/PROTOCOLS.md) を `pnpm sync-docs` で取り込んだもの。直すときは本体リポジトリへ。
+:::
+
+Ubichill の約束ごと（プロトコル・データの形式・API）を、**だれが・どこに・どれだけ長く持つか**で 4 種類に分け、種類ごとに互換の扱いを決める。
+互換を残すかどうかを場当たりで決めない。新しい約束ごとを作るときは、まずどの種類かを決めてここに足す。
+
+| 種類 | 例 | 持つ人・場所 | 互換の扱い |
+| --- | --- | --- | --- |
+| A. 外に出るデータ | 署名・mod の lock・ワールドの YAML・サービストークン | 作者のリポジトリ・GitHub Pages・他のサーバー・外部サービス（こちらは消せない） | 形式に版を付ける。**作る側だけ新しくし、読む側は出したことのある版を読み続ける**。読む処理は 1 か所 |
+| B. 公開している SDK とプロトコル | `ubichill`（npm）・Host ⇔ Worker の `PROTOCOL_VERSION` | 作者がビルドした mod の中 | semver。足すときは版を上げ、消すときは互換の最小の版も上げる（CI が確かめる） |
+| C. サーバーの間の API | WebFinger・作者の鍵の一覧・ワールドの配信・連合の一覧（`scope=local`）・連合（AP 面・部屋 RPC 面） | 版の違う他のサーバー | 足すだけ。意味を変えるときは新しい道（パス・パラメーター）を足す |
+| D. 内部の API | フロント ⇔ backend（`/api/v1/users/me/...` など）・フロント ⇔ Go のインスタンス（`protocol/instance`） | 同じリポジトリ・同じ版でデプロイ | **互換を残さない**。フロントは backend との版のずれを検知して読み込み直す（`VersionSkewGuard`） |
+
+非推奨（deprecated）の API は作らない。D は版のずれの検知で不要にし、A・B・C は最初から「足すだけ」で設計する。
+
+## A. 外に出るデータ
+
+| 形式 | 版 | 定義 | 置き場所 |
+| --- | --- | --- | --- |
+| ワールドの定義 | `apiVersion: ubichill.com/v1alpha1` | `shared/schemas/world.schema.ts` | `<world>.yaml` |
+| mod の lock | `lockVersion: 1` | `shared/schemas/modLock.schema.ts` | `<world>.lock.json`・`v<版>/lock.json` |
+| 作者署名（ワールド） | `version: 2`・`kind: 'world'` | `shared/signature/envelope.ts`（内容のハッシュは `shared/world/identity.ts`） | `<world>.sig.json` |
+| 作者署名（mod） | `version: 2`・`kind: 'mod'` | `shared/signature/envelope.ts`（内容のハッシュは `shared/mod/modSignature.ts`） | `v<版>/lock.sig.json` |
+| サービストークン | JWT（EdDSA） | `shared/mod/serviceToken.ts` | 外部サービスへ渡す |
+| CLI・CI の認証情報 | `version: 1` | `cli/src/credentials.ts` | `~/.config/ubichill`・CI の Secret |
+
+### 作者署名の形式（版 2）
+
+ワールド・mod など、作者が署名するものはすべてこの 1 つの形式（封筒）で署名する。種類を足すとき（購入の証明など）も `kind` を足すだけにする。
+版 1（ワールドと mod で別々だった形式）は、ワールドを作っていたのが私たちだけだったので読み続けずに署名し直した（2026-10）。
+
+```json
+{
+  "format": "ubichill-signature",
+  "version": 2,
+  "kind": "world",
+  "alg": "ed25519",
+  "publicKey": "<base64url>",
+  "author": "alice@example.com",
+  "subject": "my-world",
+  "subjectVersion": "1.0.0",
+  "contentHash": "sha256-...",
+  "signature": "<base64url>"
+}
+```
+
+- **対象**: `kind` だけが違う（`world` / `mod`、今後 `license` など）。`contentHash` の求め方は種類ごとに決める（ワールドは `{ definition, lock }`、mod は lock の実行内容）。
+- **署名する値**: `signature` 以外の全項目の正規化した JSON（RFC 8785 相当）。`format` と `kind` が入るので、別の種類・別の用途の署名として使い回せない。
+- **作者**: 必須。正規の表記（`handle@domain`、ドメインは小文字）だけ。作者の無い署名は作らない。
+- **検証の順番（どの種類も同じ）**: 形式を読む → 対象と内容のハッシュを照らす → 元のバイト列で署名を照合する → 作者の鍵を確かめる（`authorKeyDirectory`）。
+- **CI**: 形式の固定のために、決まった鍵で作った署名の例（`shared/signature/vectors.v2.json`）を置き、`loader/src/signatureVectors.test.ts` が本物の Ed25519 で、いつまでも検証できることと、同じ鍵から同じバイト列ができることを確かめる。署名する値の作り方を変えると落ちる。形式を変えるときは版を上げ、新しい版の例を足す（古い版の例は残す）。
+
+## B. 公開している SDK と Host ⇔ Worker のプロトコル
+
+- コマンド・イベントの一覧は `shared/mod/protocol.contract.ts` に版ごとに残す。`protocol.contract.test.ts` が今の定義と照らし合わせる。
+- 足す: `PROTOCOL_VERSION` を +1 し、契約に新しい版を足す。消す・意味を変える: さらに `MIN_COMPATIBLE_PROTOCOL_VERSION` を上げる。どちらも忘れると CI が落ちる。
+- **CI が見るのはコマンド・イベントの名前の増減だけ**。ペイロードの型や意味を変えたこと（項目を必須にした・単位を変えたなど）は検知しない。
+  `shared/mod/protocol.ts` と `shared/mod/types.ts` のペイロードの型を変える PR は、互換を壊していないかをレビューで確かめる。
+- 名前が増えなくても、**古い Host が黙って捨てる意味をペイロードに足したとき**（例: v6 の `EVENT_EMIT` の `ref`）は足す変更として扱い、
+  `PROTOCOL_VERSION` を +1 して契約に同じ名前の版を足す。あわせて `Ubi.runtime` の機能（`RuntimeFeature` と `HOST_FEATURE_PROTOCOL`）を足し、
+  mod が古い Host を見分けて切り替えられるようにする。
+- SDK のビルド結果が変わったのに changeset が無ければ落ちる（`scripts/check-npm-drift.mjs`）。
+
+## C. サーバーの間の API
+
+| API | 使う側 |
+| --- | --- |
+| `GET /.well-known/webfinger` | 作者を確かめる他のサーバー・ブラウザ |
+| `GET /api/v1/authors/:handle/signing-keys` | 同上（`Access-Control-Allow-Origin: *`） |
+| `GET /api/v1/authors/:handle/worlds/:name.yaml`（`.lock.json`・`.sig.json`） | ワールドを読む他のサーバー |
+| `GET /api/v1/worlds?scope=local` | 連合のピア（このサーバーのワールドだけを返す） |
+| `GET /api/v1/service-tokens/keys` | サービストークンを検証する外部サービス |
+| `GET /.well-known/nodeinfo`・`/nodeinfo/2.1` | ubichill のサーバーかを確かめるほかのサーバー |
+| `GET /ap/actor`・`/ap/users/:id`（`/outbox`） | 連合の actor の文書（鍵は FEP-521a の Multikey） |
+| `POST /ap/inbox`・`/ap/users/:id/inbox` | 連合の知らせ（AS2 の activity。RFC 9421 の署名付き） |
+| `GET /ap/instances/:id`・`POST /federation/v1/...` | 連合の部屋 RPC（入室・招待の権利・見えるか・現在地・フレンドか） |
+
+### 連合（federation v1）
+
+設計は [design/federation.md](https://github.com/ubichill/ubichill/blob/main/docs/design/federation.md)、形は `shared/src/federation/`。
+
+- 版は `FEDERATION_VERSION`（NodeInfo の `metadata.ubichill.federation.version`）。機能は Application actor の `implements`（FEP-844e）で告知し、
+  使う前に相手が告知しているかを見る。機能を足すときは URI（`FEDERATION_FEATURES`）を足す。
+- 受けるときは知らない activity の型・知らない項目を捨てる（202。`.strict()` にしない）。部屋 RPC の本文も同じ。
+- 署名の形（RFC 9421 の ubichill プロファイル: Ed25519・`sig1`・含める項目・時刻の幅）を変えるときは、新しいラベル・`alg` を足して
+  両方を受ける期間を置く。今の形は RFC 9421 付録 B.2.6 と RFC 9530 の値でテストで固定している（`backend/src/services/federation/httpSignature.test.ts`）。
+- id の形（`/ap/users/<ユーザー ID>`・`/ap/instances/<部屋 ID>`）はほかのサーバーが持つので変えない。
+
+## D. 内部の API
+
+フロントと backend は同じ版でデプロイする。開いたままの古いタブは、`VersionSkewGuard` が backend の版（`/api/version`）と比べ、ずれていればインスタンスの外ではすぐ、中では知らせてから読み込み直す。
+そのため内部の API は、互換を残さずに変えてよい（Host の内部の実装は後方互換性に囚われない、という CLAUDE.md の方針の前提）。
+
+インスタンスのプロトコル（`protocol/instance`）も D で、イベントを足す・消すときに互換の層を作らない。
+`protocolVersion` を上げると古いタブは入室そのものを確定した失敗にするので、上げるのは接続・入室の手順やフレームの形を変えたときだけにする（イベントの増減では上げない）。
+例: `server:notice`（その場だけの知らせ）はイベントを足しただけなので上げない。古いタブは知らないイベントを読み飛ばし、新しいタブも知らない `kind` を読み飛ばす。
+
+ただし Go のインスタンスはフロント・backend と別のイメージで、別々にデプロイされる（新しいフロントが古い Go に繋ぐ時間も、その逆もある）。
+`VersionSkewGuard` は backend の版しか見ないので、**今あるイベントの配り方を変えるときは `world:join` の `features` で宣言させ、宣言した接続にだけ新しい形で送る**。
+宣言しない接続には今の形を送り続ける（外部の実装・e2e の `apiSmoke` もこちら）。宣言を足すのはイベントの増減と同じ扱いで、`protocolVersion` は上げない。
+例: `cursors:batch`（カーソルを `cursors:moved` でまとめて受ける。`protocol/instance/README.md` の「受け取れる形の宣言」）。
+
+`ubichill dev` の SSE（`/__ubichill/events`）も D。dev サーバーと world.html は同じ CLI に入っていて版がずれない（形は `shared/world/devEvents.ts` だけで決める）。
+
+通知の API（`/api/v1/notifications`・SSE）も D。通知の形（`shared/notification/activity.ts`）は ActivityStreams 2.0 に寄せてあるが、
+ほかのサーバーと送り合うのは連合の activity（C）で、通知はそれを受けたサーバーが自分の利用者に見せる形（D）として分けている。
+
+## 設計の規則を CI で守る
+
+`scripts/architecture.mjs`（`pnpm check:architecture`）が、次の規則を全ソースに当てる。規則ごとに理由を持つ。
+
+| 規則 | 守るもの |
+| --- | --- |
+| `host-runs-mods-without-backend` | Host は SNS backend の無い `world.html` でも mod を動かす（mod の経路から Host の API を呼ばない） |
+| `world-app-closure` | `world.html` から辿れるコード（`src/world`・`src/worldApp`）は SNS（認証・router・backend API）を読み込まない。間接の import も含めて辿る |
+| `shared-is-pure` | shared は Node・DOM・ネットワークに依存しない（ブラウザ・backend・CLI が同じ規則を使う） |
+| `loader-main-is-browser-safe` | loader の既定の入口はブラウザで読める |
+| `backend-runs-built-packages-only` | backend はソースのまま配るパッケージに依存しない |
+| `mods-use-public-sdk-only` | mod は公開パッケージ `ubichill` だけに依存する |
+| `signatures-in-one-place` | Ed25519 の照合は shared の署名・鍵の証明の部品（`signature/envelope.ts`・`world/identity.ts`・`user/cliAuth.ts`・連合の HTTP の署名 `federation/httpSignature.ts`）の中だけ |
+
+規則を足すときは、何を守るのかを `why` に書く。

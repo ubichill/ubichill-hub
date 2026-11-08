@@ -1,0 +1,841 @@
+<!doctype html>
+<!--
+  案G · Developer
+  コンセプト: 開発者・セルフホスター向け。「ワールドはコードで、機能は URL で。」
+             ヒーローの主役はコード（world.yaml / mod / helm をタブ切替）と、それが動いた結果のミニワールド。
+  狙い:      mod 作者・World as Code を書く人・自分のサーバーを建てる人に、最初の 1 画面で
+             「何を書けば何が起きるか」を見せる。Astro / Deno / Bun 系の LP の文法。
+  向いている点: 技術的な強み（Worker サンドボックス・権限ティア・連合・Helm）を誤魔化さずに並べられる。
+               ドキュメントサイト（同じ hub 内）への移行がなめらか。
+  弱い点:    一般ユーザーには硬い・暗い。「チル」の温度感は弱め。トップより /developers 的なページ向きかもしれない。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ubichill Hub — 案G Developer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+:root {
+  /* ── 基本トークン（Panda: tokens） ───────────────────────── */
+  --colors-ink-950: #0a0c11;
+  --colors-ink-900: #0f121a;
+  --colors-ink-850: #141824;
+  --colors-ink-800: #1a1f2e;
+  --colors-ink-700: #262c3f;
+  --colors-ink-600: #3a4258;
+  --colors-fog-500: #6b7489;
+  --colors-fog-400: #8a93a8;
+  --colors-fog-300: #b4bccd;
+  --colors-fog-100: #e8ebf3;
+  --colors-sky-200: #bde1fb;
+  --colors-periwinkle-400: #9ab2f8;
+  --colors-periwinkle-500: #7d97ef;
+  --colors-lavender-300: #ceb0fa;
+  --colors-mint-300: #8ad29b;
+  --colors-amber-300: #f1c86c;
+  --colors-rose-300: #f4a7c1;
+  --colors-red-400: #ff8f8f;
+  --colors-white-a06: rgba(255, 255, 255, 0.06);
+  --colors-white-a08: rgba(255, 255, 255, 0.08);
+  --colors-white-a14: rgba(255, 255, 255, 0.14);
+
+  --fonts-body: "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --fonts-display: "Inter", "Noto Sans JP", system-ui, sans-serif;
+  --fonts-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  --radii-sm: 6px;
+  --radii-md: 10px;
+  --radii-lg: 14px;
+  --radii-xl: 20px;
+  --radii-full: 999px;
+
+  --spacing-section: clamp(72px, 10vw, 128px);
+  --spacing-gutter: clamp(20px, 4vw, 40px);
+  --sizes-container: 1200px;
+
+  --shadows-window: 0 30px 80px -20px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--colors-white-a08);
+  --shadows-glow: 0 0 0 1px rgba(154, 178, 248, 0.35), 0 8px 30px -6px rgba(154, 178, 248, 0.45);
+
+  /* ── セマンティックトークン（Panda: semanticTokens） ─────── */
+  --colors-bg: var(--colors-ink-950);
+  --colors-bg-surface: var(--colors-ink-900);
+  --colors-bg-raised: var(--colors-ink-850);
+  --colors-bg-code: var(--colors-ink-900);
+  --colors-fg: var(--colors-fog-100);
+  --colors-fg-muted: var(--colors-fog-400);
+  --colors-fg-subtle: var(--colors-fog-500);
+  --colors-accent: var(--colors-periwinkle-400);
+  --colors-accent-hover: var(--colors-sky-200);
+  --colors-accent-fg: var(--colors-ink-950);
+  --colors-border: var(--colors-white-a08);
+  --colors-border-strong: var(--colors-white-a14);
+  --colors-tier-safe: var(--colors-mint-300);
+  --colors-tier-sensitive: var(--colors-amber-300);
+  --colors-tier-dangerous: var(--colors-red-400);
+  /* シンタックス */
+  --colors-code-key: var(--colors-sky-200);
+  --colors-code-string: var(--colors-mint-300);
+  --colors-code-number: var(--colors-amber-300);
+  --colors-code-keyword: var(--colors-lavender-300);
+  --colors-code-tag: var(--colors-periwinkle-400);
+  --colors-code-comment: var(--colors-fog-500);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--colors-bg);
+  color: var(--colors-fg);
+  font-family: var(--fonts-body);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+img { max-width: 100%; display: block; }
+code, pre, .mono { font-family: var(--fonts-mono); }
+.container { width: 100%; max-width: var(--sizes-container); margin: 0 auto; padding: 0 var(--spacing-gutter); }
+.icon { width: 18px; height: 18px; flex: none; }
+h1, h2, h3, p, .lead { word-break: auto-phrase; line-break: strict; }
+.nb { display: inline-block; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* 背景のグリッド */
+.gridbg {
+  position: absolute; inset: 0; pointer-events: none; z-index: -1;
+  background-image:
+    linear-gradient(var(--colors-white-a06) 1px, transparent 1px),
+    linear-gradient(90deg, var(--colors-white-a06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(80% 70% at 50% 20%, #000 30%, transparent 85%);
+  -webkit-mask-image: radial-gradient(80% 70% at 50% 20%, #000 30%, transparent 85%);
+}
+
+/* ── ヘッダー ───────────────────────────── */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--colors-bg) 78%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--colors-border);
+}
+.header__in { display: flex; align-items: center; gap: 28px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.01em; }
+.brand img { width: 26px; height: auto; }
+.brand__tag { font-family: var(--fonts-mono); font-size: 11px; font-weight: 500; color: var(--colors-fg-muted); padding: 1px 7px; border: 1px solid var(--colors-border-strong); border-radius: var(--radii-full); }
+.nav { display: flex; gap: 22px; font-size: 14px; color: var(--colors-fg-muted); }
+.nav a:hover { color: var(--colors-fg); }
+.header__right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.iconbtn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--radii-md); color: var(--colors-fg-muted); border: 1px solid transparent; }
+.iconbtn:hover { color: var(--colors-fg); border-color: var(--colors-border-strong); }
+.lang { font-family: var(--fonts-mono); font-size: 12px; width: auto; padding: 0 10px; gap: 6px; display: flex; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 20px; border-radius: var(--radii-md);
+  font-weight: 600; font-size: 15px; white-space: nowrap;
+  transition: background .15s, border-color .15s, transform .15s, box-shadow .15s;
+}
+.btn--sm { height: 36px; padding: 0 14px; font-size: 14px; }
+.btn--primary { background: var(--colors-accent); color: var(--colors-accent-fg); box-shadow: var(--shadows-glow); }
+.btn--primary:hover { background: var(--colors-accent-hover); transform: translateY(-1px); }
+.btn--ghost { border: 1px solid var(--colors-border-strong); color: var(--colors-fg); }
+.btn--ghost:hover { background: var(--colors-white-a06); }
+
+/* ── ヒーロー ───────────────────────────── */
+.hero { position: relative; padding: clamp(48px, 7vw, 96px) 0 var(--spacing-section); isolation: isolate; overflow: hidden; }
+.hero::before {
+  content: ""; position: absolute; z-index: -1; width: 900px; height: 600px; right: -200px; top: -160px;
+  background: radial-gradient(closest-side, rgba(154, 178, 248, 0.20), transparent), radial-gradient(closest-side at 70% 60%, rgba(206, 176, 250, 0.16), transparent);
+  filter: blur(20px);
+}
+.hero__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr); gap: clamp(32px, 5vw, 64px); align-items: center; }
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 6px; border-radius: var(--radii-full);
+  border: 1px solid var(--colors-border-strong); background: var(--colors-bg-raised); font-size: 13px; color: var(--colors-fg-muted);
+}
+.pill b { font-family: var(--fonts-mono); font-weight: 500; font-size: 11px; color: var(--colors-accent-fg); background: var(--colors-accent); padding: 2px 8px; border-radius: var(--radii-full); }
+.pill:hover { border-color: var(--colors-accent); color: var(--colors-fg); }
+.eyebrow { font-family: var(--fonts-mono); font-size: 13px; color: var(--colors-accent); letter-spacing: .02em; margin: 28px 0 10px; }
+.hero h1 {
+  font-family: var(--fonts-display); font-weight: 900; font-size: clamp(36px, 4.7vw, 62px); line-height: 1.12;
+  letter-spacing: -0.03em; margin: 0 0 22px;
+}
+.grad { background: linear-gradient(100deg, var(--colors-sky-200), var(--colors-periwinkle-400) 45%, var(--colors-lavender-300)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.lead { color: var(--colors-fg-muted); font-size: 17px; max-width: 34em; margin: 0 0 30px; }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+.install {
+  display: flex; align-items: center; gap: 12px; max-width: 520px; padding: 12px 12px 12px 16px;
+  background: var(--colors-bg-surface); border: 1px solid var(--colors-border); border-radius: var(--radii-md);
+  font-family: var(--fonts-mono); font-size: 13.5px; color: var(--colors-fg);
+}
+.install__p { color: var(--colors-accent); user-select: none; }
+.install code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.copy { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: var(--radii-sm); border: 1px solid var(--colors-border); background: transparent; color: var(--colors-fg-muted); cursor: pointer; }
+.copy:hover { color: var(--colors-fg); border-color: var(--colors-border-strong); }
+.copy.is-done { color: var(--colors-mint-300); border-color: var(--colors-mint-300); }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 22px; font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); }
+.facts span { display: inline-flex; align-items: center; gap: 6px; }
+.facts i { width: 6px; height: 6px; border-radius: 50%; background: var(--colors-accent); display: block; }
+
+/* コードウィンドウ */
+.stack { position: relative; margin-top: 40px; }
+.win { background: var(--colors-bg-code); border-radius: var(--radii-lg); box-shadow: var(--shadows-window); overflow: hidden; }
+.win__bar { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 14px; border-bottom: 1px solid var(--colors-border); background: var(--colors-bg-raised); }
+.win__dots { display: flex; gap: 6px; }
+.win__dots i { width: 10px; height: 10px; border-radius: 50%; background: var(--colors-ink-600); display: block; }
+.tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; }
+.tab {
+  font-family: var(--fonts-mono); font-size: 12.5px; padding: 6px 12px; border-radius: var(--radii-sm); border: 0;
+  background: transparent; color: var(--colors-fg-subtle); cursor: pointer; white-space: nowrap; display: inline-flex; gap: 7px; align-items: center;
+}
+.tab[aria-selected="true"] { background: var(--colors-white-a08); color: var(--colors-fg); }
+.tab .icon { width: 13px; height: 13px; }
+.code {
+  margin: 0; padding: 18px 20px; font-size: 13px; line-height: 1.75; color: var(--colors-fg); overflow-x: auto; min-height: 318px;
+  counter-reset: ln; tab-size: 2;
+}
+.code .l { display: block; white-space: pre; }
+.code .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 2.2em; margin-right: 14px; text-align: right; color: var(--colors-ink-600); user-select: none; }
+.k { color: var(--colors-code-key); }
+.s { color: var(--colors-code-string); }
+.n { color: var(--colors-code-number); }
+.kw { color: var(--colors-code-keyword); }
+.t { color: var(--colors-code-tag); }
+.c { color: var(--colors-code-comment); font-style: italic; }
+.pr { color: var(--colors-accent); }
+.ok { color: var(--colors-mint-300); }
+.dim { color: var(--colors-fg-subtle); }
+.panel[hidden] { display: none; }
+
+.preview { margin-top: -1px; border-top: 1px solid var(--colors-border); }
+.preview__bar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; font-family: var(--fonts-mono); font-size: 11.5px; color: var(--colors-fg-subtle); background: var(--colors-bg-raised); border-top: 1px solid var(--colors-border); }
+.preview__bar .live { width: 7px; height: 7px; border-radius: 50%; background: var(--colors-mint-300); box-shadow: 0 0 0 3px rgba(138, 210, 155, .2); }
+.preview [data-world] { height: 250px; }
+/* logo3d.js が .l3d{position:relative} を注入するので詳細度を上げて absolute を保つ */
+[data-logo3d].logo-float { position: absolute; width: 132px; aspect-ratio: 667 / 761; right: -44px; top: -118px; z-index: 5; }
+
+/* ── セクション共通 ───────────────────────── */
+section { position: relative; }
+.sec { padding: var(--spacing-section) 0; border-top: 1px solid var(--colors-border); }
+.sec__head { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: end; margin-bottom: 48px; }
+.sec__kicker { font-family: var(--fonts-mono); font-size: 13px; color: var(--colors-accent); margin: 0 0 12px; }
+.sec h2 { font-size: clamp(28px, 3.6vw, 44px); line-height: 1.2; letter-spacing: -0.025em; margin: 0; font-weight: 800; }
+.sec__desc { color: var(--colors-fg-muted); margin: 0; max-width: 36em; }
+
+/* 柱 */
+.pillars { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--colors-border); border-radius: var(--radii-xl); overflow: hidden; background: var(--colors-bg-surface); }
+.pillar { padding: 28px 24px 26px; border-right: 1px solid var(--colors-border); display: flex; flex-direction: column; gap: 12px; }
+.pillar:last-child { border-right: 0; }
+.pillar__top { display: flex; justify-content: space-between; align-items: center; color: var(--colors-fg-subtle); font-family: var(--fonts-mono); font-size: 12px; }
+.pillar__icon { width: 40px; height: 40px; border-radius: var(--radii-md); display: grid; place-items: center; background: var(--colors-white-a06); color: var(--colors-accent); }
+.pillar h3 { font-size: 18px; margin: 6px 0 0; letter-spacing: -0.01em; }
+.pillar p { margin: 0; color: var(--colors-fg-muted); font-size: 14.5px; flex: 1; }
+.token { align-self: flex-start; font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg); padding: 3px 9px; border-radius: var(--radii-sm); background: var(--colors-bg); border: 1px solid var(--colors-border); }
+
+/* はじめる */
+.start { border: 1px solid var(--colors-border); border-radius: var(--radii-xl); overflow: hidden; }
+.start__row {
+  display: grid; grid-template-columns: 56px minmax(0, 1.1fr) minmax(0, 1.4fr) 28px; align-items: center; gap: 20px;
+  padding: 20px 24px; border-bottom: 1px solid var(--colors-border); transition: background .15s;
+}
+.start__row:last-child { border-bottom: 0; }
+.start__row:hover { background: var(--colors-bg-surface); }
+.start__no { font-family: var(--fonts-mono); color: var(--colors-fg-subtle); font-size: 13px; }
+.start__row h3 { margin: 0; font-size: 17px; display: flex; gap: 10px; align-items: center; }
+.start__row p { margin: 2px 0 0; color: var(--colors-fg-muted); font-size: 14px; }
+.cmd { font-family: var(--fonts-mono); font-size: 13px; padding: 9px 12px; border-radius: var(--radii-sm); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+.cmd .pr { margin-right: 8px; }
+.start__arrow { color: var(--colors-fg-subtle); }
+.start__row:hover .start__arrow { color: var(--colors-accent); transform: translateX(3px); }
+.badge { font-family: var(--fonts-mono); font-size: 10.5px; font-weight: 500; padding: 1px 7px; border-radius: var(--radii-full); border: 1px solid var(--colors-border-strong); color: var(--colors-fg-muted); }
+
+/* 使い方 + 機能ツリー */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.uses { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.use { padding: 22px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); }
+.use__icon { color: var(--colors-accent); margin-bottom: 14px; }
+.use h3 { font-size: 16px; margin: 0 0 4px; }
+.use p { font-size: 13.5px; color: var(--colors-fg-muted); margin: 0; }
+.tree { border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 13px; overflow: hidden; }
+.tree__head { padding: 12px 18px; border-bottom: 1px solid var(--colors-border); color: var(--colors-fg-subtle); display: flex; justify-content: space-between; }
+.tree ul { list-style: none; margin: 0; padding: 10px 0; }
+.tree li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 7px 18px; }
+.tree li:hover { background: var(--colors-white-a06); }
+.tree .path { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tree .path span { color: var(--colors-fg-subtle); }
+.tree small { font-family: var(--fonts-body); font-size: 12.5px; color: var(--colors-fg-muted); }
+.tag { font-size: 10.5px; padding: 1px 7px; border-radius: var(--radii-full); margin-left: 8px; }
+.tag--core { background: rgba(154, 178, 248, .14); color: var(--colors-accent); }
+.tag--mod { background: rgba(206, 176, 250, .14); color: var(--colors-lavender-300); }
+
+/* アーキテクチャ */
+.arch { display: grid; grid-template-columns: minmax(0, 1.25fr) 80px minmax(0, 1fr) 80px minmax(0, 1fr); align-items: stretch; gap: 0; }
+.box { border: 1px solid var(--colors-border-strong); border-radius: var(--radii-lg); padding: 18px; background: var(--colors-bg-surface); }
+.box__title { font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); margin-bottom: 10px; display: flex; justify-content: space-between; }
+.box h3 { margin: 0 0 4px; font-size: 16px; }
+.box p { margin: 0; font-size: 13px; color: var(--colors-fg-muted); }
+.workers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 14px; padding: 12px; border: 1px dashed var(--colors-lavender-300); border-radius: var(--radii-md); position: relative; }
+.workers::before { content: "sandbox · capabilityGate"; position: absolute; top: -9px; left: 12px; font-family: var(--fonts-mono); font-size: 10.5px; color: var(--colors-lavender-300); background: var(--colors-bg-surface); padding: 0 6px; }
+.worker { font-family: var(--fonts-mono); font-size: 11.5px; text-align: center; padding: 8px 4px; border-radius: var(--radii-sm); background: var(--colors-bg); border: 1px solid var(--colors-border); }
+.worker small { display: block; color: var(--colors-fg-subtle); font-size: 10px; }
+.wire { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 6px; font-family: var(--fonts-mono); font-size: 10.5px; color: var(--colors-fg-subtle); text-align: center; }
+.wire__line { width: 100%; height: 2px; background: repeating-linear-gradient(90deg, var(--colors-accent) 0 6px, transparent 6px 11px); background-size: 22px 2px; animation: flow 1.2s linear infinite; }
+@keyframes flow { to { background-position: 22px 0; } }
+.arch__col { display: flex; flex-direction: column; gap: 12px; }
+.arch__col .box { flex: 1; }
+
+/* SDK + 権限 */
+.sdk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.tiers { display: flex; flex-direction: column; gap: 10px; }
+.tier { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 16px; padding: 18px; border-radius: var(--radii-lg); border: 1px solid var(--colors-border); background: var(--colors-bg-surface); }
+.tier__name { font-family: var(--fonts-mono); font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+.tier__name i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.tier__name small { display: block; font-weight: 400; font-size: 11px; color: var(--colors-fg-subtle); margin-top: 2px; }
+.tier p { margin: 0 0 8px; font-size: 13.5px; color: var(--colors-fg-muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-family: var(--fonts-mono); font-size: 11.5px; padding: 2px 8px; border-radius: var(--radii-sm); background: var(--colors-bg); border: 1px solid var(--colors-border); }
+.note { margin-top: 14px; display: flex; gap: 10px; font-size: 13.5px; color: var(--colors-fg-muted); padding: 14px 16px; border-radius: var(--radii-md); border: 1px dashed var(--colors-border-strong); }
+.note .icon { color: var(--colors-accent); margin-top: 3px; }
+
+/* WaC */
+.wac { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 24px; align-items: center; }
+.shot { border-radius: var(--radii-lg); overflow: hidden; box-shadow: var(--shadows-window); position: relative; }
+.shot__cap { position: absolute; left: 12px; bottom: 12px; font-family: var(--fonts-mono); font-size: 11.5px; padding: 4px 10px; border-radius: var(--radii-full); background: rgba(10, 12, 17, .82); color: var(--colors-fg); border: 1px solid var(--colors-border-strong); }
+.sync { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); margin-top: 14px; }
+
+/* 連合 / セルフホスト */
+.fed { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+.card { padding: 28px; border-radius: var(--radii-xl); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); }
+.card h3 { font-size: 22px; margin: 0 0 8px; letter-spacing: -0.015em; }
+.card > p { color: var(--colors-fg-muted); margin: 0 0 20px; font-size: 15px; }
+.addr { display: flex; align-items: center; gap: 0; font-family: var(--fonts-mono); font-size: clamp(15px, 2vw, 20px); padding: 16px 18px; border-radius: var(--radii-md); background: var(--colors-bg); border: 1px solid var(--colors-border); margin-bottom: 18px; overflow-x: auto; white-space: nowrap; }
+.addr .a1 { color: var(--colors-lavender-300); }
+.addr .a2 { color: var(--colors-fg-subtle); }
+.addr .a3 { color: var(--colors-sky-200); }
+.kv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 18px; font-size: 13.5px; margin: 0; }
+.kv dt { font-family: var(--fonts-mono); color: var(--colors-fg-subtle); font-size: 12.5px; }
+.kv dd { margin: 0; color: var(--colors-fg-muted); }
+.scope { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 20px; }
+.scope span { text-align: center; font-size: 12px; padding: 8px 4px; border-radius: var(--radii-sm); background: var(--colors-bg); border: 1px solid var(--colors-border); color: var(--colors-fg-muted); }
+.term { border-radius: var(--radii-md); background: var(--colors-bg); border: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 12.5px; line-height: 1.85; padding: 16px 18px; overflow-x: auto; margin-bottom: 16px; }
+.term div { white-space: pre; }
+.req { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* OSS */
+.oss { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: center; padding: clamp(32px, 5vw, 56px); border-radius: 28px; border: 1px solid var(--colors-border-strong); background: radial-gradient(80% 120% at 100% 0%, rgba(154, 178, 248, .16), transparent 60%), var(--colors-bg-surface); overflow: hidden; position: relative; }
+.oss h2 { font-size: clamp(28px, 3.4vw, 40px); margin: 0 0 12px; letter-spacing: -0.02em; }
+.oss p { color: var(--colors-fg-muted); margin: 0 0 24px; }
+.oss__logo { justify-self: center; width: min(260px, 70%); aspect-ratio: 667 / 761; }
+.license { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+
+/* フッター */
+.footer { border-top: 1px solid var(--colors-border); padding: 56px 0 40px; font-size: 14px; }
+.footer__grid { display: grid; grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr)); gap: 32px; }
+.footer h4 { font-family: var(--fonts-mono); font-size: 12px; font-weight: 500; color: var(--colors-fg-subtle); margin: 0 0 14px; text-transform: lowercase; }
+.footer ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; color: var(--colors-fg-muted); }
+.footer ul a:hover { color: var(--colors-fg); }
+.footer__bottom { margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--colors-border); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--colors-fg-subtle); font-family: var(--fonts-mono); font-size: 12px; }
+.footer p { color: var(--colors-fg-muted); margin: 14px 0 0; max-width: 28em; }
+
+/* 案ラベル */
+.variant { position: fixed; right: 14px; bottom: 14px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: var(--radii-full); background: rgba(20, 24, 36, .92); border: 1px solid var(--colors-border-strong); font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg); backdrop-filter: blur(8px); }
+.variant a { padding: 4px 10px; border-radius: var(--radii-full); background: var(--colors-accent); color: var(--colors-accent-fg); font-weight: 700; }
+
+/* スクロール表示 */
+.reveal { opacity: 0; transform: translateY(16px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.is-in { opacity: 1; transform: none; }
+
+/* ── レスポンシブ ─────────────────────────── */
+@media (max-width: 1080px) {
+  .nav { display: none; }
+  .hero__grid, .sec__head, .split, .sdk, .wac, .fed, .oss { grid-template-columns: minmax(0, 1fr); }
+  .pillars { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pillar:nth-child(2) { border-right: 0; }
+  .pillar:nth-child(-n + 2) { border-bottom: 1px solid var(--colors-border); }
+  .arch { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .wire { flex-direction: row; height: 56px; }
+  .wire__line { width: 2px; height: 100%; background: repeating-linear-gradient(180deg, var(--colors-accent) 0 6px, transparent 6px 11px); background-size: 2px 22px; animation: flowv 1.2s linear infinite; }
+  @keyframes flowv { to { background-position: 0 22px; } }
+  .footer__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  [data-logo3d].logo-float { right: 8px; }
+  .oss__logo { order: -1; width: 180px; }
+}
+@media (max-width: 640px) {
+  .header__right .btn { display: none; }
+  .pillars { grid-template-columns: minmax(0, 1fr); }
+  .pillar { border-right: 0; border-bottom: 1px solid var(--colors-border); }
+  .pillar:last-child { border-bottom: 0; }
+  .start__row { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .start__no, .start__arrow { display: none; }
+  .uses { grid-template-columns: minmax(0, 1fr); }
+  .tier { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .scope { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer__grid { grid-template-columns: minmax(0, 1fr); }
+  .code { font-size: 12px; min-height: 0; }
+  [data-logo3d].logo-float { width: 92px; top: -52px; right: 4px; }
+  .tree small { display: none; }
+  .variant { right: 8px; bottom: 8px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .wire__line { animation: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-github" viewBox="0 0 24 24"><path fill="currentColor" d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.38-5.26 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 3l7 17 2.5-7.5L21 10z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="m10.4 7.6-3.8 8.8M13.6 7.6l3.8 8.8M8 19h8"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6"/></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+    <symbol id="i-git" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m10 9 5 3-5 3z"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></symbol>
+  </defs>
+</svg>
+
+<header class="header">
+  <div class="container header__in">
+    <a class="brand" href="#">
+      <img src="./assets/logo-transparent-sm.png" alt="" />
+      <span>Ubichill</span>
+      <span class="brand__tag">hub</span>
+    </a>
+    <nav class="nav" aria-label="メイン">
+      <a href="#docs">ドキュメント</a>
+      <a href="#wac">ワールド</a>
+      <a href="#sdk">mod</a>
+      <a href="#fed">サーバー</a>
+      <a href="#">ニュース</a>
+    </nav>
+    <div class="header__right">
+      <a class="iconbtn lang" href="#" aria-label="言語を切り替える"><svg class="icon" style="width:15px;height:15px"><use href="#i-globe"/></svg>JA</a>
+      <a class="iconbtn" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="icon"><use href="#i-github"/></svg></a>
+      <a class="btn btn--primary btn--sm" href="https://ubichill.com/">アプリを開く</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ── ヒーロー ── -->
+  <section class="hero">
+    <div class="gridbg"></div>
+    <div class="container hero__grid">
+      <div>
+        <a class="pill" href="#fed"><b>new</b>サーバー間の連合（federation v1）に対応しました<svg class="icon" style="width:14px;height:14px"><use href="#i-arrow"/></svg></a>
+        <p class="eyebrow">// draw · watch · chill</p>
+        <h1><span class="nb">ワールドは</span><span class="nb">コードで、</span><br /><span class="grad nb">機能は URL で。</span></h1>
+        <p class="lead">Ubichill は、みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。ワールドは YAML で書けて、機能は URL から読み込む mod で足せる。自分のサーバーも Helm チャート 1 つ。</p>
+        <div class="cta">
+          <a class="btn btn--primary" href="https://ubichill.com/">アプリを開く<svg class="icon"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn--ghost" href="#docs">ドキュメントを読む</a>
+        </div>
+        <div class="install">
+          <span class="install__p">$</span>
+          <code id="install-cmd">helm install ubichill ubichill/ubichill</code>
+          <button class="copy" type="button" data-copy="install-cmd" aria-label="コマンドをコピー"><svg class="icon" style="width:15px;height:15px"><use href="#i-copy"/></svg></button>
+        </div>
+        <div class="facts">
+          <span><i></i>AGPL-3.0</span>
+          <span><i style="background:var(--colors-lavender-300)"></i>Worker サンドボックス</span>
+          <span><i style="background:var(--colors-sky-200)"></i>Vite CSR + Go WebSocket</span>
+          <span><i style="background:var(--colors-mint-300)"></i>ActivityPub 形の連合</span>
+        </div>
+      </div>
+
+      <div class="stack" data-logo3d-host>
+        <div class="logo-float" data-logo3d data-depth="22" data-thickness="9" data-shade="0.22" data-shadow="0"></div>
+        <div class="win">
+          <div class="win__bar">
+            <div class="win__dots"><i></i><i></i><i></i></div>
+            <div class="tabs" role="tablist" aria-label="コード例">
+              <button class="tab" role="tab" aria-selected="true" aria-controls="p-world" id="t-world"><svg class="icon"><use href="#i-file"/></svg>chill-room.yaml</button>
+              <button class="tab" role="tab" aria-selected="false" aria-controls="p-mod" id="t-mod"><svg class="icon"><use href="#i-code"/></svg>button.worker.tsx</button>
+              <button class="tab" role="tab" aria-selected="false" aria-controls="p-term" id="t-term"><svg class="icon"><use href="#i-term"/></svg>terminal</button>
+            </div>
+          </div>
+<pre class="code panel" id="p-world" role="tabpanel" aria-labelledby="t-world"><span class="l"><span class="c"># worlds/chill-room.yaml</span></span><span class="l"><span class="k">apiVersion</span>: <span class="s">ubichill.com/v1alpha1</span></span><span class="l"><span class="k">kind</span>: <span class="t">World</span></span><span class="l"><span class="k">metadata</span>:</span><span class="l">  <span class="k">name</span>: <span class="s">chill-room</span></span><span class="l">  <span class="k">version</span>: <span class="s">"1.0.0"</span></span><span class="l"><span class="k">spec</span>:</span><span class="l">  <span class="k">displayName</span>: <span class="s">チルな作業部屋</span></span><span class="l">  <span class="k">capacity</span>: { <span class="k">max</span>: <span class="n">20</span>, <span class="k">default</span>: <span class="n">10</span> }</span><span class="l">  <span class="k">dependencies</span>:</span><span class="l">    - <span class="k">name</span>: <span class="s">pen</span></span><span class="l">    - <span class="k">name</span>: <span class="s">video-player</span></span><span class="l">  <span class="k">initialEntities</span>:</span><span class="l">    - <span class="k">id</span>: <span class="s">pentray</span></span><span class="l">      <span class="k">components</span>:</span><span class="l">        - <span class="k">type</span>: <span class="t">pen:tray</span></span></pre>
+<pre class="code panel" id="p-mod" role="tabpanel" aria-labelledby="t-mod" hidden><span class="l"><span class="c">// mods/like/src/button.worker.tsx（イメージ）</span></span><span class="l"><span class="c">// 使った API から権限は自動で導出される → ui:render, scene:update</span></span><span class="l"></span><span class="l"><span class="kw">const</span> likes = Ubi.state.<span class="pr">sync</span>(<span class="n">0</span>);</span><span class="l"></span><span class="l">Ubi.ui.<span class="pr">render</span>(() =&gt; (</span><span class="l">  &lt;<span class="t">button</span> <span class="k">onClick</span>={() =&gt; likes.<span class="pr">set</span>(likes.<span class="pr">get</span>() + <span class="n">1</span>)}&gt;</span><span class="l">    いいね {likes.<span class="pr">get</span>()}</span><span class="l">  &lt;/<span class="t">button</span>&gt;</span><span class="l">));</span><span class="l"></span><span class="l"><span class="c">// 全員に同期・DB に永続化。サーバーは書かない。</span></span></pre>
+<pre class="code panel" id="p-term" role="tabpanel" aria-labelledby="t-term" hidden><span class="l"><span class="pr">$</span> ubi world build worlds/chill-room.yaml</span><span class="l"><span class="ok">✓</span> <span class="dim">resolved</span> pen@latest, video-player@2.1.0</span><span class="l"><span class="ok">✓</span> <span class="dim">capabilities</span> ui:render scene:update canvas:draw media:control</span><span class="l"><span class="ok">✓</span> <span class="dim">wrote</span> worlds/chill-room.lock.json</span><span class="l"></span><span class="l"><span class="pr">$</span> helm install ubichill ubichill/ubichill \</span><span class="l">    -n ubichill --create-namespace \</span><span class="l">    --set global.domain=hub.example.com</span><span class="l"><span class="ok">✓</span> <span class="dim">deployed</span> backend · instance · frontend · postgresql</span><span class="l"></span><span class="l"><span class="pr">$</span> open https://hub.example.com/@you/chill-room</span></pre>
+          <div class="preview">
+            <div class="preview__bar"><span class="live"></span>preview · hub.example.com/@you/chill-room<span style="margin-left:auto">4 cursors + you</span></div>
+            <div data-world data-theme="dark" data-cursors="4" data-notes="0" data-hud="0" data-grid="lines"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 柱 ── -->
+  <section class="sec" id="docs">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">01 / why</p>
+          <h2>軽くて、安全で、<br />中央を持たない。</h2>
+        </div>
+        <p class="sec__desc">顔も声も出さずに「そこにいる」を共有するための、最小の仕組みだけを持つ。残りはすべて mod と URL に任せる。</p>
+      </div>
+      <div class="pillars reveal">
+        <article class="pillar">
+          <div class="pillar__top"><span>01</span><span>presence</span></div>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-pointer"/></svg></div>
+          <h3>カーソルだけのゆるい繋がり</h3>
+          <p>顔出しも声出しもなし。お互いの動線だけが伝わる、ちょうどいい存在感。</p>
+          <code class="token">avatar: cursor.cur</code>
+        </article>
+        <article class="pillar">
+          <div class="pillar__top"><span>02</span><span>zero-install</span></div>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-link"/></svg></div>
+          <h3>URL をひらくだけ</h3>
+          <p>インストール不要。低スペックな PC やスマホからでも、ブラウザ 1 つで 1 秒で。</p>
+          <code class="token">ubichill.com/@you/room</code>
+        </article>
+        <article class="pillar">
+          <div class="pillar__top"><span>03</span><span>mods</span></div>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-box"/></svg></div>
+          <h3>mod でなんでも足せる</h3>
+          <p>ペン・動画・付箋。機能は URL から読み込む mod。ゼロトラストの Worker サンドボックスで動く。</p>
+          <code class="token">Ubi.ui.render()</code>
+        </article>
+        <article class="pillar">
+          <div class="pillar__top"><span>04</span><span>federation</span></div>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-network"/></svg></div>
+          <h3>中央を持たない</h3>
+          <p>サーバー同士が連合。どのサーバーの人ともフレンドになり、相手の部屋に入れる。</p>
+          <code class="token">room@hub.example.com</code>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── はじめる ── -->
+  <section class="sec">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">02 / get started</p>
+          <h2>はじめる</h2>
+        </div>
+        <p class="sec__desc">使うだけなら URL を開くだけ。建てる・作る・書く人のための入口も、同じ場所から。</p>
+      </div>
+      <div class="start reveal">
+        <a class="start__row" href="https://ubichill.com/">
+          <span class="start__no">01</span>
+          <div><h3>アプリを開く</h3><p>ubichill.com でアカウントを作って、すぐ入る</p></div>
+          <div class="cmd"><span class="pr">→</span>https://ubichill.com/</div>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row" href="#fed">
+          <span class="start__no">02</span>
+          <div><h3>自分のサーバーを建てる</h3><p>Helm チャート 1 つで k8s に。DB のパスワードも自動生成</p></div>
+          <div class="cmd"><span class="pr">$</span>helm install ubichill ubichill/ubichill</div>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row" href="#sdk">
+          <span class="start__no">03</span>
+          <div><h3>mod をつくる <span class="badge">soon</span></h3><p><code>@ubichill/sdk</code> だけに依存する Worker を書く</p></div>
+          <div class="cmd"><span class="pr">$</span>ubi mod create my-mod</div>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row" href="#wac">
+          <span class="start__no">04</span>
+          <div><h3>ワールドを書く</h3><p>World as Code。YAML が唯一の真実、ワールドは URL で識別</p></div>
+          <div class="cmd"><span class="pr">$</span>ubi world build worlds/default.yaml</div>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row" href="https://github.com/ubichill/ubichill">
+          <span class="start__no">05</span>
+          <div><h3>開発に参加する</h3><p>Issue / PR 歓迎。PR は日本語でどうぞ</p></div>
+          <div class="cmd"><span class="pr">$</span>gh repo clone ubichill/ubichill</div>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 使い方 / 機能 ── -->
+  <section class="sec">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">03 / use cases</p>
+          <h2>こんな使い方</h2>
+        </div>
+        <p class="sec__desc">ワールドにあるものは、ほとんどが mod。組み合わせ次第で作業部屋にも、映画館にも、展示会場にもなる。</p>
+      </div>
+      <div class="split">
+        <div class="uses reveal">
+          <article class="use"><svg class="icon use__icon"><use href="#i-focus"/></svg><h3>もくもく作業会</h3><p>カメラなしで、誰かが近くにいる感じだけ。</p></article>
+          <article class="use"><svg class="icon use__icon"><use href="#i-play"/></svg><h3>動画・映画の同時視聴</h3><p>再生位置はみんなで同期。ライブも観られる。</p></article>
+          <article class="use"><svg class="icon use__icon"><use href="#i-pen"/></svg><h3>お絵描き・ホワイトボード</h3><p>ペンと消しゴムを持って、同じキャンバスに。</p></article>
+          <article class="use"><svg class="icon use__icon"><use href="#i-users"/></svg><h3>イベント・展示・勉強会</h3><p>ワールドを YAML で配って、当日はインスタンスを立てるだけ。</p></article>
+        </div>
+        <div class="tree reveal" aria-label="ワールドでできること">
+          <div class="tree__head"><span>~/world</span><span>9 items</span></div>
+          <ul>
+            <li><span class="path"><span>core/</span>cursor-avatar<span class="tag tag--core">core</span></span><small>.cur のカーソルテーマ</small></li>
+            <li><span class="path"><span>mods/</span>pen<span class="tag tag--mod">mod</span></span><small>ペン・消しゴム</small></li>
+            <li><span class="path"><span>mods/</span>video-player<span class="tag tag--mod">mod</span></span><small>動画・ライブの同時視聴</small></li>
+            <li><span class="path"><span>mods/</span>sticky<span class="tag tag--mod">mod</span></span><small>付箋</small></li>
+            <li><span class="path"><span>mods/</span>danmaku<span class="tag tag--mod">mod</span></span><small>弾幕</small></li>
+            <li><span class="path"><span>mods/</span>mobile-controller<span class="tag tag--mod">mod</span></span><small>スマホコントローラー</small></li>
+            <li><span class="path"><span>core/</span>home-launchpad<span class="tag tag--core">core</span></span><small>ホームワールドとランチパッド</small></li>
+            <li><span class="path"><span>core/</span>friends<span class="tag tag--core">core</span></span><small>フレンド・招待・リクエストインバイト</small></li>
+            <li><span class="path"><span>core/</span>visibility<span class="tag tag--core">core</span></span><small>公開範囲 4 種</small></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── アーキテクチャ ── -->
+  <section class="sec">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">04 / architecture</p>
+          <h2>UI はブラウザに閉じ、<br />同期は Go が受け持つ。</h2>
+        </div>
+        <p class="sec__desc">完全 CSR のホストが mod を Worker に隔離して動かし、インスタンスの同期は独立した Go の WebSocket サーバーが行う。信頼境界は Worker → Host の postMessage の一点だけ。</p>
+      </div>
+      <div class="arch reveal">
+        <div class="box">
+          <div class="box__title"><span>browser</span><span>vite · csr</span></div>
+          <h3>Host</h3>
+          <p>UI・セッション・ルーティング・mod レジストリ</p>
+          <div class="workers">
+            <div class="worker">pen<small>Worker</small></div>
+            <div class="worker">video<small>Worker</small></div>
+            <div class="worker">your-mod<small>Worker</small></div>
+          </div>
+        </div>
+        <div class="wire"><span>/realtime</span><div class="wire__line"></div><span>WebSocket</span></div>
+        <div class="arch__col">
+          <div class="box">
+            <div class="box__title"><span>services/instance</span><span>go</span></div>
+            <h3>Instance</h3>
+            <p>部屋ごとの同期・presence・エンティティ</p>
+          </div>
+          <div class="box">
+            <div class="box__title"><span>packages/backend</span><span>api</span></div>
+            <h3>SNS API</h3>
+            <p>アカウント・フレンド・ワールド（PostgreSQL）</p>
+          </div>
+        </div>
+        <div class="wire"><span>AS2</span><div class="wire__line"></div><span>RFC 9421</span></div>
+        <div class="box">
+          <div class="box__title"><span>federation</span><span>v1</span></div>
+          <h3>ほかのサーバー</h3>
+          <p>フレンド申請・招待は inbox へ、入室は部屋のサーバーへ署名付き RPC。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SDK + 権限 ── -->
+  <section class="sec" id="sdk">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">05 / mod sdk</p>
+          <h2>権限は宣言しない。<br /><span class="grad">使った API から導く。</span></h2>
+        </div>
+        <p class="sec__desc">mod は <code>@ubichill/sdk</code> だけに依存する。ビルド時に Worker のコードを静的解析して capability を自動生成し、読み込み時にユーザーがまとめて承認する。</p>
+      </div>
+      <div class="sdk">
+        <div class="win reveal">
+          <div class="win__bar"><div class="win__dots"><i></i><i></i><i></i></div><span class="tab" aria-selected="true"><svg class="icon"><use href="#i-code"/></svg>Ubi.*</span></div>
+<pre class="code" style="min-height:0"><span class="l"><span class="c">// 状態（宣言的に同期）</span></span><span class="l">Ubi.state.<span class="pr">sync</span>(<span class="n">0</span>)                        <span class="c">// 全員共有 + 永続化</span></span><span class="l">Ubi.state.<span class="pr">sync</span>(<span class="s">''</span>, { <span class="k">perUser</span>: <span class="kw">true</span> })   <span class="c">// ユーザーごと</span></span><span class="l">Ubi.state.<span class="pr">sync</span>(pos, { <span class="k">ephemeral</span>: <span class="kw">true</span> }) <span class="c">// 揮発 broadcast</span></span><span class="l"></span><span class="l"><span class="c">// UI・メディア・キャンバス</span></span><span class="l">Ubi.ui.<span class="pr">render</span>(() =&gt; &lt;<span class="t">Panel</span> /&gt;)</span><span class="l">Ubi.media.<span class="pr">load</span>(url, <span class="s">'main'</span>)</span><span class="l">Ubi.canvas.<span class="pr">commitStroke</span>(<span class="s">'canvas'</span>, stroke)</span><span class="l"></span><span class="l"><span class="c">// 型付きイベント</span></span><span class="l"><span class="kw">const</span> Ev = Ubi.event.<span class="pr">define</span>&lt;{ <span class="s">'like:add'</span>: { <span class="k">n</span>: <span class="t">number</span> } }&gt;()</span><span class="l">Ev.<span class="pr">emit</span>(<span class="s">'like:add'</span>, { <span class="k">n</span>: <span class="n">1</span> }, { <span class="k">ref</span>: <span class="s">'screen'</span> })</span></pre>
+        </div>
+        <div class="reveal">
+          <div class="tiers">
+            <div class="tier">
+              <div class="tier__name"><i style="background:var(--colors-tier-safe)"></i><div>safe<small>自動で許可</small></div></div>
+              <div><p>ワールド内で完結し、外へは何も出ない。</p><div class="chips"><span class="chip">ui:render</span><span class="chip">ui:toast</span><span class="chip">scene:read</span><span class="chip">event:emit</span><span class="chip">asset:read</span></div></div>
+            </div>
+            <div class="tier">
+              <div class="tier__name"><i style="background:var(--colors-tier-sensitive)"></i><div>sensitive<small>既定で許可</small></div></div>
+              <div><p>ワールドの状態を書き換える。設定で要承認にできる。</p><div class="chips"><span class="chip">scene:update</span><span class="chip">canvas:draw</span><span class="chip">media:control</span><span class="chip">event:broadcast</span></div></div>
+            </div>
+            <div class="tier">
+              <div class="tier__name"><i style="background:var(--colors-tier-dangerous)"></i><div>dangerous<small>明示承認</small></div></div>
+              <div><p>外部通信。fetch は接続先ドメインごとに「今回だけ / 次回も / 拒否」。</p><div class="chips"><span class="chip">net:fetch</span><span class="chip">identity:token</span></div></div>
+            </div>
+          </div>
+          <div class="note"><svg class="icon"><use href="#i-shield"/></svg><span>承認が済むまで Worker は実行されない。拒否された権限は実行時ゲートが個別に止め、必ずコンソールとトーストに出る。</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── World as Code ── -->
+  <section class="sec" id="wac">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">06 / world as code</p>
+          <h2>YAML が唯一の真実。<br />エディタでも書ける。</h2>
+        </div>
+        <p class="sec__desc">Kubernetes の CRD と同じ形（apiVersion / kind / metadata / spec）。ワールドは URL で識別され、GitHub にも、ほかのサーバーにも置ける。ワールド自体はステートレスで、インスタンスが生きている間だけ状態を持つ。</p>
+      </div>
+      <div class="wac">
+        <div class="win reveal">
+          <div class="win__bar"><div class="win__dots"><i></i><i></i><i></i></div><span class="tab" aria-selected="true"><svg class="icon"><use href="#i-file"/></svg>worlds/default.yaml</span></div>
+<pre class="code" style="min-height:0"><span class="l"><span class="k">kind</span>: <span class="t">World</span></span><span class="l"><span class="k">spec</span>:</span><span class="l">  <span class="k">displayName</span>: <span class="s">Ubichill Home</span></span><span class="l">  <span class="k">environment</span>:</span><span class="l">    <span class="k">worldSize</span>: { <span class="k">width</span>: <span class="n">2000</span>, <span class="k">height</span>: <span class="n">1500</span> }</span><span class="l">    <span class="k">backgroundColor</span>: <span class="s">"#F0F8FF"</span></span><span class="l">  <span class="k">initialEntities</span>:</span><span class="l">    - <span class="k">id</span>: <span class="s">pen</span></span><span class="l">      <span class="k">transform</span>: { <span class="k">x</span>: <span class="n">9</span>, <span class="k">y</span>: <span class="n">7</span>, <span class="k">w</span>: <span class="n">55</span>, <span class="k">h</span>: <span class="n">48</span> }</span><span class="l">      <span class="k">components</span>:</span><span class="l">        - <span class="k">type</span>: <span class="t">pen:pen</span></span><span class="l">          <span class="k">overlay</span>: <span class="s">top-left</span></span><span class="l">          <span class="k">data</span>: { <span class="k">color</span>: <span class="s">"#93bcf0"</span>, <span class="k">strokeWidth</span>: <span class="n">4</span> }</span></pre>
+        </div>
+        <div class="reveal">
+          <div class="shot">
+            <img src="./assets/app-editor.png" alt="Ubichill のワールドエディタ。左にエンティティの階層、中央にキャンバス、下にアセット" loading="lazy" />
+            <span class="shot__cap">World Editor — 実際の画面</span>
+          </div>
+          <div class="sync"><span>editor</span><svg class="icon" style="width:14px;height:14px"><use href="#i-arrow"/></svg><span>yaml</span><svg class="icon" style="width:14px;height:14px;transform:scaleX(-1)"><use href="#i-arrow"/></svg><span>editor</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 連合 / セルフホスト ── -->
+  <section class="sec" id="fed">
+    <div class="container">
+      <div class="sec__head reveal">
+        <div>
+          <p class="sec__kicker">07 / federation &amp; self-host</p>
+          <h2>建てて、つなぐ。</h2>
+        </div>
+        <p class="sec__desc">部屋のことは部屋のサーバーが、人のことはその人のホームのサーバーが決める。中央のサーバーは置かない。</p>
+      </div>
+      <div class="fed">
+        <article class="card reveal">
+          <h3>どのサーバーの部屋にも入れる</h3>
+          <p>ActivityPub（AS2）の形で、相手は ubichill のサーバーだけ。部屋の住所はメールアドレスのように書ける。</p>
+          <div class="addr"><span class="a1">chill-room</span><span class="a2">@</span><span class="a3">hub.example.com</span></div>
+          <dl class="kv">
+            <dt>鍵</dt><dd>Ed25519。actor ごとに種から導出し、秘密鍵は保存しない</dd>
+            <dt>署名</dt><dd>RFC 9421 + Content-Digest（RFC 9530）。宛先に縛られ転用できない</dd>
+            <dt>配送</dt><dd>フレンド申請・招待は inbox へ非同期、入室は部屋のサーバーへ同期 RPC</dd>
+          </dl>
+          <div class="scope" aria-label="公開範囲">
+            <span>パブリック</span><span>フレンド+</span><span>フレンドのみ</span><span>招待のみ</span>
+          </div>
+        </article>
+        <article class="card reveal">
+          <h3>Helm チャート 1 つ</h3>
+          <p><code>global.domain</code> から Ingress・CORS・認証 URL まで導出。同梱の PostgreSQL はパスワードを自動生成する。</p>
+          <div class="term">
+            <div><span class="pr">$</span> helm repo add ubichill https://ubichill.github.io/ubichill</div>
+            <div><span class="pr">$</span> helm install ubichill ubichill/ubichill -n ubichill --create-namespace \</div>
+            <div>    --set global.domain=&lt;your-domain&gt; \</div>
+            <div>    --set backend.secretEnv.BETTER_AUTH_SECRET=&lt;random-secret&gt;</div>
+          </div>
+          <div class="req">
+            <span class="chip">k8s / k3s</span><span class="chip">PostgreSQL 同梱</span><span class="chip">GHCR イメージ</span><span class="chip">メール認証は任意</span><span class="chip">インスタンスだけでも動く</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── OSS ── -->
+  <section class="sec">
+    <div class="container">
+      <div class="oss reveal" data-logo3d-host>
+        <div>
+          <p class="sec__kicker">08 / open source</p>
+          <h2>ずっとオープン。<br /><span class="nb">公式 mod だけ作る、</span><span class="nb">も歓迎。</span></h2>
+          <p>Ubichill は AGPL-3.0 のオープンソース。独立した mod には追加的許可があるので、mod は自由なライセンスで配れる。Issue / PR は日本語でどうぞ。</p>
+          <div class="license"><span class="chip">AGPL-3.0-only</span><span class="chip">mod は追加的許可</span><span class="chip">Biome</span><span class="chip">pnpm · turbo</span></div>
+          <div class="cta" style="margin:0">
+            <a class="btn btn--primary" href="https://github.com/ubichill/ubichill"><svg class="icon"><use href="#i-github"/></svg>GitHub を見る</a>
+            <a class="btn btn--ghost" href="#">ロードマップ</a>
+          </div>
+        </div>
+        <div class="oss__logo" data-logo3d data-depth="30" data-thickness="12" data-shade="0.25" data-shadow="0"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="#"><img src="./assets/logo-transparent-sm.png" alt="" /><span>Ubichill</span></a>
+        <p>みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。</p>
+      </div>
+      <div>
+        <h4>docs</h4>
+        <ul><li><a href="#">ドキュメント</a></li><li><a href="#">API</a></li><li><a href="#">Architecture</a></li><li><a href="#">World as Code</a></li></ul>
+      </div>
+      <div>
+        <h4>project</h4>
+        <ul><li><a href="#">Roadmap</a></li><li><a href="#">ニュース</a></li><li><a href="#">ライセンス</a></li><li><a href="#">セキュリティ</a></li></ul>
+      </div>
+      <div>
+        <h4>links</h4>
+        <ul><li><a href="https://ubichill.com/">アプリを開く</a></li><li><a href="https://github.com/ubichill/ubichill">GitHub</a></li><li><a href="#">ブランド素材</a></li></ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© Ubichill Project</span>
+      <span>hub.ubichill.com · AGPL-3.0</span>
+    </div>
+  </div>
+</footer>
+
+<div class="variant">案G · Developer<a href="./index.html">一覧へ</a></div>
+
+<script type="module" src="./assets/logo3d.js"></script>
+<script type="module" src="./assets/world.js"></script>
+<script>
+  // タブ切替
+  const tabs = document.querySelectorAll('.tabs [role="tab"]');
+  tabs.forEach((tab) => {
+    tab.addEventListener('click', () => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+    });
+  });
+  // コピー
+  document.querySelectorAll('[data-copy]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const text = document.getElementById(btn.dataset.copy).textContent;
+      try { await navigator.clipboard.writeText(text); } catch (_) { /* 権限なし */ }
+      btn.classList.add('is-done');
+      btn.innerHTML = '<svg class="icon" style="width:15px;height:15px"><use href="#i-check"/></svg>';
+      setTimeout(() => {
+        btn.classList.remove('is-done');
+        btn.innerHTML = '<svg class="icon" style="width:15px;height:15px"><use href="#i-copy"/></svg>';
+      }, 1600);
+    });
+  });
+  // スクロール表示
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>

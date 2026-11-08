@@ -1,0 +1,37 @@
+---
+/**
+ * 明暗の切り替え。Starlight と同じ localStorage のキー（starlight-theme）と
+ * `<html data-theme>` を使うので、トップとドキュメントで設定が共有される。
+ */
+import { css } from 'styled-system/css';
+import Icon from './Icon.astro';
+
+const root = css({
+  width: '40px',
+  height: '40px',
+  borderRadius: '50%',
+  display: 'grid',
+  placeItems: 'center',
+  bg: 'bg.subtle',
+  color: 'fg',
+  _hover: { bg: 'border.strong' },
+  '& .moon': { display: 'none' },
+  _dark: { '& .sun': { display: 'none' }, '& .moon': { display: 'block' } },
+});
+---
+
+<button class={root} type="button" data-theme-toggle aria-label="明るい表示と暗い表示を切り替える">
+  <Icon name="sun" class="sun" />
+  <Icon name="moon" class="moon" />
+</button>
+
+<script>
+  const KEY = 'starlight-theme';
+  for (const btn of document.querySelectorAll('[data-theme-toggle]')) {
+    btn.addEventListener('click', () => {
+      const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      localStorage.setItem(KEY, next);
+    });
+  }
+</script>

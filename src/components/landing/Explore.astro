@@ -1,0 +1,201 @@
+---
+import { css } from 'styled-system/css';
+import { exampleWorlds, site } from '../../data/site';
+import Button from '../Button.astro';
+import Icon from '../Icon.astro';
+import Section from '../Section.astro';
+
+const grid = css({
+  marginTop: '48px',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(3, 1fr)',
+  gap: '18px',
+  lgDown: { gridTemplateColumns: 'repeat(2, 1fr)' },
+  smDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
+});
+const card = css({
+  borderRadius: 'lg',
+  bg: 'bg.surface',
+  boxShadow: 'card',
+  overflow: 'hidden',
+  transition: 'transform 200ms ease, box-shadow 200ms ease',
+  _hover: { transform: 'translateY(-4px)', boxShadow: 'float' },
+  '& .art': { position: 'relative', height: '168px', overflow: 'hidden' },
+  '& .host': {
+    position: 'absolute',
+    left: '12px',
+    top: '12px',
+    zIndex: 2,
+    fontFamily: 'mono',
+    fontSize: '11px',
+    padding: '3px 10px',
+    borderRadius: 'full',
+    bg: 'rgba(255,255,255,.9)',
+    color: 'navy.900',
+  },
+  '& .body': {
+    padding: '16px 20px 18px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+  },
+  '& h3': { fontSize: '16px', fontWeight: '800' },
+  '& .by': { display: 'block', fontFamily: 'mono', fontSize: '11.5px', color: 'fg.muted' },
+  '& .ok': {
+    display: 'inline-flex',
+    padding: '6px',
+    borderRadius: 'full',
+    bg: 'status.okBg',
+    color: 'status.ok',
+    flex: 'none',
+  },
+});
+// 例示用の小さな情景（CSS のみ）
+const arts: Record<string, string> = {
+  cinema: css({
+    background: 'linear-gradient(160deg, #2a3a66, #6b5aa8 60%, #f0a6c4)',
+    '& .screen': {
+      position: 'absolute',
+      left: '22%',
+      top: '20%',
+      width: '56%',
+      height: '52%',
+      borderRadius: '8px',
+      bg: 'rgba(0,0,0,.25)',
+      boxShadow: 'inset 0 0 0 2px rgba(255,255,255,.25)',
+      display: 'grid',
+      placeItems: 'center',
+      color: 'white',
+    },
+  }),
+  notes: css({
+    background: 'linear-gradient(160deg, {colors.tint.sky}, {colors.brand.sky})',
+    '& .note': {
+      position: 'absolute',
+      width: '74px',
+      height: '62px',
+      borderRadius: '4px',
+      boxShadow: '0 6px 14px rgba(27,42,68,.12)',
+    },
+    '& .note::before, & .note::after': {
+      content: '""',
+      position: 'absolute',
+      left: '10px',
+      right: '14px',
+      height: '4px',
+      borderRadius: '2px',
+      bg: 'rgba(27,42,68,.18)',
+    },
+    '& .note::before': { top: '14px' },
+    '& .note::after': { top: '26px', right: '26px' },
+  }),
+  draw: css({
+    background: 'linear-gradient(160deg, {colors.tint.lavender}, {colors.brand.lavender})',
+    '& svg': { position: 'absolute', inset: 0, width: '100%', height: '100%' },
+    '& path': { fill: 'none', strokeWidth: '5', strokeLinecap: 'round' },
+  }),
+  event: css({
+    background: 'linear-gradient(160deg, #fdf5e2, {colors.yellow.300})',
+    '& .frame': {
+      position: 'absolute',
+      width: '50px',
+      height: '40px',
+      top: '22%',
+      borderRadius: '6px',
+      bg: 'rgba(255,255,255,.8)',
+      boxShadow: '0 4px 10px rgba(27,42,68,.12)',
+    },
+    '& .stage': {
+      position: 'absolute',
+      left: '14%',
+      right: '14%',
+      bottom: 0,
+      height: '30%',
+      borderRadius: '10px 10px 0 0',
+      bg: 'rgba(255,255,255,.7)',
+    },
+  }),
+  danmaku: css({
+    background: 'linear-gradient(160deg, #121c30, #263d68)',
+    '& svg': { position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.85 },
+    '& path': { fill: 'none', strokeWidth: '6', strokeLinecap: 'round' },
+  }),
+  wasm: css({
+    backgroundImage:
+      'linear-gradient(rgba(255,255,255,.4) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.4) 1px, transparent 1px), linear-gradient(160deg, #e6f5ea, #8ad29b)',
+    backgroundSize: '22px 22px, 22px 22px, auto',
+    '& .box': {
+      position: 'absolute',
+      left: '42%',
+      top: '36%',
+      width: '60px',
+      height: '60px',
+      borderRadius: '14px',
+      bg: 'white',
+      boxShadow: '0 6px 14px rgba(27,42,68,.12)',
+    },
+  }),
+};
+const cta = css({ marginTop: '28px', display: 'flex', justifyContent: 'center' });
+---
+
+<Section id="explore" eyebrow="Explore" title="ほかの人のワールドへ。" center>
+  <div class={grid}>
+    {
+      exampleWorlds.map((w) => (
+        <a class={card} href={site.app} rel="noopener">
+          <div class:list={['art', arts[w.art]]}>
+            <span class="host">{w.host}</span>
+            {w.art === 'cinema' && (
+              <span class="screen">
+                <Icon name="play" />
+              </span>
+            )}
+            {w.art === 'notes' && (
+              <>
+                <span class="note" style="left:20%;top:36%;background:#fff3b8;transform:rotate(-5deg)" />
+                <span class="note" style="left:58%;top:44%;background:#fff;transform:rotate(4deg)" />
+              </>
+            )}
+            {w.art === 'draw' && (
+              <svg viewBox="0 0 300 168" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40 116 C 90 36, 140 156, 200 66 S 270 86, 280 56" stroke="#fff" />
+                <path d="M60 60 q 30 -30 60 0" stroke="#9ab2f8" />
+              </svg>
+            )}
+            {w.art === 'event' && (
+              <>
+                <span class="frame" style="left:18%" />
+                <span class="frame" style="left:42%" />
+                <span class="frame" style="left:66%" />
+                <span class="stage" />
+              </>
+            )}
+            {w.art === 'danmaku' && (
+              <svg viewBox="0 0 300 168" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M40 66 h 90" stroke="#9ab2f8" />
+                <path d="M150 96 h 110" stroke="#ceb0fa" />
+                <path d="M70 126 h 70" stroke="#bde1fb" />
+                <path d="M180 46 h 60" stroke="#f1c86c" />
+              </svg>
+            )}
+            {w.art === 'wasm' && <span class="box" />}
+          </div>
+          <div class="body">
+            <div>
+              <h3>{w.title}</h3>
+              <span class="by">{w.author}</span>
+            </div>
+            <span class="ok" title="作者署名あり">
+              <Icon name="badge-check" size={16} />
+            </span>
+          </div>
+        </a>
+      ))
+    }
+  </div>
+  <div class={cta}>
+    <Button href={site.app} icon="arrow-ur">ワールドを探す</Button>
+  </div>
+</Section>

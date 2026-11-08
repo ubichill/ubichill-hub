@@ -1,0 +1,47 @@
+/*
+ * Starlight にデザイントークンを流し込む。
+ * 色・フォントは PandaCSS が出す変数（--colors-* / --fonts-*）だけを参照し、ここに生の値は書かない。
+ * 明暗の切り替えは Panda 側（[data-theme="dark"]）で済むので、この中に dark 用の分岐はない。
+ */
+@import "@fontsource-variable/nunito";
+@import "@fontsource/m-plus-rounded-1c/400.css";
+@import "@fontsource/m-plus-rounded-1c/500.css";
+@import "@fontsource/m-plus-rounded-1c/700.css";
+@import "@fontsource/m-plus-rounded-1c/800.css";
+@import "@fontsource-variable/jetbrains-mono";
+
+:root {
+  --sl-font: var(--fonts-body);
+  --sl-font-mono: var(--fonts-mono);
+
+  --sl-color-accent-low: var(--colors-tint-periwinkle);
+  --sl-color-accent: var(--colors-accent);
+  --sl-color-accent-high: var(--colors-fg);
+  --sl-color-text-accent: var(--colors-link);
+
+  --sl-color-bg: var(--colors-bg);
+  --sl-color-bg-nav: var(--colors-bg-surface);
+  --sl-color-bg-sidebar: var(--colors-bg);
+  --sl-color-bg-inline-code: var(--colors-bg-subtle);
+  --sl-color-text: var(--colors-fg);
+  --sl-color-text-invert: var(--colors-accent-fg);
+
+  --sl-color-hairline: var(--colors-border);
+  --sl-color-hairline-light: var(--colors-border);
+  --sl-color-hairline-shade: var(--colors-border-strong);
+
+  --sl-content-width: 50rem;
+}
+
+/* 見出しは Nunito、本文は丸ゴシック */
+.sl-markdown-content :is(h1, h2, h3, h4),
+.site-title,
+h1[data-page-title] {
+  font-family: var(--fonts-heading), var(--fonts-body);
+  letter-spacing: -0.01em;
+}
+
+/* 本体リポジトリから同期したページの印 */
+.sl-markdown-content .starlight-aside--note.synced {
+  font-size: var(--sl-text-sm);
+}

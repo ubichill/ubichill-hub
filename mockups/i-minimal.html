@@ -1,0 +1,819 @@
+<!--
+  案I · Minimal
+  コンセプト: 白基調・余白多め・アクセントは periwinkle 1 色だけ。小さめの 3D ロゴで「らしさ」を一点だけ置き、
+              主役は大きな実画面。スクロールで静かにフェードイン（Apple / Linear 系の落ち着いた LP）。
+  狙い:       情報を足し算せず「ブラウザ 1 つ」「軽い」をレイアウト自体で表現する。ドキュメントサイトと同じトーンに揃えやすい。
+  向いている点: 長期運用で古びにくい / ドキュメント（Starlight 等）と地続きにしやすい / トークンが少なく PandaCSS 化が楽
+  弱い点:     第一印象の「楽しさ」「チル感」は弱め。実画面の質（スクリーンショット）に見栄えが強く依存する
+-->
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ubichill — カーソルで、そこにいる。（案I · Minimal）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Design tokens（PandaCSS の tokens / semanticTokens に移植する前提）
+   ============================================================ */
+:root {
+  /* --- tokens.colors --- */
+  --colors-white: #ffffff;
+  --colors-gray-50: #f7f8fa;
+  --colors-gray-100: #f0f2f5;
+  --colors-gray-200: #e4e7ec;
+  --colors-gray-300: #d0d5dd;
+  --colors-gray-400: #98a1b2;
+  --colors-gray-500: #667085;
+  --colors-gray-700: #344054;
+  --colors-gray-900: #141b2b;
+  --colors-periwinkle-50: #f4f6ff;
+  --colors-periwinkle-100: #e9eefe;
+  --colors-periwinkle-200: #d5defd;
+  --colors-periwinkle-400: #9ab2f8;
+  --colors-periwinkle-600: #5b7ae8;
+  --colors-periwinkle-700: #4560cf;
+  --colors-logo-blue: #bde1fb;
+  --colors-logo-peri: #9ab2f8;
+  --colors-logo-lav: #ceb0fa;
+
+  /* --- semanticTokens.colors --- */
+  --colors-bg: var(--colors-white);
+  --colors-bg-subtle: var(--colors-gray-50);
+  --colors-bg-muted: var(--colors-gray-100);
+  --colors-bg-inverted: var(--colors-gray-900);
+  --colors-fg: var(--colors-gray-900);
+  --colors-fg-muted: var(--colors-gray-500);
+  --colors-fg-subtle: var(--colors-gray-400);
+  --colors-fg-inverted: var(--colors-white);
+  --colors-border: var(--colors-gray-200);
+  --colors-border-strong: var(--colors-gray-300);
+  --colors-accent: var(--colors-periwinkle-600);
+  --colors-accent-hover: var(--colors-periwinkle-700);
+  --colors-accent-subtle: var(--colors-periwinkle-100);
+  --colors-accent-fg: var(--colors-white);
+
+  /* --- fonts --- */
+  --fonts-sans: "Inter", "Noto Sans JP", system-ui, -apple-system, sans-serif;
+  --fonts-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* --- fontSizes（流体） --- */
+  --font-sizes-display: clamp(2.6rem, 6.4vw, 5rem);
+  --font-sizes-h2: clamp(1.75rem, 3.6vw, 2.75rem);
+  --font-sizes-h3: 1.125rem;
+  --font-sizes-lead: clamp(1rem, 1.4vw, 1.1875rem);
+  --font-sizes-body: 0.9375rem;
+  --font-sizes-small: 0.8125rem;
+
+  /* --- radii --- */
+  --radii-sm: 6px;
+  --radii-md: 10px;
+  --radii-lg: 16px;
+  --radii-xl: 24px;
+  --radii-full: 9999px;
+
+  /* --- shadows --- */
+  --shadows-xs: 0 1px 2px rgba(20, 27, 43, 0.05);
+  --shadows-sm: 0 2px 8px rgba(20, 27, 43, 0.06);
+  --shadows-lg: 0 24px 64px -16px rgba(20, 27, 43, 0.18), 0 2px 6px rgba(20, 27, 43, 0.04);
+
+  /* --- spacing --- */
+  --spacing-gutter: clamp(20px, 4vw, 40px);
+  --spacing-section: clamp(96px, 13vw, 168px);
+  --sizes-container: 1120px;
+  --sizes-container-wide: 1280px;
+
+  /* --- durations / easings --- */
+  --durations-slow: 0.9s;
+  --easings-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--colors-bg);
+  color: var(--colors-fg);
+  font-family: var(--fonts-sans);
+  font-size: var(--font-sizes-body);
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "palt";
+}
+h1, h2, h3, .hero__lead, .section__desc { word-break: auto-phrase; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+code, pre { font-family: var(--fonts-mono); }
+.icon { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.container { width: min(100% - var(--spacing-gutter) * 2, var(--sizes-container)); margin-inline: auto; }
+.container--wide { width: min(100% - var(--spacing-gutter) * 2, var(--sizes-container-wide)); }
+@media (max-width: 760px) { .br-pc { display: none; } }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* reveal（JS が有効なときだけ隠す） */
+.js .reveal { opacity: 0; transform: translateY(20px); transition: opacity var(--durations-slow) var(--easings-out), transform var(--durations-slow) var(--easings-out); }
+.js .reveal.is-visible { opacity: 1; transform: none; }
+.js .reveal[data-delay="1"] { transition-delay: .08s; }
+.js .reveal[data-delay="2"] { transition-delay: .16s; }
+.js .reveal[data-delay="3"] { transition-delay: .24s; }
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal { opacity: 1; transform: none; transition: none; }
+}
+
+/* ============================================================
+   Buttons（→ cva: button { variant: primary | secondary | ghost, size }）
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; padding: 0 20px; border-radius: var(--radii-full);
+  font-weight: 600; font-size: 0.9375rem; letter-spacing: 0.01em;
+  border: 1px solid transparent; transition: background .2s, border-color .2s, color .2s, transform .2s;
+  white-space: nowrap;
+}
+.btn .icon { font-size: 16px; transition: transform .2s; }
+.btn:hover .icon--arrow { transform: translateX(3px); }
+.btn--primary { background: var(--colors-bg-inverted); color: var(--colors-fg-inverted); }
+.btn--primary:hover { background: #000; }
+.btn--secondary { background: var(--colors-bg); border-color: var(--colors-border-strong); color: var(--colors-fg); }
+.btn--secondary:hover { border-color: var(--colors-fg-subtle); background: var(--colors-bg-subtle); }
+.btn--accent { background: var(--colors-accent); color: var(--colors-accent-fg); }
+.btn--accent:hover { background: var(--colors-accent-hover); }
+.btn--sm { height: 36px; padding: 0 14px; font-size: 0.8125rem; }
+
+/* ============================================================
+   Header
+   ============================================================ */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: saturate(1.6) blur(14px); -webkit-backdrop-filter: saturate(1.6) blur(14px);
+  border-bottom: 1px solid transparent; transition: border-color .3s;
+}
+.header.is-scrolled { border-bottom-color: var(--colors-border); }
+.header__inner { height: 64px; display: flex; align-items: center; gap: 32px; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.0625rem; letter-spacing: -0.01em; }
+.brand img { width: 26px; height: auto; }
+.nav { display: flex; gap: 4px; }
+.nav a { padding: 6px 12px; border-radius: var(--radii-full); font-size: 0.875rem; color: var(--colors-fg-muted); transition: color .2s, background .2s; }
+.nav a:hover { color: var(--colors-fg); background: var(--colors-bg-muted); }
+.header__actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: var(--radii-full); color: var(--colors-fg-muted); transition: background .2s, color .2s; border: 0; background: none; cursor: pointer; }
+.icon-btn:hover { background: var(--colors-bg-muted); color: var(--colors-fg); }
+.icon-btn .icon { font-size: 18px; }
+.lang { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border-radius: var(--radii-full); color: var(--colors-fg-muted); font-size: 0.8125rem; font-weight: 600; }
+.lang:hover { background: var(--colors-bg-muted); color: var(--colors-fg); }
+.menu-btn { display: none; }
+.mobile-nav { display: none; }
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.hero { padding-top: clamp(40px, 6vw, 72px); text-align: center; }
+.hero__logo { width: 84px; aspect-ratio: 667 / 761; margin: 0 auto 18px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 6px;
+  border: 1px solid var(--colors-border); border-radius: var(--radii-full);
+  font-size: var(--font-sizes-small); color: var(--colors-fg-muted); background: var(--colors-bg);
+  transition: border-color .2s, color .2s; max-width: 100%;
+}
+.pill:hover { border-color: var(--colors-periwinkle-200); color: var(--colors-fg); }
+.pill__tag { padding: 2px 10px; border-radius: var(--radii-full); background: var(--colors-accent-subtle); color: var(--colors-accent); font-weight: 700; font-size: 0.75rem; flex: none; }
+.pill span:not(.pill__tag) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero h1 {
+  margin: 22px 0 0; font-size: var(--font-sizes-display); font-weight: 800;
+  line-height: 1.12; letter-spacing: -0.035em;
+}
+.hero h1 .accent { color: var(--colors-accent); }
+.hero__lead { max-width: 800px; margin: 22px auto 0; text-wrap: pretty; font-size: var(--font-sizes-lead); color: var(--colors-fg-muted); line-height: 1.85; }
+.hero__cta { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero__meta { margin-top: 20px; display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; font-size: var(--font-sizes-small); color: var(--colors-fg-subtle); }
+.hero__meta span { display: inline-flex; align-items: center; gap: 6px; }
+.hero__meta .icon { color: var(--colors-accent); font-size: 14px; }
+
+.shot { margin: clamp(40px, 4vw, 52px) auto 0; transform-origin: 50% 0; will-change: transform; }
+.shot__frame {
+  border-radius: var(--radii-xl); border: 1px solid var(--colors-border); background: var(--colors-bg);
+  box-shadow: var(--shadows-lg); overflow: hidden;
+}
+.shot__bar { height: 40px; display: flex; align-items: center; gap: 8px; padding: 0 16px; border-bottom: 1px solid var(--colors-border); background: var(--colors-bg-subtle); }
+.shot__bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--colors-gray-300); display: block; }
+.shot__url { margin: 0 auto; display: flex; align-items: center; gap: 6px; padding: 3px 14px; border-radius: var(--radii-sm); background: var(--colors-bg); border: 1px solid var(--colors-border); font-size: 0.75rem; color: var(--colors-fg-muted); font-weight: 500; }
+.shot__url .icon { font-size: 11px; }
+.shot__img { aspect-ratio: 2513 / 1295; object-fit: cover; object-position: left top; width: 100%; height: auto; }
+.shot figcaption { margin-top: 14px; font-size: var(--font-sizes-small); color: var(--colors-fg-subtle); text-align: center; }
+
+/* ============================================================
+   Section scaffolding
+   ============================================================ */
+.section { padding-block: var(--spacing-section); }
+.section--subtle { background: var(--colors-bg-subtle); }
+.eyebrow { display: inline-block; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--colors-accent); }
+.section__head { max-width: 720px; }
+.section__head--center { margin-inline: auto; text-align: center; }
+.section h2 { margin: 14px 0 0; font-size: var(--font-sizes-h2); line-height: 1.3; letter-spacing: -0.025em; font-weight: 800; }
+.section__desc { margin: 18px 0 0; color: var(--colors-fg-muted); font-size: 1rem; line-height: 1.9; }
+
+/* ---------- Pillars ---------- */
+.pillars { margin-top: 64px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid var(--colors-border); }
+.pillar { padding: 32px 28px 0 0; }
+.pillar + .pillar { padding-left: 28px; border-left: 1px solid var(--colors-border); }
+.pillar__num { font-family: var(--fonts-mono); font-size: 0.75rem; color: var(--colors-fg-subtle); }
+.pillar__icon { margin-top: 20px; width: 40px; height: 40px; border-radius: var(--radii-md); display: grid; place-items: center; background: var(--colors-accent-subtle); color: var(--colors-accent); }
+.pillar__icon .icon { font-size: 20px; }
+.pillar h3 { margin: 18px 0 0; font-size: var(--font-sizes-h3); line-height: 1.5; letter-spacing: -0.01em; }
+.pillar p { margin: 10px 0 0; color: var(--colors-fg-muted); font-size: 0.875rem; line-height: 1.85; }
+
+/* ---------- Try（world.js） ---------- */
+.try { margin-top: 56px; }
+.try__world { height: clamp(420px, 52vw, 600px); border-radius: var(--radii-xl); border: 1px solid var(--colors-border); box-shadow: var(--shadows-sm); }
+.try__hint { margin-top: 16px; text-align: center; font-size: var(--font-sizes-small); color: var(--colors-fg-muted); text-wrap: balance; }
+.try__hint .icon { color: var(--colors-accent); vertical-align: -2px; margin-right: 6px; }
+/* world.js の HUD を狭い幅でも 1 行に保つ（共有部品は触らずページ側で上書き） */
+.try__world .uw__hudbtn { white-space: nowrap; }
+kbd { font-family: var(--fonts-mono); font-size: 0.75rem; padding: 1px 6px; border: 1px solid var(--colors-border); border-bottom-width: 2px; border-radius: 5px; background: var(--colors-bg); }
+
+/* ---------- Start（行リスト） ---------- */
+.start { margin-top: 56px; border-top: 1px solid var(--colors-border); }
+.start__row {
+  display: grid; grid-template-columns: 48px 220px 1fr 24px; gap: 24px; align-items: center;
+  padding: 28px 8px; border-bottom: 1px solid var(--colors-border); transition: background .2s;
+}
+.start__row:hover { background: var(--colors-bg-subtle); }
+.start__row:hover .start__arrow { color: var(--colors-accent); transform: translateX(4px); }
+.start__icon { width: 44px; height: 44px; border-radius: var(--radii-md); border: 1px solid var(--colors-border); display: grid; place-items: center; color: var(--colors-fg); background: var(--colors-bg); }
+.start__icon .icon { font-size: 20px; }
+.start__title { font-weight: 700; font-size: 1.0625rem; }
+.start__desc { color: var(--colors-fg-muted); font-size: 0.9375rem; }
+.start__desc code { font-size: 0.8125rem; padding: 2px 6px; border-radius: 5px; background: var(--colors-bg-muted); color: var(--colors-fg); }
+.start__arrow { color: var(--colors-fg-subtle); transition: transform .2s, color .2s; font-size: 20px; }
+
+/* ---------- Use cases ---------- */
+.uses { margin-top: 56px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.use { padding: 28px; border-radius: var(--radii-lg); background: var(--colors-bg); border: 1px solid var(--colors-border); }
+.use .icon { font-size: 22px; color: var(--colors-accent); }
+.use h3 { margin: 20px 0 0; font-size: 1rem; }
+.use p { margin: 8px 0 0; color: var(--colors-fg-muted); font-size: 0.875rem; line-height: 1.8; }
+.features { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px 32px; padding: 32px; border-radius: var(--radii-lg); border: 1px solid var(--colors-border); background: var(--colors-bg); }
+.features li { display: flex; gap: 10px; align-items: flex-start; font-size: 0.875rem; color: var(--colors-fg); }
+.features li .icon { color: var(--colors-accent); font-size: 16px; margin-top: 4px; }
+.features ul { list-style: none; margin: 0; padding: 0; display: contents; }
+.features__title { grid-column: 1 / -1; font-size: 0.75rem; font-weight: 700; letter-spacing: .12em; color: var(--colors-fg-subtle); text-transform: uppercase; }
+
+/* ---------- Developers ---------- */
+.dev-grid { margin-top: 56px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
+.dev-item h3 { margin: 16px 0 0; font-size: 1.0625rem; }
+.dev-item p { margin: 8px 0 0; color: var(--colors-fg-muted); font-size: 0.875rem; line-height: 1.85; }
+.dev-item .icon-wrap { width: 40px; height: 40px; display: grid; place-items: center; border-radius: var(--radii-md); border: 1px solid var(--colors-border); }
+.dev-item .icon { font-size: 18px; }
+.tiers { margin-top: 14px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tier { font-family: var(--fonts-mono); font-size: 0.75rem; padding: 2px 10px; border-radius: var(--radii-full); border: 1px solid var(--colors-border); color: var(--colors-fg-muted); }
+.tier i { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+
+.code-grid { margin-top: 56px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.code { border-radius: var(--radii-lg); border: 1px solid var(--colors-border); background: var(--colors-bg-subtle); overflow: hidden; min-width: 0; }
+.code__head { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 0.75rem; color: var(--colors-fg-muted); }
+.code__lang { padding: 1px 8px; border-radius: var(--radii-full); background: var(--colors-bg); border: 1px solid var(--colors-border); }
+.code pre { margin: 0; padding: 20px; font-size: 0.8125rem; line-height: 1.8; overflow-x: auto; color: var(--colors-gray-700); }
+.tok-k { color: var(--colors-accent); }
+.tok-s { color: #2f7d5b; }
+.tok-c { color: var(--colors-fg-subtle); }
+.tok-n { color: #b4547c; }
+
+/* ---------- Federation / Self-host ---------- */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(40px, 6vw, 96px); align-items: start; }
+.split > *, .code-grid > *, .dev-grid > * { min-width: 0; }
+.address { margin-top: 32px; display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px; font-family: var(--fonts-mono); font-size: clamp(1.05rem, 2.2vw, 1.5rem); padding: 16px 22px; border-radius: var(--radii-lg); border: 1px solid var(--colors-border); background: var(--colors-bg); }
+.address b { font-weight: 500; }
+.address .room { color: var(--colors-fg); }
+.address .at { color: var(--colors-fg-subtle); }
+.address .domain { color: var(--colors-accent); }
+.address-legend { margin-top: 10px; display: flex; gap: 20px; font-size: 0.75rem; color: var(--colors-fg-subtle); }
+.scopes { margin-top: 28px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.scope { padding: 14px 16px; border-radius: var(--radii-md); border: 1px solid var(--colors-border); background: var(--colors-bg); }
+.scope b { display: block; font-size: 0.875rem; }
+.scope span { font-size: 0.8125rem; color: var(--colors-fg-muted); }
+.steps { margin: 28px 0 0; padding: 0; list-style: none; counter-reset: step; }
+.steps li { counter-increment: step; display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--colors-border); font-size: 0.9375rem; }
+.steps li:last-child { border-bottom: 0; }
+.steps li::before { content: counter(step); flex: none; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 0.75rem; font-weight: 700; background: var(--colors-accent-subtle); color: var(--colors-accent); margin-top: 3px; }
+.steps small { display: block; color: var(--colors-fg-muted); font-size: 0.8125rem; }
+
+/* ---------- Open source ---------- */
+.oss { text-align: center; }
+.oss__logo { width: 64px; margin: 0 auto; opacity: .95; }
+.oss h2 { font-size: clamp(2rem, 5vw, 3.5rem); }
+.oss__cta { margin-top: 36px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.oss__stats { margin: 56px auto 0; max-width: 880px; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--colors-border); border-bottom: 1px solid var(--colors-border); }
+.oss__stats div { padding: 24px 12px; }
+.oss__stats div + div { border-left: 1px solid var(--colors-border); }
+.oss__stats b { display: block; font-size: 1.25rem; letter-spacing: -0.01em; }
+.oss__stats span { font-size: 0.8125rem; color: var(--colors-fg-muted); }
+
+/* ---------- Footer ---------- */
+.footer { border-top: 1px solid var(--colors-border); padding: 64px 0 40px; }
+.footer__grid { display: grid; grid-template-columns: 1.6fr repeat(3, 1fr); gap: 40px; }
+.footer__about p { margin: 14px 0 0; color: var(--colors-fg-muted); font-size: 0.875rem; max-width: 300px; }
+.footer h4 { margin: 0; font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--colors-fg-subtle); }
+.footer ul { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.footer li a { font-size: 0.875rem; color: var(--colors-fg-muted); }
+.footer li a:hover { color: var(--colors-fg); }
+.footer__bottom { margin-top: 56px; padding-top: 24px; border-top: 1px solid var(--colors-border); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 0.8125rem; color: var(--colors-fg-subtle); }
+
+/* ---------- 案ラベル ---------- */
+.variant-label {
+  position: fixed; right: 16px; bottom: 16px; z-index: 100;
+  display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px;
+  border-radius: var(--radii-full); background: var(--colors-bg-inverted); color: var(--colors-fg-inverted);
+  font-size: 0.75rem; font-weight: 600; box-shadow: var(--shadows-lg);
+}
+.variant-label a { padding: 4px 10px; border-radius: var(--radii-full); background: rgba(255, 255, 255, .14); }
+.variant-label a:hover { background: rgba(255, 255, 255, .24); }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 1000px) {
+  .nav { display: none; }
+  .menu-btn { display: grid; }
+  .header__actions .btn--app { display: none; }
+  .mobile-nav.is-open { display: grid; gap: 2px; padding: 8px var(--spacing-gutter) 16px; border-top: 1px solid var(--colors-border); background: var(--colors-bg); }
+  .mobile-nav a { padding: 10px 4px; font-size: 0.9375rem; border-bottom: 1px solid var(--colors-border); }
+  .pillars { grid-template-columns: repeat(2, 1fr); }
+  .pillar:nth-child(3) { border-left: 0; padding-left: 0; }
+  .pillar { padding-bottom: 32px; }
+  .uses { grid-template-columns: repeat(2, 1fr); }
+  .features { grid-template-columns: repeat(2, 1fr); }
+  .dev-grid { grid-template-columns: 1fr; gap: 28px; }
+  .code-grid, .split { grid-template-columns: 1fr; }
+  .footer__grid { grid-template-columns: repeat(3, 1fr); }
+  .footer__about { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .lang span { display: none; }
+  .pillars { grid-template-columns: 1fr; }
+  .pillar, .pillar + .pillar { padding: 28px 0; border-left: 0; }
+  .pillar + .pillar { border-top: 1px solid var(--colors-border); }
+  .start__row { grid-template-columns: 44px 1fr 20px; gap: 6px 16px; padding: 22px 4px; }
+  .start__title { grid-column: 2; }
+  .start__desc { grid-column: 2; grid-row: 2; font-size: 0.875rem; }
+  .start__icon { grid-row: 1 / span 2; }
+  .start__arrow { grid-column: 3; grid-row: 1 / span 2; }
+  .uses, .features, .scopes { grid-template-columns: 1fr; }
+  .features { padding: 24px; }
+  .oss__stats { grid-template-columns: repeat(2, 1fr); }
+  .oss__stats div:nth-child(3) { border-left: 0; }
+  .oss__stats div:nth-child(n+3) { border-top: 1px solid var(--colors-border); }
+  .footer__grid { grid-template-columns: repeat(2, 1fr); }
+  .shot__bar { height: 32px; }
+  .shot__img { aspect-ratio: 4 / 3; }
+  .try__world .uw__hud { transform: translateX(-50%) scale(.8); transform-origin: 50% 100%; }
+  .shot__url { font-size: 0.6875rem; }
+  .hero__cta .btn { flex: 1 1 100%; }
+  .variant-label { right: 10px; bottom: 10px; }
+}
+</style>
+</head>
+<body>
+<!-- アイコン（lucide 準拠のパス） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></symbol>
+  <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+  <symbol id="i-window" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></symbol>
+  <symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></symbol>
+  <symbol id="i-pr" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2"/><path d="m17 2-5 5-5-5"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></symbol>
+  <symbol id="i-presentation" viewBox="0 0 24 24"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+</svg>
+
+<header class="header" id="top">
+  <div class="container header__inner">
+    <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="" width="26" height="30" />Ubichill</a>
+    <nav class="nav" aria-label="メイン">
+      <a href="#docs">ドキュメント</a>
+      <a href="#uses">ワールド</a>
+      <a href="#developers">mod</a>
+      <a href="#federation">サーバー</a>
+      <a href="#news">ニュース</a>
+    </nav>
+    <div class="header__actions">
+      <a class="lang" href="#" aria-label="言語を切り替える"><svg class="icon"><use href="#i-globe"/></svg><span>日本語</span></a>
+      <a class="icon-btn" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="icon"><use href="#i-github"/></svg></a>
+      <a class="btn btn--primary btn--sm btn--app" href="https://ubichill.com/">アプリを開く</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="メニュー" aria-expanded="false" aria-controls="mobile-nav"><svg class="icon"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="メイン（モバイル）">
+    <a href="#docs">ドキュメント</a>
+    <a href="#uses">ワールド</a>
+    <a href="#developers">mod</a>
+    <a href="#federation">サーバー</a>
+    <a href="#news">ニュース</a>
+    <a href="https://ubichill.com/">アプリを開く</a>
+  </nav>
+</header>
+
+<main>
+  <!-- ========== Hero ========== -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero__logo reveal" data-logo3d data-depth="24" data-thickness="10" data-tilt="18" aria-label="Ubichill の 3D ロゴ"></div>
+      <a class="pill reveal" data-delay="1" href="#federation" id="news">
+        <span class="pill__tag">NEW</span>
+        <span>サーバー間の連合（federation v1）に対応しました</span>
+        <svg class="icon"><use href="#i-arrow"/></svg>
+      </a>
+      <h1 class="reveal" data-delay="1">カーソルで、<br /><span class="accent">そこにいる。</span></h1>
+      <p class="hero__lead reveal" data-delay="2">
+        Ubichill は、みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。<br class="br-pc" />
+        URL を開くだけ。インストール不要、機能は誰でも URL で追加できる。
+      </p>
+      <div class="hero__cta reveal" data-delay="3">
+        <a class="btn btn--primary" href="https://ubichill.com/">アプリを開く<svg class="icon icon--arrow"><use href="#i-arrow"/></svg></a>
+        <a class="btn btn--secondary" href="#about">詳しく知る</a>
+      </div>
+      <div class="hero__meta reveal" data-delay="3">
+        <span><svg class="icon"><use href="#i-check"/></svg>インストール不要</span>
+        <span><svg class="icon"><use href="#i-check"/></svg>スマホでも動く</span>
+        <span><svg class="icon"><use href="#i-check"/></svg>オープンソース（AGPL-3.0）</span>
+      </div>
+    </div>
+    <div class="container container--wide">
+      <figure class="shot reveal" id="shot">
+        <div class="shot__frame">
+          <div class="shot__bar" aria-hidden="true">
+            <i></i><i></i><i></i>
+            <span class="shot__url"><svg class="icon"><use href="#i-lock"/></svg>ubichill.com/@yokan/chiruwa/edit</span>
+          </div>
+          <img class="shot__img" src="./assets/app-editor.png" alt="Ubichill のワールドエディタ。動画プレイヤー・ペントレイ・プレイリストを配置している画面" width="2513" height="1295" />
+        </div>
+        <figcaption>実際のワールドエディタ。mod をドラッグして置くだけでワールドができる。</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ========== Pillars ========== -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="eyebrow">Why Ubichill</span>
+        <h2>重すぎない、ちょうどいい「いっしょ」。</h2>
+        <p class="section__desc">3D 空間も、顔出しも、専用アプリもいらない。ブラウザのタブ 1 つ分の気軽さで、だれかと同じ場所にいられます。</p>
+      </div>
+      <div class="pillars">
+        <article class="pillar reveal">
+          <span class="pillar__num">01</span>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-pointer"/></svg></div>
+          <h3>カーソルだけの<br />ゆるい繋がり</h3>
+          <p>顔出しも声出しもなし。お互いの動線だけが伝わる、ちょうどいい存在感。</p>
+        </article>
+        <article class="pillar reveal" data-delay="1">
+          <span class="pillar__num">02</span>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-link"/></svg></div>
+          <h3>URL を<br />ひらくだけ</h3>
+          <p>インストール不要。低スペックな PC やスマホからでも、ブラウザ 1 つで 1 秒で。</p>
+        </article>
+        <article class="pillar reveal" data-delay="2">
+          <span class="pillar__num">03</span>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-puzzle"/></svg></div>
+          <h3>mod で<br />なんでも足せる</h3>
+          <p>ペン・動画・付箋。機能は URL から読み込む mod。ゼロトラストの Worker サンドボックスで安全に動く。</p>
+        </article>
+        <article class="pillar reveal" data-delay="3">
+          <span class="pillar__num">04</span>
+          <div class="pillar__icon"><svg class="icon"><use href="#i-network"/></svg></div>
+          <h3>中央を<br />持たない</h3>
+          <p>サーバー同士が連合。どのサーバーの人ともフレンドになり、相手の部屋に入れる。</p>
+        </article>
+      </div>
+
+      <div class="try reveal">
+        <div class="try__world" data-world data-theme="light" data-cursors="5" data-frame="1"></div>
+        <p class="try__hint"><svg class="icon"><use href="#i-pointer"/></svg>このページの中でも、あなたのカーソルはアバターになります。<kbd>ドラッグ</kbd>で描いてみてください。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Start ========== -->
+  <section class="section section--subtle" id="docs">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="eyebrow">Get started</span>
+        <h2>はじめる</h2>
+        <p class="section__desc">使うだけでも、建てても、つくっても。入り口はいくつもあります。</p>
+      </div>
+      <div class="start">
+        <a class="start__row reveal" href="https://ubichill.com/">
+          <span class="start__icon"><svg class="icon"><use href="#i-window"/></svg></span>
+          <span class="start__title">アプリを開く</span>
+          <span class="start__desc">ubichill.com でアカウントを作って、すぐにホームワールドへ。</span>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row reveal" href="#federation">
+          <span class="start__icon"><svg class="icon"><use href="#i-server"/></svg></span>
+          <span class="start__title">自分のサーバーを建てる</span>
+          <span class="start__desc">Helm チャート 1 つで Kubernetes に。DB のパスワードも自動生成。</span>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row reveal" href="#developers">
+          <span class="start__icon"><svg class="icon"><use href="#i-braces"/></svg></span>
+          <span class="start__title">mod をつくる</span>
+          <span class="start__desc"><code>@ubichill/sdk</code> と <code>ubi mod create</code> で雛形から。</span>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row reveal" href="#developers">
+          <span class="start__icon"><svg class="icon"><use href="#i-file"/></svg></span>
+          <span class="start__title">ワールドを書く</span>
+          <span class="start__desc">World as Code。YAML 1 枚がワールドの唯一の真実。</span>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="start__row reveal" href="https://github.com/ubichill/ubichill">
+          <span class="start__icon"><svg class="icon"><use href="#i-pr"/></svg></span>
+          <span class="start__title">開発に参加する</span>
+          <span class="start__desc">Issue / PR 歓迎。PR は日本語でどうぞ。公式 mod だけ作る、も歓迎。</span>
+          <svg class="icon start__arrow"><use href="#i-arrow"/></svg>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Uses ========== -->
+  <section class="section" id="uses">
+    <div class="container">
+      <div class="section__head section__head--center reveal">
+        <span class="eyebrow">Use cases</span>
+        <h2>こんな使い方</h2>
+        <p class="section__desc">ワールドは mod の組み合わせ。同じ仕組みで、作業部屋にも映画館にもなります。</p>
+      </div>
+      <div class="uses">
+        <article class="use reveal">
+          <svg class="icon"><use href="#i-headphones"/></svg>
+          <h3>もくもく作業会</h3>
+          <p>カメラも声もオフのまま、誰かが動いている気配だけ。ほどよく集中できる。</p>
+        </article>
+        <article class="use reveal" data-delay="1">
+          <svg class="icon"><use href="#i-tv"/></svg>
+          <h3>動画・映画の同時視聴</h3>
+          <p>再生位置はみんなで同期。弾幕やカーソルで「いまのとこ」を指させる。</p>
+        </article>
+        <article class="use reveal" data-delay="2">
+          <svg class="icon"><use href="#i-pen"/></svg>
+          <h3>お絵描き・ホワイトボード</h3>
+          <p>ペンを持って、そのまま描く。付箋を貼って、アイデアを並べる。</p>
+        </article>
+        <article class="use reveal" data-delay="3">
+          <svg class="icon"><use href="#i-presentation"/></svg>
+          <h3>イベント・展示・勉強会</h3>
+          <p>URL を配るだけで会場に。公開範囲と招待で入る人を決められる。</p>
+        </article>
+      </div>
+
+      <div class="features reveal">
+        <p class="features__title">ワールドでできること</p>
+        <ul>
+          <li><svg class="icon"><use href="#i-check"/></svg>カーソルアバター（.cur のカーソルテーマ）</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>ペン・消しゴム</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>動画・ライブの同時視聴</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>付箋</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>弾幕</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>スマホコントローラー</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>ホームワールドとランチパッド</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>フレンド・招待・リクエストインバイト</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>公開範囲 4 種</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Developers ========== -->
+  <section class="section section--subtle" id="developers">
+    <div class="container">
+      <div class="section__head reveal">
+        <span class="eyebrow">For developers</span>
+        <h2>つくる人のために、<br />小さく、安全に。</h2>
+        <p class="section__desc">完全 CSR（Vite）と Go の WebSocket インスタンスサーバー。拡張はすべて Worker の中で動く mod として。</p>
+      </div>
+      <div class="dev-grid">
+        <div class="dev-item reveal">
+          <span class="icon-wrap"><svg class="icon"><use href="#i-braces"/></svg></span>
+          <h3>mod</h3>
+          <p><code>@ubichill/sdk</code> だけに依存する Web Worker。状態は <code>Ubi.state.sync</code> で宣言するだけで全員に同期される。</p>
+        </div>
+        <div class="dev-item reveal" data-delay="1">
+          <span class="icon-wrap"><svg class="icon"><use href="#i-file"/></svg></span>
+          <h3>World as Code</h3>
+          <p>ワールドは Kubernetes の CRD と同じ形の YAML。ワールド＝URL。GitHub に置いてもそのまま開ける。</p>
+        </div>
+        <div class="dev-item reveal" data-delay="2">
+          <span class="icon-wrap"><svg class="icon"><use href="#i-shield"/></svg></span>
+          <h3>ゼロトラストな権限</h3>
+          <p>権限はビルド時の静的解析で自動導出。使うときにブラウザのカメラ許可のように確認する。</p>
+          <div class="tiers">
+            <span class="tier"><i style="background:#3fb37f"></i>safe</span>
+            <span class="tier"><i style="background:#e0a63b"></i>sensitive</span>
+            <span class="tier"><i style="background:#d9534f"></i>dangerous</span>
+          </div>
+        </div>
+      </div>
+      <div class="code-grid">
+        <div class="code reveal">
+          <div class="code__head"><span>worlds/chill-room.yaml</span><span class="code__lang">YAML</span></div>
+<pre><code><span class="tok-k">apiVersion</span>: ubichill.com/v1alpha1
+<span class="tok-k">kind</span>: World
+<span class="tok-k">metadata</span>:
+  <span class="tok-k">name</span>: chill-room
+  <span class="tok-k">version</span>: <span class="tok-s">"1.0.0"</span>
+<span class="tok-k">spec</span>:
+  <span class="tok-k">displayName</span>: チルな作業部屋
+  <span class="tok-k">capacity</span>: { <span class="tok-k">max</span>: <span class="tok-n">20</span>, <span class="tok-k">default</span>: <span class="tok-n">10</span> }
+  <span class="tok-k">dependencies</span>:
+    - <span class="tok-k">name</span>: pen
+    - <span class="tok-k">name</span>: video-player
+  <span class="tok-k">initialEntities</span>:
+    - <span class="tok-k">id</span>: pentray
+      <span class="tok-k">components</span>:
+        - <span class="tok-k">type</span>: pen:tray</code></pre>
+        </div>
+        <div class="code reveal" data-delay="1">
+          <div class="code__head"><span>mods/like/src/button.worker.tsx</span><span class="code__lang">TSX</span></div>
+<pre><code><span class="tok-c">// 状態を宣言するだけで、全員に同期される（イメージ）</span>
+<span class="tok-k">const</span> likes = Ubi.state.sync(<span class="tok-n">0</span>);
+
+Ubi.ui.render(() =&gt; (
+  &lt;<span class="tok-k">button</span> onClick={() =&gt; likes.set(likes.get() + <span class="tok-n">1</span>)}&gt;
+    いいね {likes.get()}
+  &lt;/<span class="tok-k">button</span>&gt;
+));</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Federation / Self-host ========== -->
+  <section class="section" id="federation">
+    <div class="container split">
+      <div class="reveal">
+        <span class="eyebrow">Federation</span>
+        <h2>どのサーバーの人とも、<br />同じ部屋に。</h2>
+        <p class="section__desc">中央のサーバーは置きません。部屋のことは部屋のサーバー、人のことはその人のホームのサーバーが決める。ActivityPub（AS2）の形で、署名は Ed25519 + RFC 9421。</p>
+        <div class="address" aria-label="部屋の住所の例">
+          <b class="room">chill-room</b><b class="at">@</b><b class="domain">yokan.example</b>
+        </div>
+        <div class="address-legend"><span>部屋 ID</span><span>部屋のサーバー</span></div>
+        <div class="scopes">
+          <div class="scope"><b>パブリック</b><span>誰でも見えて、ログインすれば入れる</span></div>
+          <div class="scope"><b>フレンド+</b><span>中にいる人のフレンドまで</span></div>
+          <div class="scope"><b>フレンドのみ</b><span>作成者のフレンドだけ</span></div>
+          <div class="scope"><b>招待のみ</b><span>招待された人だけが入れる</span></div>
+        </div>
+      </div>
+      <div class="reveal" data-delay="1">
+        <span class="eyebrow">Self-host</span>
+        <h2>自分のサーバーを建てる</h2>
+        <div class="code" style="margin-top:28px">
+          <div class="code__head"><span>terminal</span><span class="code__lang">bash</span></div>
+<pre><code><span class="tok-c"># Helm チャート 1 つで</span>
+helm repo add ubichill https://ubichill.github.io/ubichill
+helm install ubichill ubichill/ubichill \
+  -n ubichill --create-namespace \
+  --set global.domain=<span class="tok-s">&lt;your-domain&gt;</span></code></pre>
+        </div>
+        <ol class="steps">
+          <li><div>Helm でインストール<small>PostgreSQL 同梱、パスワードは自動生成</small></div></li>
+          <li><div>ドメインを決める<small>Ingress / CORS / 認証 URL は <code>global.domain</code> から導出</small></div></li>
+          <li><div>ほかのサーバーとつながる<small>連合は追加の設定なしで</small></div></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Open source ========== -->
+  <section class="section section--subtle oss">
+    <div class="container">
+      <img class="oss__logo reveal" src="./assets/logo-transparent-sm.png" alt="" width="64" height="73" />
+      <span class="eyebrow reveal" style="margin-top:24px">Open source</span>
+      <h2 class="reveal">ずっと、オープンに。</h2>
+      <p class="section__desc reveal" style="max-width:600px;margin-inline:auto">Ubichill は AGPL-3.0 のオープンソースです。独立した mod には追加的許可があるので、mod は自由なライセンスで配れます。</p>
+      <div class="oss__cta reveal">
+        <a class="btn btn--primary" href="https://github.com/ubichill/ubichill"><svg class="icon"><use href="#i-github"/></svg>GitHub で見る</a>
+        <a class="btn btn--secondary" href="#docs"><svg class="icon"><use href="#i-book"/></svg>ドキュメント</a>
+      </div>
+      <div class="oss__stats reveal">
+        <div><b>AGPL-3.0</b><span>ライセンス</span></div>
+        <div><b>Vite + Go</b><span>CSR と WebSocket</span></div>
+        <div><b>Helm</b><span>セルフホスト</span></div>
+        <div><b>日本語 PR</b><span>歓迎します</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__about">
+        <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="" width="26" height="30" />Ubichill</a>
+        <p>みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。</p>
+      </div>
+      <div>
+        <h4>プロダクト</h4>
+        <ul>
+          <li><a href="https://ubichill.com/">アプリを開く</a></li>
+          <li><a href="#uses">ワールド</a></li>
+          <li><a href="#developers">mod</a></li>
+          <li><a href="#federation">サーバー</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>ドキュメント</h4>
+        <ul>
+          <li><a href="#docs">はじめる</a></li>
+          <li><a href="#developers">API</a></li>
+          <li><a href="#developers">Architecture</a></li>
+          <li><a href="#news">Roadmap</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>コミュニティ</h4>
+        <ul>
+          <li><a href="https://github.com/ubichill/ubichill">GitHub</a></li>
+          <li><a href="#news">ニュース</a></li>
+          <li><a href="#">ライセンス</a></li>
+          <li><a href="#">行動規範</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© Ubichill Project</span>
+      <span>AGPL-3.0-only</span>
+    </div>
+  </div>
+</footer>
+
+<div class="variant-label">案I · Minimal<a href="./index.html">一覧へ</a></div>
+
+<script type="module" src="./assets/logo3d.js"></script>
+<script type="module" src="./assets/world.js"></script>
+<script>
+  document.documentElement.classList.add('js');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // スクロールでフェードイン
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) { e.target.classList.add('is-visible'); io.unobserve(e.target); }
+    }
+  }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+
+  // ヘッダーの下線
+  const header = document.querySelector('.header');
+  const onScroll = () => header.classList.toggle('is-scrolled', window.scrollY > 8);
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // 実画面: スクロールに合わせて 0.94 → 1 にわずかに拡大
+  const shot = document.getElementById('shot');
+  if (!reduce && shot) {
+    const update = () => {
+      const r = shot.getBoundingClientRect();
+      const p = Math.min(1, Math.max(0, 1 - (r.top - window.innerHeight * 0.25) / (window.innerHeight * 0.75)));
+      shot.style.transform = `scale(${(0.94 + p * 0.06).toFixed(4)})`;
+    };
+    window.addEventListener('scroll', () => requestAnimationFrame(update), { passive: true });
+    update();
+  }
+
+  // モバイルメニュー
+  const menuBtn = document.querySelector('.menu-btn');
+  const mobileNav = document.getElementById('mobile-nav');
+  menuBtn.addEventListener('click', () => {
+    const open = mobileNav.classList.toggle('is-open');
+    menuBtn.setAttribute('aria-expanded', String(open));
+  });
+  mobileNav.addEventListener('click', (e) => {
+    if (e.target.closest('a')) { mobileNav.classList.remove('is-open'); menuBtn.setAttribute('aria-expanded', 'false'); }
+  });
+</script>
+</body>
+</html>

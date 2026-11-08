@@ -1,0 +1,763 @@
+<!doctype html>
+<!--
+  案D · Night Chill
+  コンセプト: 深いネイビーの夜。lo-fi の作業 BGM が流れる「夜の作業通話」の空気感。
+            星・フィルムグレイン・オーロラのにじみの上で、パステルのロゴがやわらかく発光する。
+  狙い: ubichill の一番リアルな使われ方（夜、作業しながら誰かがそこにいる）を情緒で伝える。
+        はじめる導線は「トラックリスト」、使い方は「今夜のタイムテーブル」として見せ、
+        lo-fi のモチーフでページ全体を一貫させる。
+  向いている点: 雰囲気・記憶に残りやすさ / パステル 3 色が暗背景で最も映える / 開発者にも刺さる落ち着き
+  弱い点: 明るいアプリ本体（cream 基調）とトーンが離れる / 暗背景は長文ドキュメントに不向き
+          （docs はライトテーマを別途用意する前提） / 星・グレインは印刷やスクショで潰れやすい
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="dark" />
+<title>Ubichill — 案D · Night Chill</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     Design tokens（PandaCSS の tokens / semanticTokens に移植する前提）
+     ============================================================ */
+  :root {
+    /* --- tokens.colors --- */
+    --colors-night-950: #060a14;
+    --colors-night-900: #0a1120;
+    --colors-night-800: #101a2e;
+    --colors-night-700: #172440;
+    --colors-night-600: #22325a;
+    --colors-sky-300: #bde1fb;
+    --colors-periwinkle-300: #b9cafb;
+    --colors-periwinkle-400: #9ab2f8;
+    --colors-lavender-400: #ceb0fa;
+    --colors-blush-400: #f4a7c9;
+    --colors-lamp-300: #ffd9a0;   /* デスクライトの暖色 */
+    --colors-mint-400: #8ad29b;
+    --colors-ink-50: #f2f4fb;
+    --colors-ink-200: #c9d0e3;
+    --colors-ink-400: #8d97b3;
+    --colors-ink-600: #5d6785;
+
+    /* --- semanticTokens.colors --- */
+    --colors-bg: var(--colors-night-900);
+    --colors-bg-deep: var(--colors-night-950);
+    --colors-bg-surface: rgba(255, 255, 255, 0.035);
+    --colors-bg-surface-hover: rgba(255, 255, 255, 0.06);
+    --colors-bg-elevated: var(--colors-night-800);
+    --colors-fg: var(--colors-ink-50);
+    --colors-fg-muted: var(--colors-ink-200);
+    --colors-fg-subtle: var(--colors-ink-400);
+    --colors-accent: var(--colors-periwinkle-400);
+    --colors-accent-fg: var(--colors-night-950);
+    --colors-accent-glow: rgba(154, 178, 248, 0.45);
+    --colors-warm: var(--colors-lamp-300);
+    --colors-border: rgba(255, 255, 255, 0.08);
+    --colors-border-strong: rgba(255, 255, 255, 0.16);
+
+    /* --- tokens.gradients --- */
+    --gradients-aurora: radial-gradient(40% 50% at 20% 10%, rgba(154,178,248,.35), transparent 70%),
+                        radial-gradient(35% 45% at 80% 0%, rgba(206,176,250,.32), transparent 70%),
+                        radial-gradient(30% 40% at 55% 30%, rgba(189,225,251,.14), transparent 70%);
+    --gradients-glow-text: linear-gradient(100deg, #bde1fb 0%, #9ab2f8 40%, #ceb0fa 75%, #f4a7c9 100%);
+
+    /* --- tokens.fonts --- */
+    --fonts-display: "Sora", "Zen Kaku Gothic New", system-ui, sans-serif;
+    --fonts-body: "Zen Kaku Gothic New", system-ui, sans-serif;
+    --fonts-mono: "DM Mono", ui-monospace, Menlo, monospace;
+
+    /* --- tokens.radii --- */
+    --radii-sm: 8px;
+    --radii-md: 14px;
+    --radii-lg: 22px;
+    --radii-xl: 30px;
+    --radii-full: 999px;
+
+    /* --- tokens.shadows --- */
+    --shadows-glow: 0 0 0 1px rgba(154,178,248,.25), 0 20px 60px rgba(70, 90, 200, .35);
+    --shadows-card: 0 1px 0 rgba(255,255,255,.05) inset, 0 20px 40px rgba(0,0,0,.35);
+    --shadows-button: 0 8px 30px rgba(154, 178, 248, .45);
+
+    /* --- tokens.spacing / sizes --- */
+    --spacing-section: clamp(96px, 12vw, 160px);
+    --spacing-gutter: clamp(18px, 4vw, 40px);
+    --sizes-content: 1180px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { background: var(--colors-bg-deep); }
+  html:focus-within { scroll-behavior: smooth; } /* アンカー移動時だけ滑らかに（scrollTo は即時） */
+  body {
+    margin: 0;
+    font-family: var(--fonts-body);
+    color: var(--colors-fg);
+    background: linear-gradient(180deg, var(--colors-night-800) 0%, var(--colors-bg) 30%, var(--colors-bg-deep) 100%);
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  img { max-width: 100%; display: block; }
+  .hero > *, .dev > *, .fed > *, .host > *, .features > *, .timeline > * { min-width: 0; } /* 長いコード行でグリッドが広がらないように */
+  h1, h2, h3 { word-break: auto-phrase; text-wrap: balance; } /* 日本語見出しを文節で改行 */
+  /* world.js の HUD は狭い幅で文字が縦に折れるため上書き（共有素材は編集しない） */
+  .uw__hudbtn { white-space: nowrap; }
+  @media (max-width: 600px) { .uw .uw__hud { transform: translateX(-50%) scale(.8); transform-origin: 50% 100%; } .uw .uw__hudbtn { padding: 6px 7px; } }
+  main { overflow-x: clip; } /* 装飾のにじみ・はみ出しで横スクロールさせない（sticky を壊さない clip） */
+  a { color: inherit; text-decoration: none; }
+  h1, h2, h3, h4 { margin: 0; line-height: 1.3; }
+  p { margin: 0; }
+  .container { width: min(100% - var(--spacing-gutter) * 2, var(--sizes-content)); margin-inline: auto; }
+  .mono { font-family: var(--fonts-mono); }
+
+  /* ---------- 夜空: 星・オーロラ・グレイン ---------- */
+  .sky { position: fixed; inset: 0; z-index: -2; pointer-events: none; }
+  .sky__aurora { position: absolute; inset: 0 0 auto; height: 110vh; background: var(--gradients-aurora); filter: blur(10px); animation: aurora 18s ease-in-out infinite alternate; }
+  @keyframes aurora { to { transform: translateX(3vw) scale(1.05); opacity: .8; } }
+  .sky__stars { position: absolute; inset: 0; background-repeat: repeat; }
+  .sky__stars--1 { background-image: radial-gradient(1px 1px at 12% 18%, #fff, transparent), radial-gradient(1px 1px at 72% 12%, #fff, transparent), radial-gradient(1.5px 1.5px at 40% 34%, #dfe7ff, transparent), radial-gradient(1px 1px at 88% 44%, #fff, transparent), radial-gradient(1px 1px at 22% 62%, #fff, transparent), radial-gradient(1.5px 1.5px at 58% 78%, #e9dcff, transparent), radial-gradient(1px 1px at 92% 86%, #fff, transparent), radial-gradient(1px 1px at 6% 90%, #fff, transparent); background-size: 520px 520px; opacity: .55; animation: twinkle 7s ease-in-out infinite; }
+  .sky__stars--2 { background-image: radial-gradient(1px 1px at 30% 8%, #fff, transparent), radial-gradient(1px 1px at 64% 52%, #fff, transparent), radial-gradient(1px 1px at 80% 26%, #cfe3ff, transparent), radial-gradient(1px 1px at 16% 40%, #fff, transparent), radial-gradient(1px 1px at 48% 92%, #fff, transparent); background-size: 340px 340px; opacity: .35; animation: twinkle 11s ease-in-out infinite reverse; }
+  @keyframes twinkle { 50% { opacity: .15; } }
+  .grain { position: fixed; inset: -50%; z-index: 90; pointer-events: none; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grain 1.2s steps(6) infinite; }
+  @keyframes grain { 0% { transform: translate(0,0); } 20% { transform: translate(-3%,2%); } 40% { transform: translate(2%,-3%); } 60% { transform: translate(-2%,-1%); } 80% { transform: translate(3%,3%); } 100% { transform: translate(0,0); } }
+
+  /* ---------- ボタン ---------- */
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 50px; padding: 0 24px; border-radius: var(--radii-full); font-weight: 700; font-size: 15px; transition: transform .2s, box-shadow .2s, background .2s; white-space: nowrap; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn--primary { background: var(--colors-accent); color: var(--colors-accent-fg); box-shadow: var(--shadows-button); }
+  .btn--primary:hover { box-shadow: 0 10px 40px rgba(154,178,248,.65); }
+  .btn--ghost { border: 1px solid var(--colors-border-strong); color: var(--colors-fg); background: var(--colors-bg-surface); }
+  .btn--ghost:hover { background: var(--colors-bg-surface-hover); }
+  .btn--sm { height: 38px; padding: 0 16px; font-size: 13.5px; }
+  .icon { width: 20px; height: 20px; flex: none; }
+
+  /* ---------- ヘッダー ---------- */
+  .header { position: sticky; top: 0; z-index: 60; background: rgba(10, 17, 32, .62); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--colors-border); }
+  .header__bar { display: flex; align-items: center; gap: 24px; height: 66px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-family: var(--fonts-display); font-weight: 700; font-size: 19px; letter-spacing: -.01em; }
+  .brand img { width: 28px; filter: drop-shadow(0 0 10px rgba(154,178,248,.55)); }
+  .nav { display: flex; gap: 2px; }
+  .nav a { padding: 8px 13px; border-radius: var(--radii-sm); font-size: 14px; color: var(--colors-fg-subtle); transition: color .2s, background .2s; }
+  .nav a:hover { color: var(--colors-fg); background: var(--colors-bg-surface); }
+  .header__right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .clock { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid var(--colors-border); border-radius: var(--radii-full); font-family: var(--fonts-mono); font-size: 12.5px; color: var(--colors-fg-muted); }
+  .clock svg { color: var(--colors-warm); }
+  .icon-btn { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--colors-fg-subtle); transition: color .2s, background .2s; }
+  .icon-btn:hover { color: var(--colors-fg); background: var(--colors-bg-surface); }
+  .menu-btn { display: none; border: 0; background: none; }
+
+  /* ---------- ヒーロー ---------- */
+  .hero { position: relative; padding-block: clamp(64px, 9vw, 128px) clamp(40px, 6vw, 72px); display: grid; grid-template-columns: 1fr 1.08fr; gap: clamp(32px, 5vw, 72px); align-items: center; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 10px; font-family: var(--fonts-mono); font-size: 13px; color: var(--colors-warm); letter-spacing: .04em; }
+  .eyebrow::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--colors-warm); box-shadow: 0 0 12px var(--colors-warm); }
+  .hero h1 { margin-top: 20px; font-size: clamp(36px, 5vw, 64px); font-weight: 900; letter-spacing: .01em; line-height: 1.22; }
+  .glow-text { background: var(--gradients-glow-text); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 22px rgba(154,178,248,.45)); }
+  .hero__lead { margin-top: 22px; max-width: 520px; color: var(--colors-fg-muted); font-size: clamp(14.5px, 1.3vw, 16px); }
+  .news { display: inline-flex; align-items: center; gap: 10px; margin-top: 26px; padding: 7px 14px 7px 8px; border-radius: var(--radii-full); border: 1px solid var(--colors-border-strong); background: var(--colors-bg-surface); font-size: 13px; color: var(--colors-fg-muted); transition: border-color .2s; }
+  .news:hover { border-color: var(--colors-accent); }
+  .news b { padding: 2px 9px; border-radius: var(--radii-full); background: rgba(154,178,248,.16); color: var(--colors-accent); font-family: var(--fonts-mono); font-size: 11.5px; font-weight: 500; }
+  .hero__cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+
+  .np { display: flex; align-items: center; gap: 14px; margin-top: 36px; padding: 12px 16px; max-width: 420px; border-radius: var(--radii-md); border: 1px solid var(--colors-border); background: var(--colors-bg-surface); }
+  .np__art { width: 44px; height: 44px; border-radius: 10px; flex: none; background: linear-gradient(135deg, #2a3a66, #6b5aa8 50%, #f0a6c4); position: relative; overflow: hidden; }
+  .np__art::after { content: ""; position: absolute; left: 18%; right: 18%; bottom: 18%; height: 26%; background: #0f1424; clip-path: polygon(0 100%,0 40%,15% 40%,15% 0,35% 0,35% 50%,55% 50%,55% 20%,75% 20%,75% 60%,100% 60%,100% 100%); }
+  .np__meta { min-width: 0; flex: 1; }
+  .np__title { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .np__sub { font-family: var(--fonts-mono); font-size: 11.5px; color: var(--colors-fg-subtle); }
+  .eq { display: flex; align-items: flex-end; gap: 3px; height: 22px; }
+  .eq i { width: 3px; border-radius: 2px; background: var(--colors-accent); animation: eq 1s ease-in-out infinite; }
+  .eq i:nth-child(1) { height: 40%; animation-delay: -.2s; } .eq i:nth-child(2) { height: 90%; animation-delay: -.5s; } .eq i:nth-child(3) { height: 60%; animation-delay: -.1s; } .eq i:nth-child(4) { height: 75%; animation-delay: -.7s; }
+  @keyframes eq { 50% { transform: scaleY(.35); } }
+  .eq i { transform-origin: bottom; }
+
+  .hero__visual { position: relative; }
+  .hero__glow { position: absolute; inset: -12% -8%; background: radial-gradient(50% 50% at 50% 50%, rgba(154,178,248,.28), transparent 70%); filter: blur(20px); z-index: -1; }
+  .hero__world { height: clamp(380px, 38vw, 500px); border-radius: var(--radii-lg); overflow: hidden; border: 1px solid var(--colors-border-strong); box-shadow: var(--shadows-glow); }
+  /* logo3d.js が .l3d{position:relative} を後から注入するため、詳細度を上げて absolute を効かせる */
+  .hero__visual .hero__logo { position: absolute; width: clamp(130px, 12vw, 176px); aspect-ratio: 667 / 761; right: -6%; top: -27%; z-index: 30; }
+  .hero__logo-glow { position: absolute; right: -12%; top: -33%; width: clamp(220px, 22vw, 320px); aspect-ratio: 1; border-radius: 50%; background: radial-gradient(closest-side, rgba(206,176,250,.55), rgba(154,178,248,.18) 55%, transparent); filter: blur(6px); z-index: 29; pointer-events: none; }
+  .hero__cap { margin-top: 14px; font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); display: flex; align-items: center; gap: 8px; }
+  .hero__cap i { width: 7px; height: 7px; border-radius: 50%; background: #ff6b6b; box-shadow: 0 0 8px #ff6b6b; display: block; }
+
+  /* ---------- セクション共通 ---------- */
+  .section { padding-top: var(--spacing-section); }
+  .label { font-family: var(--fonts-mono); font-size: 12.5px; color: var(--colors-accent); letter-spacing: .06em; }
+  .section__title { margin-top: 12px; font-size: clamp(28px, 3.8vw, 44px); font-weight: 900; letter-spacing: .01em; }
+  .section__lead { margin-top: 14px; max-width: 620px; color: var(--colors-fg-muted); }
+  .section__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+
+  /* 柱 */
+  .pillars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; margin-top: 48px; border: 1px solid var(--colors-border); border-radius: var(--radii-lg); overflow: hidden; background: var(--colors-border); }
+  .pillar { position: relative; padding: 30px 26px 34px; background: var(--colors-bg); transition: background .3s; }
+  .pillar:hover { background: var(--colors-night-800); }
+  .pillar__no { font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); }
+  .pillar__icon { margin-top: 22px; width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; border: 1px solid var(--colors-border-strong); color: var(--c, var(--colors-accent)); box-shadow: 0 0 24px -4px var(--c, var(--colors-accent)); background: rgba(255,255,255,.03); }
+  .pillar h3 { margin-top: 20px; font-size: 17.5px; font-weight: 700; }
+  .pillar p { margin-top: 10px; font-size: 14px; color: var(--colors-fg-subtle); }
+
+  /* 実画面 */
+  .screen { margin-top: 48px; position: relative; border-radius: var(--radii-xl); padding: 12px; background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02)); border: 1px solid var(--colors-border-strong); box-shadow: 0 40px 120px rgba(70, 90, 200, .25); }
+  .screen__bar { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; }
+  .screen__bar i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.14); }
+  .screen__bar span { margin-left: auto; margin-right: auto; font-family: var(--fonts-mono); font-size: 11.5px; color: var(--colors-fg-subtle); }
+  .screen img { border-radius: 18px; width: 100%; height: auto; filter: brightness(.94); }
+  .screen__note { position: absolute; padding: 10px 14px; border-radius: var(--radii-md); background: rgba(10,17,32,.86); border: 1px solid var(--colors-border-strong); backdrop-filter: blur(8px); font-size: 12.5px; max-width: 240px; box-shadow: var(--shadows-card); }
+  .screen__note b { display: block; font-size: 13px; color: var(--colors-accent); font-family: var(--fonts-mono); font-weight: 500; }
+  .screen__note--a { left: -2%; top: 26%; }
+  .screen__note--b { right: -2%; bottom: 18%; }
+
+  /* トラックリスト（はじめる） */
+  .tracks { margin-top: 44px; border-top: 1px solid var(--colors-border); }
+  .track { display: grid; grid-template-columns: 56px 44px 1fr auto 28px; align-items: center; gap: 16px; padding: 20px 12px; border-bottom: 1px solid var(--colors-border); border-radius: var(--radii-md); transition: background .2s; }
+  .track:hover { background: var(--colors-bg-surface-hover); }
+  .track__no { font-family: var(--fonts-mono); font-size: 14px; color: var(--colors-fg-subtle); }
+  .track__no .play { display: none; color: var(--colors-accent); }
+  .track:hover .track__no .num { display: none; }
+  .track:hover .track__no .play { display: block; }
+  .track__icon { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.04); border: 1px solid var(--colors-border); color: var(--c, var(--colors-accent)); }
+  .track__title { font-size: 17px; font-weight: 700; }
+  .track__desc { font-size: 13.5px; color: var(--colors-fg-subtle); }
+  .track__meta { font-family: var(--fonts-mono); font-size: 12.5px; color: var(--colors-fg-subtle); padding: 3px 10px; border: 1px solid var(--colors-border); border-radius: var(--radii-full); white-space: nowrap; }
+  .track__go { color: var(--colors-fg-subtle); transition: transform .2s, color .2s; }
+  .track:hover .track__go { color: var(--colors-fg); transform: translateX(3px); }
+
+  /* 今夜のタイムテーブル（使い方） */
+  .timeline { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 56px; }
+  .timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 7px; height: 1px; background: linear-gradient(90deg, transparent, var(--colors-border-strong) 10%, var(--colors-border-strong) 90%, transparent); }
+  .slot { position: relative; padding-top: 34px; }
+  .slot::before { content: ""; position: absolute; left: 0; top: 0; width: 15px; height: 15px; border-radius: 50%; background: var(--colors-bg); border: 2px solid var(--c, var(--colors-accent)); box-shadow: 0 0 14px var(--c, var(--colors-accent)); }
+  .slot__time { font-family: var(--fonts-mono); font-size: 28px; font-weight: 500; letter-spacing: -.02em; color: var(--c, var(--colors-accent)); }
+  .slot__card { margin-top: 12px; padding: 22px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); min-height: 168px; }
+  .slot__card h3 { font-size: 17px; font-weight: 700; }
+  .slot__card p { margin-top: 8px; font-size: 13.5px; color: var(--colors-fg-subtle); }
+  .slot__tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+  .slot__tags span { font-family: var(--fonts-mono); font-size: 11px; color: var(--colors-fg-muted); padding: 2px 8px; border-radius: var(--radii-full); background: rgba(255,255,255,.05); }
+
+  /* 機能グリッド */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 44px; }
+  .feature { display: flex; gap: 14px; align-items: flex-start; padding: 20px; border-radius: var(--radii-md); border: 1px solid var(--colors-border); background: var(--colors-bg-surface); transition: border-color .2s, background .2s; }
+  .feature:hover { border-color: var(--colors-border-strong); background: var(--colors-bg-surface-hover); }
+  .feature svg { color: var(--colors-accent); margin-top: 2px; }
+  .feature h3 { font-size: 15px; font-weight: 700; }
+  .feature p { margin-top: 4px; font-size: 13px; color: var(--colors-fg-subtle); }
+
+  /* 開発者（ターミナル） */
+  .dev { display: grid; grid-template-columns: 1fr 1.15fr; gap: clamp(28px, 5vw, 64px); align-items: start; }
+  .tiers { display: grid; gap: 10px; margin-top: 28px; }
+  .tier { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-radius: var(--radii-md); border: 1px solid var(--colors-border); background: var(--colors-bg-surface); }
+  .tier__dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--c); box-shadow: 0 0 10px var(--c); }
+  .tier b { font-family: var(--fonts-mono); font-weight: 500; font-size: 13px; min-width: 88px; color: var(--c); }
+  .tier span { font-size: 13.5px; color: var(--colors-fg-subtle); }
+  .devpoints { list-style: none; padding: 0; margin: 22px 0 0; display: grid; gap: 10px; font-size: 14px; color: var(--colors-fg-muted); }
+  .devpoints li { display: flex; gap: 10px; align-items: flex-start; }
+  .devpoints svg { color: var(--colors-accent); margin-top: 4px; width: 16px; height: 16px; flex: none; }
+  .term { border-radius: var(--radii-lg); border: 1px solid var(--colors-border-strong); background: var(--colors-bg-deep); box-shadow: var(--shadows-card); overflow: hidden; }
+  .term__bar { display: flex; align-items: center; gap: 4px; padding: 8px 10px; border-bottom: 1px solid var(--colors-border); background: rgba(255,255,255,.02); overflow-x: auto; }
+  .term__dots { display: flex; gap: 6px; margin-right: 10px; }
+  .term__dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.14); display: block; }
+  .term__tab { border: 0; cursor: pointer; font-family: var(--fonts-mono); font-size: 12.5px; padding: 6px 12px; border-radius: var(--radii-sm); background: transparent; color: var(--colors-fg-subtle); white-space: nowrap; }
+  .term__tab[aria-selected="true"] { background: rgba(154,178,248,.14); color: var(--colors-fg); }
+  .term__panel { padding: 22px 24px; font-family: var(--fonts-mono); font-size: 13px; line-height: 1.85; min-height: 360px; overflow-x: auto; }
+  .term__panel[hidden] { display: none; }
+  .term__panel pre { margin: 0; }
+  .tk-c { color: #6b7696; } .tk-k { color: #ceb0fa; } .tk-s { color: #a8e6c1; } .tk-n { color: #ffd9a0; } .tk-f { color: #9fd2fa; } .tk-p { color: #f4a7c9; }
+  .cursor-blink { display: inline-block; width: 8px; height: 16px; vertical-align: -3px; background: var(--colors-accent); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* 連合（星座） */
+  .fed { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: clamp(28px, 5vw, 64px); align-items: center; }
+  .constellation { width: 100%; height: auto; overflow: visible; }
+  .constellation .node circle.core { fill: var(--colors-night-800); stroke-width: 1.5; }
+  .constellation text { font-family: var(--fonts-mono); font-size: 11px; fill: var(--colors-ink-200); }
+  .constellation .link { stroke: rgba(185, 202, 251, .35); stroke-width: 1; stroke-dasharray: 3 5; animation: dash 6s linear infinite; }
+  @keyframes dash { to { stroke-dashoffset: -80; } }
+  .constellation .traveler { offset-rotate: 0deg; animation: travel 7s ease-in-out infinite; }
+  @keyframes travel { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+  .addr { display: inline-flex; align-items: center; gap: 10px; margin-top: 22px; padding: 10px 16px; border-radius: var(--radii-md); border: 1px solid var(--colors-border-strong); background: var(--colors-bg-surface); font-family: var(--fonts-mono); font-size: 14px; }
+  .addr span { color: var(--colors-fg-subtle); }
+  .scopes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 22px; }
+  .scope { padding: 12px 14px; border-radius: var(--radii-md); border: 1px solid var(--colors-border); background: var(--colors-bg-surface); }
+  .scope b { font-size: 14px; }
+  .scope p { font-size: 12px; color: var(--colors-fg-subtle); margin-top: 2px; }
+
+  /* セルフホスト */
+  .host { margin-top: 56px; display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 24px; align-items: stretch; padding: clamp(24px, 4vw, 44px); border-radius: var(--radii-xl); border: 1px solid var(--colors-border); background: linear-gradient(135deg, rgba(154,178,248,.08), rgba(206,176,250,.04) 50%, transparent); }
+  .host h3 { font-size: clamp(22px, 2.6vw, 30px); font-weight: 900; margin-top: 10px; }
+  .host p { margin-top: 12px; color: var(--colors-fg-muted); font-size: 14.5px; }
+  .host .term__panel { min-height: 0; font-size: 12.5px; }
+
+  /* OSS */
+  .oss { margin-top: var(--spacing-section); position: relative; text-align: center; padding: clamp(56px, 8vw, 110px) var(--spacing-gutter); border-radius: var(--radii-xl); border: 1px solid var(--colors-border); overflow: hidden; background: radial-gradient(60% 80% at 50% 120%, rgba(154,178,248,.25), transparent 70%), var(--colors-bg-deep); }
+  .oss__moon { width: 72px; height: 72px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #fff6e0, #ffd9a0 60%, #e9b46a); filter: drop-shadow(0 0 22px rgba(255, 217, 160, .6));
+    -webkit-mask: radial-gradient(circle at 86% 22%, transparent 29px, #000 30px); mask: radial-gradient(circle at 86% 22%, transparent 29px, #000 30px); }
+  .oss h2 { margin-top: 28px; font-size: clamp(28px, 4.2vw, 50px); font-weight: 900; }
+  .oss p { margin: 16px auto 0; max-width: 600px; color: var(--colors-fg-muted); }
+  .oss .hero__cta { justify-content: center; }
+
+  /* フッター */
+  .footer { margin-top: var(--spacing-section); border-top: 1px solid var(--colors-border); padding: 56px 0 40px; }
+  .footer__grid { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 32px; }
+  .footer h4 { font-family: var(--fonts-mono); font-size: 12px; font-weight: 500; color: var(--colors-fg-subtle); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 14px; }
+  .footer ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 9px; font-size: 14px; color: var(--colors-fg-muted); }
+  .footer ul a:hover { color: var(--colors-fg); }
+  .footer__note { margin-top: 14px; font-size: 13.5px; color: var(--colors-fg-subtle); max-width: 300px; }
+  .footer__bottom { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); }
+
+  /* 案ラベル */
+  .proposal { position: fixed; right: 14px; bottom: 14px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 7px 7px 7px 14px; border-radius: var(--radii-full); background: rgba(16,26,46,.9); border: 1px solid var(--colors-border-strong); backdrop-filter: blur(10px); font-size: 12.5px; font-weight: 700; color: var(--colors-fg); }
+  .proposal a { padding: 4px 12px; border-radius: var(--radii-full); background: var(--colors-accent); color: var(--colors-accent-fg); }
+
+  .reveal { opacity: 0; transform: translateY(20px); transition: opacity .9s ease, transform .9s ease; }
+  .reveal.is-in { opacity: 1; transform: none; }
+
+  /* ---------- レスポンシブ ---------- */
+  @media (max-width: 1080px) {
+    .hero, .dev, .fed, .host { grid-template-columns: 1fr; }
+    .hero__visual .hero__logo { right: 0; top: -14%; }
+    .pillars { grid-template-columns: repeat(2, 1fr); }
+    .timeline { grid-template-columns: repeat(2, 1fr); row-gap: 36px; }
+    .timeline::before { display: none; }
+    .features { grid-template-columns: repeat(2, 1fr); }
+    .footer__grid { grid-template-columns: 1fr 1fr; }
+    .screen__note { display: none; }
+  }
+  @media (max-width: 860px) {
+    .nav, .clock, .icon-btn--hide { display: none; }
+    .menu-btn { display: grid; }
+  }
+  @media (max-width: 600px) {
+    .header__bar { gap: 10px; }
+    .pillars, .timeline, .features, .scopes { grid-template-columns: 1fr; }
+    .track { grid-template-columns: 30px 40px 1fr 20px; gap: 12px; padding: 16px 6px; }
+    .track__meta { display: none; }
+    .track__icon { width: 40px; height: 40px; }
+    .hero__world { height: 360px; }
+    .hero__visual .hero__logo { width: 104px; right: -2%; top: -64px; }
+    .hero__logo-glow { width: 180px; right: -8%; top: -80px; }
+    .hero__visual { margin-top: 40px; }
+    .footer__grid { grid-template-columns: 1fr 1fr; }
+    .footer__grid > div:first-child { grid-column: span 2; }
+    .proposal { font-size: 11px; }
+    .term__panel { font-size: 12px; padding: 18px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sky__aurora, .sky__stars, .grain, .eq i, .constellation .link, .constellation .traveler, .cursor-blink { animation: none; }
+    .reveal { opacity: 1; transform: none; transition: none; }
+    html:focus-within { scroll-behavior: auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="sky" aria-hidden="true"><div class="sky__aurora"></div><div class="sky__stars sky__stars--1"></div><div class="sky__stars sky__stars--2"></div></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+      <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.28-1.69-1.28-1.69-1.05-.71.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.69 5.39-5.25 5.67.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z"/></symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+      <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></symbol>
+      <symbol id="i-cursor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 4 7.07 17 2.51-7.39L21 11.07z"/></symbol>
+      <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+      <symbol id="i-blocks" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="14" y="3" width="7" height="7" rx="1"/><path d="M10 21V8a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-5a1 1 0 0 0-1-1H3"/></symbol>
+      <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98M15.41 6.51l-6.82 3.98"/></symbol>
+      <symbol id="i-server" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></symbol>
+      <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></symbol>
+      <symbol id="i-file" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6"/><path d="M10 13h4M10 17h4"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3"/></symbol>
+      <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+      <symbol id="i-tv" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="m17 2-5 5-5-5"/></symbol>
+      <symbol id="i-sticky" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
+      <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+      <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></symbol>
+      <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></symbol>
+      <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></symbol>
+      <symbol id="i-timer" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M12 14l3-3"/><circle cx="12" cy="14" r="8"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ===================== ヘッダー ===================== -->
+  <header class="header">
+    <div class="container header__bar">
+      <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="" />Ubichill</a>
+      <nav class="nav" aria-label="メイン">
+        <a href="#start">ドキュメント</a>
+        <a href="#tonight">ワールド</a>
+        <a href="#dev">mod</a>
+        <a href="#fed">サーバー</a>
+        <a href="#oss">ニュース</a>
+      </nav>
+      <div class="header__right">
+        <span class="clock" title="あなたの現在時刻"><svg class="icon" style="width:14px;height:14px"><use href="#i-moon"/></svg><span id="clock">23:41</span></span>
+        <a class="icon-btn icon-btn--hide" href="#" aria-label="言語を切り替える"><svg class="icon"><use href="#i-globe"/></svg></a>
+        <a class="icon-btn icon-btn--hide" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="icon"><use href="#i-github"/></svg></a>
+        <a class="btn btn--primary btn--sm" href="https://ubichill.com/">アプリを開く</a>
+        <button class="icon-btn menu-btn" aria-label="メニュー"><svg class="icon"><use href="#i-menu"/></svg></button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- ===================== ヒーロー ===================== -->
+    <section class="hero container" data-logo3d-host>
+      <div>
+        <span class="eyebrow">夜の作業通話に、もうひとつの選択肢</span>
+        <h1>同じ空間で、<br />作業も会話も<br /><span class="glow-text">いっしょに。</span></h1>
+        <p class="hero__lead">Ubichill は、みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。顔も声も出さなくていい。URL を開くだけで、誰かがそこにいる。</p>
+        <a class="news" href="#fed"><b>new</b>サーバー間の連合（federation v1）に対応しました<svg class="icon" style="width:15px;height:15px"><use href="#i-arrow"/></svg></a>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="https://ubichill.com/">アプリを開く<svg class="icon"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn--ghost" href="#pillars">詳しく知る</a>
+        </div>
+        <div class="np" aria-label="いま流れている曲（イメージ）">
+          <span class="np__art" aria-hidden="true"></span>
+          <div class="np__meta">
+            <div class="np__title">lofi beats to chill / study</div>
+            <div class="np__sub">chill-room@ubichill.com · 6 人が作業中</div>
+          </div>
+          <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+        </div>
+      </div>
+
+      <div class="hero__visual">
+        <div class="hero__glow" aria-hidden="true"></div>
+        <div class="hero__logo-glow" aria-hidden="true"></div>
+        <div class="hero__logo" data-logo3d data-shade="0.16" data-depth="30" data-thickness="11" data-tilt="24" data-shadow="0"></div>
+        <div class="hero__world" data-world data-theme="dark" data-frame="1" data-cursors="6"></div>
+        <p class="hero__cap"><i></i>これはデモのワールド。マウスを乗せると、あなたのカーソルも参加します（ドラッグで描ける）</p>
+      </div>
+    </section>
+
+    <!-- ===================== 柱 ===================== -->
+    <section class="container" id="pillars">
+      <div class="pillars reveal">
+        <article class="pillar" style="--c: #bde1fb">
+          <span class="pillar__no">01</span>
+          <span class="pillar__icon"><svg class="icon"><use href="#i-cursor"/></svg></span>
+          <h3>カーソルだけのゆるい繋がり</h3>
+          <p>顔出しも声出しもなし。お互いの動線だけが伝わる、ちょうどいい存在感。</p>
+        </article>
+        <article class="pillar" style="--c: #9ab2f8">
+          <span class="pillar__no">02</span>
+          <span class="pillar__icon"><svg class="icon"><use href="#i-link"/></svg></span>
+          <h3>URL をひらくだけ</h3>
+          <p>インストール不要。低スペックな PC やスマホからでも、ブラウザ 1 つで 1 秒で。</p>
+        </article>
+        <article class="pillar" style="--c: #ceb0fa">
+          <span class="pillar__no">03</span>
+          <span class="pillar__icon"><svg class="icon"><use href="#i-blocks"/></svg></span>
+          <h3>mod でなんでも足せる</h3>
+          <p>ペン・動画・付箋…機能は URL から読み込む mod。ゼロトラストの Worker サンドボックスで安全に動く。</p>
+        </article>
+        <article class="pillar" style="--c: #f4a7c9">
+          <span class="pillar__no">04</span>
+          <span class="pillar__icon"><svg class="icon"><use href="#i-share"/></svg></span>
+          <h3>中央を持たない</h3>
+          <p>サーバー同士が連合。どのサーバーの人ともフレンドになり、相手の部屋に入れる。</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================== 実画面 ===================== -->
+    <section class="section container">
+      <div class="section__head">
+        <div>
+          <span class="label">// the real thing</span>
+          <h2 class="section__title">ワールドは、こうやってつくる</h2>
+          <p class="section__lead">実際のワールドエディタ。動画プレイヤーやペンを並べて、そのまま YAML として書き出せる。</p>
+        </div>
+      </div>
+      <figure class="screen reveal" style="margin-inline:0">
+        <div class="screen__bar" aria-hidden="true"><i></i><i></i><i></i><span>ubichill.com/@yokan/chill-room/edit</span></div>
+        <img src="./assets/app-editor.png" alt="Ubichill のワールドエディタ。動画プレイヤーやペン、付箋の配置を編集している実際の画面" width="2513" height="1295" loading="lazy" />
+        <div class="screen__note screen__note--a"><b>video-player:screen</b>mod のコンポーネントを置くだけ</div>
+        <div class="screen__note screen__note--b"><b>YAML</b>ボタン 1 つで World as Code に</div>
+      </figure>
+    </section>
+
+    <!-- ===================== はじめる（トラックリスト） ===================== -->
+    <section class="section container" id="start">
+      <span class="label">// tracklist</span>
+      <h2 class="section__title">はじめる</h2>
+      <p class="section__lead">好きなところから再生してください。</p>
+      <div class="tracks reveal">
+        <a class="track" href="https://ubichill.com/" style="--c:#bde1fb">
+          <span class="track__no"><span class="num">01</span><svg class="icon play" style="width:16px;height:16px"><use href="#i-play"/></svg></span>
+          <span class="track__icon"><svg class="icon"><use href="#i-home"/></svg></span>
+          <span><span class="track__title">アプリを開く</span><br /><span class="track__desc">ubichill.com でアカウントを作って、すぐ自分のホームワールドへ</span></span>
+          <span class="track__meta">1 min</span>
+          <svg class="icon track__go"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="track" href="#host" style="--c:#9ab2f8">
+          <span class="track__no"><span class="num">02</span><svg class="icon play" style="width:16px;height:16px"><use href="#i-play"/></svg></span>
+          <span class="track__icon"><svg class="icon"><use href="#i-server"/></svg></span>
+          <span><span class="track__title">自分のサーバーを建てる</span><br /><span class="track__desc">Helm チャート 1 つで k8s に</span></span>
+          <span class="track__meta">helm</span>
+          <svg class="icon track__go"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="track" href="#dev" style="--c:#ceb0fa">
+          <span class="track__no"><span class="num">03</span><svg class="icon play" style="width:16px;height:16px"><use href="#i-play"/></svg></span>
+          <span class="track__icon"><svg class="icon"><use href="#i-code"/></svg></span>
+          <span><span class="track__title">mod をつくる</span><br /><span class="track__desc">@ubichill/sdk と ubi mod create で雛形から</span></span>
+          <span class="track__meta">sdk</span>
+          <svg class="icon track__go"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="track" href="#dev" style="--c:#f4a7c9">
+          <span class="track__no"><span class="num">04</span><svg class="icon play" style="width:16px;height:16px"><use href="#i-play"/></svg></span>
+          <span class="track__icon"><svg class="icon"><use href="#i-file"/></svg></span>
+          <span><span class="track__title">ワールドを書く</span><br /><span class="track__desc">World as Code。YAML 1 枚がワールドの設計図</span></span>
+          <span class="track__meta">yaml</span>
+          <svg class="icon track__go"><use href="#i-arrow"/></svg>
+        </a>
+        <a class="track" href="https://github.com/ubichill/ubichill" style="--c:#ffd9a0">
+          <span class="track__no"><span class="num">05</span><svg class="icon play" style="width:16px;height:16px"><use href="#i-play"/></svg></span>
+          <span class="track__icon"><svg class="icon"><use href="#i-github"/></svg></span>
+          <span><span class="track__title">開発に参加する</span><br /><span class="track__desc">Issue / PR 歓迎。PR は日本語で大丈夫</span></span>
+          <span class="track__meta">github</span>
+          <svg class="icon track__go"><use href="#i-arrow"/></svg>
+        </a>
+      </div>
+    </section>
+
+    <!-- ===================== 今夜のすごしかた ===================== -->
+    <section class="section container" id="tonight">
+      <span class="label">// tonight</span>
+      <h2 class="section__title">今夜のすごしかた</h2>
+      <p class="section__lead">作業の横に、ちょっと誰かがいる。予定がなくても、URL を開けば始まる。</p>
+      <div class="timeline">
+        <article class="slot reveal" style="--c:#bde1fb">
+          <div class="slot__time">21:00</div>
+          <div class="slot__card"><h3>もくもく作業会</h3><p>カーソルが動いているだけで、なんだか頑張れる。BGM は誰かが流してくれる。</p><div class="slot__tags"><span>pen</span><span>timer</span></div></div>
+        </article>
+        <article class="slot reveal" style="--c:#9ab2f8">
+          <div class="slot__time">22:30</div>
+          <div class="slot__card"><h3>映画の同時視聴</h3><p>同じ再生位置で、同じ場面にカーソルで反応する。弾幕で盛り上がるのもあり。</p><div class="slot__tags"><span>video-player</span><span>danmaku</span></div></div>
+        </article>
+        <article class="slot reveal" style="--c:#ceb0fa">
+          <div class="slot__time">24:00</div>
+          <div class="slot__card"><h3>お絵描きタイム</h3><p>眠くなってきたら、ペンを持ってだらだら落書き。ホワイトボードにもなる。</p><div class="slot__tags"><span>pen</span><span>sticky</span></div></div>
+        </article>
+        <article class="slot reveal" style="--c:#f4a7c9">
+          <div class="slot__time">週末</div>
+          <div class="slot__card"><h3>イベント・勉強会</h3><p>ワールドを会場に。URL を配れば、それが入場券。展示にも使える。</p><div class="slot__tags"><span>world.yaml</span><span>invite</span></div></div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===================== ワールドでできること ===================== -->
+    <section class="section container">
+      <span class="label">// in the world</span>
+      <h2 class="section__title">ワールドでできること</h2>
+      <div class="features">
+        <div class="feature reveal"><svg class="icon"><use href="#i-cursor"/></svg><div><h3>カーソルアバター</h3><p>.cur のカーソルテーマが、そのままあなたの姿に。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-pen"/></svg><div><h3>ペン・消しゴム</h3><p>ペントレイから取って、みんなで描く。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-tv"/></svg><div><h3>動画・ライブの同時視聴</h3><p>再生位置もプレイリストも全員で共有。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-sticky"/></svg><div><h3>付箋</h3><p>今日のタスクや、22 時からの予定を貼っておく。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-chat"/></svg><div><h3>弾幕</h3><p>声を出さずに、画面の上で盛り上がる。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-phone"/></svg><div><h3>スマホコントローラー</h3><p>スマホからでもカーソルを動かせる。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-home"/></svg><div><h3>ホームワールドとランチパッド</h3><p>ログインしたら自分の部屋へ。移動は部屋の中から。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-users"/></svg><div><h3>フレンド・招待</h3><p>招待とリクエストインバイトで、気軽に呼び合う。</p></div></div>
+        <div class="feature reveal"><svg class="icon"><use href="#i-eye"/></svg><div><h3>公開範囲 4 種</h3><p>パブリック・フレンド+・フレンドのみ・招待のみ。</p></div></div>
+      </div>
+    </section>
+
+    <!-- ===================== 開発者 ===================== -->
+    <section class="section container" id="dev">
+      <div class="dev">
+        <div class="reveal">
+          <span class="label">// for builders</span>
+          <h2 class="section__title">ワールドは YAML、<br />機能は mod。</h2>
+          <p class="section__lead">ワールドは URL で識別される YAML。機能は URL から読み込む mod。置いた場所が、そのまま配布先になる。</p>
+          <div class="tiers">
+            <div class="tier" style="--c:#8ad29b"><span class="tier__dot"></span><b>safe</b><span>描画や状態同期など。確認なしで動く</span></div>
+            <div class="tier" style="--c:#ffd9a0"><span class="tier__dot"></span><b>sensitive</b><span>外部への fetch など。ドメインごとに初回だけ確認</span></div>
+            <div class="tier" style="--c:#f59a8f"><span class="tier__dot"></span><b>dangerous</b><span>より強い権限。厳格な確認か拒否</span></div>
+          </div>
+          <ul class="devpoints">
+            <li><svg><use href="#i-check"/></svg><span>権限は宣言不要。ビルド時の静的解析で使っている API から自動導出</span></li>
+            <li><svg><use href="#i-check"/></svg><span>mod は Worker で隔離。信頼境界は Worker と Host の postMessage 1 点だけ</span></li>
+            <li><svg><use href="#i-check"/></svg><span>外部依存ゼロの <span class="mono">@ubichill/sdk</span>。<span class="mono">Ubi.state.sync</span> で宣言的に同期</span></li>
+          </ul>
+        </div>
+        <div class="term reveal">
+          <div class="term__bar" role="tablist" aria-label="コード例">
+            <span class="term__dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            <button class="term__tab" role="tab" aria-selected="true" aria-controls="p-yaml" id="t-yaml">world.yaml</button>
+            <button class="term__tab" role="tab" aria-selected="false" aria-controls="p-mod" id="t-mod">button.worker.tsx</button>
+            <button class="term__tab" role="tab" aria-selected="false" aria-controls="p-cli" id="t-cli">terminal</button>
+          </div>
+          <div class="term__panel" role="tabpanel" id="p-yaml" aria-labelledby="t-yaml"><pre><span class="tk-c"># worlds/chill-room.yaml</span>
+<span class="tk-k">apiVersion</span>: <span class="tk-s">ubichill.com/v1alpha1</span>
+<span class="tk-k">kind</span>: <span class="tk-s">World</span>
+<span class="tk-k">metadata</span>:
+  <span class="tk-k">name</span>: <span class="tk-s">chill-room</span>
+  <span class="tk-k">version</span>: <span class="tk-s">"1.0.0"</span>
+<span class="tk-k">spec</span>:
+  <span class="tk-k">displayName</span>: <span class="tk-s">チルな作業部屋</span>
+  <span class="tk-k">capacity</span>: { <span class="tk-k">max</span>: <span class="tk-n">20</span>, <span class="tk-k">default</span>: <span class="tk-n">10</span> }
+  <span class="tk-k">dependencies</span>:
+    - <span class="tk-k">name</span>: <span class="tk-s">pen</span>
+    - <span class="tk-k">name</span>: <span class="tk-s">video-player</span>
+  <span class="tk-k">initialEntities</span>:
+    - <span class="tk-k">id</span>: <span class="tk-s">pentray</span>
+      <span class="tk-k">components</span>:
+        - <span class="tk-k">type</span>: <span class="tk-s">pen:tray</span></pre></div>
+          <div class="term__panel" role="tabpanel" id="p-mod" aria-labelledby="t-mod" hidden><pre><span class="tk-c">// mods/like/src/button.worker.tsx（イメージ）</span>
+<span class="tk-k">const</span> likes = Ubi.state.<span class="tk-f">sync</span>(<span class="tk-n">0</span>);
+
+Ubi.ui.<span class="tk-f">render</span>(() =&gt; (
+  &lt;<span class="tk-p">button</span> <span class="tk-k">onClick</span>={() =&gt; likes.<span class="tk-f">set</span>(likes.<span class="tk-f">get</span>() + <span class="tk-n">1</span>)}&gt;
+    いいね {likes.<span class="tk-f">get</span>()}
+  &lt;/<span class="tk-p">button</span>&gt;
+));</pre></div>
+          <div class="term__panel" role="tabpanel" id="p-cli" aria-labelledby="t-cli" hidden><pre><span class="tk-p">~/mods</span> <span class="tk-c">$</span> ubi mod create like
+<span class="tk-s">✓</span> mod.json と src/ を作成しました
+<span class="tk-p">~/mods/like</span> <span class="tk-c">$</span> ubi mod build
+<span class="tk-c">  bundling</span> button.worker.tsx
+<span class="tk-c">  capabilities</span> <span class="tk-s">[safe]</span> state.sync, ui.render
+<span class="tk-s">✓</span> dist/manifest.json
+<span class="tk-p">~/mods/like</span> <span class="tk-c">$</span> ubi mod deploy
+<span class="tk-s">✓</span> https://you.github.io/like/mod.json
+<span class="tk-p">~/mods/like</span> <span class="tk-c">$</span> <span class="cursor-blink"></span></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== 連合 ===================== -->
+    <section class="section container" id="fed">
+      <div class="fed">
+        <div class="reveal">
+          <svg class="constellation" viewBox="0 0 560 380" role="img" aria-label="複数の ubichill サーバーが星座のようにつながり、カーソルがサーバー間を移動している図">
+            <defs>
+              <radialGradient id="halo"><stop offset="0" stop-color="#9ab2f8" stop-opacity=".5"/><stop offset="1" stop-color="#9ab2f8" stop-opacity="0"/></radialGradient>
+            </defs>
+            <g>
+              <path class="link" d="M120 110 L300 70"/>
+              <path class="link" d="M300 70 L460 150"/>
+              <path class="link" d="M120 110 L200 270"/>
+              <path class="link" d="M200 270 L400 300"/>
+              <path class="link" d="M400 300 L460 150"/>
+              <path class="link" d="M300 70 L200 270"/>
+              <path class="link" d="M300 70 L400 300"/>
+              <path class="link" d="M60 300 L200 270"/>
+              <path class="link" d="M500 40 L460 150"/>
+            </g>
+            <g class="node"><circle cx="300" cy="70" r="46" fill="url(#halo)"/><circle class="core" cx="300" cy="70" r="12" stroke="#9ab2f8"/><text x="300" y="44" text-anchor="middle">ubichill.com</text></g>
+            <g class="node"><circle cx="120" cy="110" r="36" fill="url(#halo)"/><circle class="core" cx="120" cy="110" r="9" stroke="#bde1fb"/><text x="120" y="90" text-anchor="middle">yokan.dev</text></g>
+            <g class="node"><circle cx="460" cy="150" r="36" fill="url(#halo)"/><circle class="core" cx="460" cy="150" r="9" stroke="#ceb0fa"/><text x="460" y="128" text-anchor="middle">haku.jp</text></g>
+            <g class="node"><circle cx="200" cy="270" r="36" fill="url(#halo)"/><circle class="core" cx="200" cy="270" r="9" stroke="#f4a7c9"/><text x="200" y="304" text-anchor="middle">school.example</text></g>
+            <g class="node"><circle cx="400" cy="300" r="36" fill="url(#halo)"/><circle class="core" cx="400" cy="300" r="9" stroke="#ffd9a0"/><text x="400" y="334" text-anchor="middle">club.example</text></g>
+            <g class="node"><circle class="core" cx="60" cy="300" r="5" stroke="#8d97b3"/><circle class="core" cx="500" cy="40" r="5" stroke="#8d97b3"/></g>
+            <g class="traveler" style="offset-path: path('M120 110 L300 70 L460 150 L400 300')">
+              <path d="M0 0 l13 7 -5.6 1.6 -2.8 5.6z" fill="#9ab2f8" stroke="#060a14" stroke-width="1.2" stroke-linejoin="round"/>
+              <rect x="12" y="12" width="44" height="16" rx="8" fill="#9ab2f8"/><text x="34" y="24" text-anchor="middle" style="fill:#060a14;font-size:10px;font-weight:600">ありす</text>
+            </g>
+            <g class="traveler" style="offset-path: path('M200 270 L300 70 L120 110'); animation-delay:-3s; animation-duration: 9s">
+              <path d="M0 0 l13 7 -5.6 1.6 -2.8 5.6z" fill="#ceb0fa" stroke="#060a14" stroke-width="1.2" stroke-linejoin="round"/>
+              <rect x="12" y="12" width="44" height="16" rx="8" fill="#ceb0fa"/><text x="34" y="24" text-anchor="middle" style="fill:#060a14;font-size:10px;font-weight:600">mio</text>
+            </g>
+          </svg>
+        </div>
+        <div class="reveal">
+          <span class="label">// federation</span>
+          <h2 class="section__title">どのサーバーの人とも、<br />同じ部屋に。</h2>
+          <p class="section__lead">中央のサーバーは置かない。部屋のことは部屋のサーバーが、人のことはその人のホームサーバーが決める。ActivityPub（AS2）の形で、フレンド申請も招待もサーバーをまたいで届く。</p>
+          <div class="addr"><svg class="icon" style="width:16px;height:16px;color:var(--colors-accent)"><use href="#i-home"/></svg>chill-room<span>@</span>yokan.dev</div>
+          <div class="scopes">
+            <div class="scope"><b>パブリック</b><p>誰でも見えて、ログインしていれば入れる</p></div>
+            <div class="scope"><b>フレンド+</b><p>中にいる人のフレンドまで</p></div>
+            <div class="scope"><b>フレンドのみ</b><p>作成者のフレンドだけ</p></div>
+            <div class="scope"><b>招待のみ</b><p>招待された人だけが入れる</p></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- セルフホスト -->
+      <div class="host reveal" id="host">
+        <div>
+          <span class="label">// self-hosting</span>
+          <h3>自分のサーバーを建てる</h3>
+          <p>Helm チャートを 1 つ入れるだけ。<span class="mono">global.domain</span> から Ingress・CORS・認証 URL が導出され、PostgreSQL もパスワード自動生成で同梱される。</p>
+          <ul class="devpoints">
+            <li><svg><use href="#i-check"/></svg><span>完全 CSR（Vite）＋ Go の WebSocket インスタンスサーバー</span></li>
+            <li><svg><use href="#i-check"/></svg><span>Ed25519 ＋ RFC 9421 署名でサーバー間を確かめる</span></li>
+          </ul>
+        </div>
+        <div class="term">
+          <div class="term__bar"><span class="term__dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="term__tab" aria-selected="true">zsh</span></div>
+          <div class="term__panel"><pre><span class="tk-c">$</span> helm repo add ubichill https://ubichill.github.io/ubichill
+<span class="tk-c">$</span> helm install ubichill ubichill/ubichill \
+    -n ubichill --create-namespace \
+    --set global.domain=<span class="tk-s">&lt;your-domain&gt;</span>
+<span class="tk-s">✓</span> ubichill is running at https://<span class="tk-s">&lt;your-domain&gt;</span></pre></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== OSS ===================== -->
+    <section class="container" id="oss">
+      <div class="oss reveal">
+        <div class="oss__moon" aria-hidden="true"></div>
+        <h2>夜更かしのお供に、<br /><span class="glow-text">コードもどうぞ。</span></h2>
+        <p>Ubichill は AGPL-3.0 のオープンソース（独立した mod には追加的許可あり）。公式 mod だけ作る、もウェルカム。PR は日本語で大丈夫。</p>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="https://github.com/ubichill/ubichill"><svg class="icon"><use href="#i-github"/></svg>GitHub を見る</a>
+          <a class="btn btn--ghost" href="#start"><svg class="icon"><use href="#i-heart"/></svg>コントリビュートする</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== フッター ===================== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer__grid">
+        <div>
+          <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="" />Ubichill</a>
+          <p class="footer__note">みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。</p>
+        </div>
+        <div><h4>Product</h4><ul><li><a href="https://ubichill.com/">アプリを開く</a></li><li><a href="#tonight">ワールド</a></li><li><a href="#oss">ニュース</a></li></ul></div>
+        <div><h4>Developers</h4><ul><li><a href="#start">ドキュメント</a></li><li><a href="#dev">API</a></li><li><a href="#dev">Architecture</a></li><li><a href="#oss">Roadmap</a></li></ul></div>
+        <div><h4>Community</h4><ul><li><a href="https://github.com/ubichill/ubichill">GitHub</a></li><li><a href="#oss">ライセンス</a></li><li><a href="#fed">サーバー</a></li></ul></div>
+      </div>
+      <div class="footer__bottom"><span>© Ubichill Project · AGPL-3.0-only</span><span>おやすみなさい。また明日のワールドで。</span></div>
+    </div>
+  </footer>
+
+  <div class="proposal">案D · Night Chill <a href="./index.html">一覧へ</a></div>
+
+  <script type="module" src="./assets/logo3d.js"></script>
+  <script type="module" src="./assets/world.js"></script>
+  <script>
+    // 時計（訪問者のローカル時刻）
+    const clock = document.getElementById('clock');
+    const tick = () => { clock.textContent = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }); };
+    tick();
+    setInterval(tick, 15000);
+
+    // タブ
+    const tabs = document.querySelectorAll('#dev .term__tab');
+    tabs.forEach((tab) => tab.addEventListener('click', () => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      });
+    }));
+
+    // フェードイン
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); } });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+  </script>
+</body>
+</html>

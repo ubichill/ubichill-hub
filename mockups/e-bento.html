@@ -1,0 +1,868 @@
+<!doctype html>
+<!--
+  案E · Bento
+  コンセプト: ページ全体をベントーグリッド（大小のタイルの詰め合わせ）で組む。
+             ヒーロー自体が「見出し / 3D ロゴ / 実際のワールド / 数字 / 連合図」のタイル集合。
+  狙い: ubichill は「チルな空間」「mod」「World as Code」「権限」「連合」「セルフホスト」と語ることが多い。
+        それを 1 画面に詰めても散らからないよう、タイルという器で整理して見せる。
+  向いている点: 情報量が多くても整理されて見える / セクションごとにタイルを足すだけで拡張しやすい /
+               PandaCSS の recipe（tile の variant）に落としやすい / 開発者にも一般ユーザーにも読める
+  弱い点: 流行りの型なので個性は出しにくい / タイルが多いとどこを見ればいいか迷う（ヒーローの主役を強く）/
+         スマホでは 1 列に積むだけになりがちで、縦に長くなる
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ubichill Hub — 案E Bento</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@500;700;800&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   Design tokens（PandaCSS の tokens / semanticTokens に移植する前提）
+   ============================================================ */
+:root {
+  /* --- tokens.colors --- */
+  --colors-cream-50: #fffdf9;
+  --colors-cream-100: #faf6f0;
+  --colors-cream-200: #f5ecdf;
+  --colors-cream-300: #ede4d6;
+  --colors-sand-400: #cebca2;
+  --colors-sand-600: #70624f;
+  --colors-navy-700: #263d68;
+  --colors-navy-800: #1e3155;
+  --colors-navy-900: #1b2a44;
+  --colors-navy-950: #121c30;
+  --colors-slate-500: #56627a;
+  --colors-slate-300: #9ea7bd;
+  --colors-sky-50: #eef7fe;
+  --colors-sky-300: #bde1fb;
+  --colors-periwinkle-50: #eef2fe;
+  --colors-periwinkle-300: #9ab2f8;
+  --colors-periwinkle-600: #4f6ad8;
+  --colors-lavender-50: #f6f0fe;
+  --colors-lavender-300: #ceb0fa;
+  --colors-lavender-600: #8a5cd6;
+  --colors-highlight-500: #4780e0;
+  --colors-mint-300: #8ad29b;
+  --colors-mint-700: #1e7e46;
+  --colors-amber-300: #f1c86c;
+  --colors-amber-700: #8a6110;
+  --colors-red-600: #c0392b;
+  --colors-white: #ffffff;
+
+  /* --- semanticTokens.colors --- */
+  --colors-bg: var(--colors-cream-100);
+  --colors-bg-surface: var(--colors-cream-50);
+  --colors-bg-tile: var(--colors-cream-50);
+  --colors-bg-tile-muted: var(--colors-cream-200);
+  --colors-bg-tile-inverse: var(--colors-navy-900);
+  --colors-bg-code: var(--colors-navy-950);
+  --colors-fg: var(--colors-navy-900);
+  --colors-fg-muted: var(--colors-slate-500);
+  --colors-fg-subtle: var(--colors-sand-600);
+  --colors-fg-inverse: var(--colors-cream-100);
+  --colors-accent: var(--colors-navy-900);
+  --colors-accent-fg: var(--colors-cream-100);
+  --colors-accent-hover: var(--colors-navy-700);
+  --colors-link: var(--colors-highlight-500);
+  --colors-border: rgba(112, 98, 79, 0.18);
+  --colors-border-strong: var(--colors-sand-400);
+  --colors-brand-gradient: linear-gradient(135deg, var(--colors-sky-300) 0%, var(--colors-periwinkle-300) 52%, var(--colors-lavender-300) 100%);
+
+  /* --- tokens.fonts --- */
+  --fonts-heading: "Plus Jakarta Sans", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --fonts-body: "Zen Kaku Gothic New", "Plus Jakarta Sans", system-ui, sans-serif;
+  --fonts-mono: "JetBrains Mono", Menlo, monospace;
+
+  /* --- tokens.radii --- */
+  --radii-tile: 24px;
+  --radii-lg: 16px;
+  --radii-md: 12px;
+  --radii-sm: 8px;
+  --radii-full: 999px;
+
+  /* --- tokens.spacing --- */
+  --spacing-gap: 14px;
+  --spacing-tile: 28px;
+  --spacing-section: 96px;
+  --sizes-container: 1200px;
+
+  /* --- tokens.shadows --- */
+  --shadows-tile: 0 1px 0 rgba(255, 255, 255, 0.8) inset, 0 1px 2px rgba(27, 42, 68, 0.04);
+  --shadows-tile-hover: 0 12px 32px rgba(27, 42, 68, 0.10);
+  --shadows-float: 0 8px 24px rgba(27, 42, 68, 0.08);
+
+  /* --- tokens.durations / easings --- */
+  --durations-fast: 160ms;
+  --easings-out: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* ============================================================ base */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+section[id] { scroll-margin-top: 80px; }
+body {
+  margin: 0;
+  font-family: var(--fonts-body);
+  color: var(--colors-fg);
+  background: var(--colors-bg);
+  line-height: 1.75;
+  font-feature-settings: "palt";
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4 { margin: 0; font-family: var(--fonts-heading); line-height: 1.25; letter-spacing: -0.01em; word-break: auto-phrase; text-wrap: balance; }
+p { margin: 0; }
+code, pre { font-family: var(--fonts-mono); }
+.icon { width: 20px; height: 20px; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.icon--sm { width: 16px; height: 16px; }
+.icon--lg { width: 26px; height: 26px; }
+.container { width: min(100% - 32px, var(--sizes-container)); margin-inline: auto; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ============================================================ header */
+.header { position: sticky; top: 0; z-index: 50; background: color-mix(in srgb, var(--colors-bg) 82%, transparent); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--colors-border); }
+.header__inner { display: flex; align-items: center; gap: 28px; height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--fonts-heading); font-weight: 800; font-size: 18px; }
+.brand img { width: 28px; height: auto; }
+.brand small { font-weight: 600; font-size: 11px; color: var(--colors-fg-muted); padding: 2px 8px; border: 1px solid var(--colors-border-strong); border-radius: var(--radii-full); }
+.nav { display: flex; gap: 4px; font-size: 14px; font-weight: 500; }
+.nav a { padding: 6px 12px; border-radius: var(--radii-full); color: var(--colors-fg-muted); transition: background var(--durations-fast), color var(--durations-fast); }
+.nav a:hover { background: var(--colors-bg-tile-muted); color: var(--colors-fg); }
+.header__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.icon-btn { width: 38px; height: 38px; display: grid; place-items: center; border-radius: var(--radii-full); color: var(--colors-fg); background: var(--colors-bg-tile-muted); border: 0; cursor: pointer; }
+.icon-btn:hover { background: var(--colors-cream-300); }
+.menu-btn { display: none; }
+
+/* ============================================================ buttons */
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: var(--radii-full); font-weight: 700; font-size: 15px; border: 1px solid transparent; transition: transform var(--durations-fast) var(--easings-out), background var(--durations-fast); white-space: nowrap; }
+.btn:hover { transform: translateY(-1px); }
+.btn--primary { background: var(--colors-accent); color: var(--colors-accent-fg); }
+.btn--primary:hover { background: var(--colors-accent-hover); }
+.btn--ghost { background: var(--colors-bg-surface); border-color: var(--colors-border-strong); }
+.btn--sm { height: 38px; padding: 0 16px; font-size: 14px; }
+.btn--light { background: var(--colors-cream-100); color: var(--colors-navy-900); }
+
+/* ============================================================ bento */
+.bento { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: var(--spacing-gap); }
+.tile {
+  position: relative;
+  overflow: hidden;
+  background: var(--colors-bg-tile);
+  border: 1px solid var(--colors-border);
+  border-radius: var(--radii-tile);
+  padding: var(--spacing-tile);
+  box-shadow: var(--shadows-tile);
+  transition: transform .25s var(--easings-out), box-shadow .25s var(--easings-out);
+  min-width: 0;
+}
+a.tile:hover, .tile--hover:hover { transform: translateY(-3px); box-shadow: var(--shadows-tile-hover); }
+.tile--muted { background: var(--colors-bg-tile-muted); }
+.tile--inverse { background: var(--colors-bg-tile-inverse); color: var(--colors-fg-inverse); border-color: transparent; }
+.tile--code { background: var(--colors-bg-code); color: #dfe6f5; border-color: transparent; }
+.tile--sky { background: var(--colors-sky-50); }
+.tile--peri { background: var(--colors-periwinkle-50); }
+.tile--lav { background: var(--colors-lavender-50); }
+.tile--brand { background: var(--colors-brand-gradient); border-color: transparent; }
+.tile--flush { padding: 0; }
+.tile__label { display: inline-flex; align-items: center; gap: 6px; font-family: var(--fonts-mono); font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--colors-fg-muted); }
+.tile--inverse .tile__label, .tile--code .tile__label { color: var(--colors-slate-300); }
+.tile h3 { font-size: 20px; margin-top: 10px; }
+.tile p { color: var(--colors-fg-muted); font-size: 14.5px; margin-top: 8px; }
+.tile--inverse p { color: rgba(250, 246, 240, .72); }
+.tile__icon { width: 44px; height: 44px; display: grid; place-items: center; border-radius: var(--radii-md); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); color: var(--colors-fg); }
+.tile__arrow { position: absolute; top: 22px; right: 22px; width: 34px; height: 34px; border-radius: var(--radii-full); display: grid; place-items: center; background: var(--colors-bg-tile-muted); transition: transform .25s var(--easings-out); }
+a.tile:hover .tile__arrow { transform: rotate(-45deg); }
+.tile--inverse .tile__arrow { background: rgba(255, 255, 255, .1); }
+
+/* col / row helpers (desktop) */
+.c-3 { grid-column: span 3; } .c-4 { grid-column: span 4; } .c-5 { grid-column: span 5; } .c-6 { grid-column: span 6; }
+.c-7 { grid-column: span 7; } .c-8 { grid-column: span 8; } .c-12 { grid-column: span 12; }
+.r-2 { grid-row: span 2; } .r-3 { grid-row: span 3; }
+
+/* ============================================================ hero */
+.hero { padding: 28px 0 0; }
+.hero .bento { grid-auto-rows: minmax(118px, auto); }
+.t-headline { grid-column: 1 / 8; grid-row: 1 / 4; display: flex; flex-direction: column; justify-content: space-between; gap: 28px; padding: 40px; }
+.t-logo { grid-column: 8 / 13; grid-row: 1 / 4; display: grid; place-items: center; padding: 24px; }
+.t-world { grid-column: 1 / 9; grid-row: 4 / 8; padding: 0; min-height: 500px; }
+.t-stat { grid-column: 9 / 13; grid-row: 4 / 6; }
+.t-fed { grid-column: 9 / 13; grid-row: 6 / 8; }
+
+.pill { display: inline-flex; align-items: center; gap: 10px; padding: 5px 14px 5px 5px; border-radius: var(--radii-full); background: var(--colors-bg-tile-muted); border: 1px solid var(--colors-border); font-size: 13.5px; font-weight: 500; width: fit-content; transition: background var(--durations-fast); }
+.pill:hover { background: var(--colors-cream-300); }
+.pill__tag { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: var(--radii-full); background: var(--colors-navy-900); color: var(--colors-cream-100); font-size: 11.5px; font-weight: 700; letter-spacing: .04em; }
+.headline { font-size: clamp(38px, 5.1vw, 66px); font-weight: 900; letter-spacing: -0.03em; line-height: 1.12; font-family: var(--fonts-body); }
+.headline__mark { background: var(--colors-brand-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; filter: saturate(1.4) brightness(.92); }
+.lead { font-size: 16.5px; color: var(--colors-fg-muted); max-width: 34em; margin-top: 18px; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+
+.t-logo { background: var(--colors-bg-surface); }
+.t-logo__glow { position: absolute; inset: 0; background:
+  radial-gradient(45% 45% at 18% 20%, rgba(189,225,251,.75), transparent 70%),
+  radial-gradient(45% 45% at 85% 25%, rgba(206,176,250,.55), transparent 70%),
+  radial-gradient(60% 50% at 60% 95%, rgba(154,178,248,.45), transparent 70%); }
+.t-logo__ring { position: absolute; width: 78%; aspect-ratio: 1; border-radius: 50%; border: 1px dashed rgba(27, 42, 68, .16); }
+.t-logo__ring--2 { width: 98%; border-style: solid; border-color: rgba(27, 42, 68, .06); }
+.t-logo [data-logo3d] { width: min(300px, 70%); aspect-ratio: 667 / 761; }
+.t-logo__caption { position: absolute; left: 20px; bottom: 18px; right: 20px; display: flex; justify-content: space-between; font-family: var(--fonts-mono); font-size: 11px; color: rgba(27,42,68,.6); }
+
+.t-world [data-world] { position: absolute; inset: 0; height: 100%; border-radius: inherit; }
+.t-world__label { position: absolute; z-index: 30; left: 18px; bottom: 76px; display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: var(--radii-full); background: rgba(255,255,255,.9); font-size: 12px; font-weight: 700; box-shadow: var(--shadows-float); pointer-events: none; }
+.t-world__label i { width: 8px; height: 8px; border-radius: 50%; background: var(--colors-mint-300); box-shadow: 0 0 0 4px rgba(138, 210, 155, .3); }
+
+.stat-list { display: grid; gap: 14px; margin-top: 14px; }
+.stat { display: flex; align-items: baseline; gap: 12px; padding-bottom: 12px; border-bottom: 1px dashed rgba(250,246,240,.16); }
+.stat:last-child { border-bottom: 0; padding-bottom: 0; }
+.stat b { font-family: var(--fonts-heading); font-size: 40px; font-weight: 800; line-height: 1; letter-spacing: -.03em; min-width: 1.6em; background: var(--colors-brand-gradient); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.stat span { font-size: 14px; color: rgba(250,246,240,.78); }
+
+.fed-svg { width: 100%; height: auto; margin-top: 8px; }
+.fed-svg .node { fill: var(--colors-bg-surface); stroke: var(--colors-border-strong); }
+.fed-svg text { font-family: var(--fonts-mono); font-size: 10px; fill: var(--colors-fg-muted); }
+
+/* ============================================================ sections */
+.section { padding: var(--spacing-section) 0 0; }
+.section__head { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 22px; flex-wrap: wrap; }
+.section__eyebrow { font-family: var(--fonts-mono); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--colors-fg-subtle); display: flex; align-items: center; gap: 8px; }
+.section__eyebrow::before { content: ""; width: 18px; height: 2px; border-radius: 2px; background: var(--colors-periwinkle-300); }
+.section__title { font-size: clamp(28px, 3.4vw, 40px); font-weight: 900; font-family: var(--fonts-body); letter-spacing: -0.02em; margin-top: 8px; }
+.section__desc { color: var(--colors-fg-muted); max-width: 30em; font-size: 15px; }
+
+/* pillars */
+.pillar { display: flex; flex-direction: column; min-height: 260px; }
+.pillar__num { font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-subtle); }
+.pillar__visual { margin-top: auto; padding-top: 22px; }
+.pillar h3 { font-size: 19px; }
+
+.mini-cursors { position: relative; height: 64px; }
+.mini-cursor { position: absolute; display: flex; align-items: flex-start; gap: 2px; animation: drift 5s ease-in-out infinite; }
+.mini-cursor span { margin-top: 12px; padding: 1px 8px; border-radius: var(--radii-full); font-size: 10.5px; font-weight: 700; }
+@keyframes drift { 0%, 100% { translate: 0 0; } 50% { translate: 14px -6px; } }
+.url-bar { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: var(--radii-full); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-fg-muted); }
+.url-bar b { color: var(--colors-fg); font-weight: 600; }
+.url-bar > span:not(.url-bar__go) { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.url-bar__go { margin-left: auto; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--colors-navy-900); color: var(--colors-cream-100); }
+.mod-stack { display: flex; gap: 8px; flex-wrap: wrap; }
+.mod-chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: var(--radii-sm); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 11.5px; }
+.mod-chip i { width: 8px; height: 8px; border-radius: 2px; display: block; }
+.node-row { display: flex; align-items: center; gap: 6px; }
+.node-dot { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--colors-bg-surface); border: 1px solid var(--colors-border-strong); font-family: var(--fonts-mono); font-size: 10px; font-weight: 600; }
+.node-line { flex: 1; height: 0; border-top: 2px dashed var(--colors-periwinkle-300); }
+
+/* start */
+.start-main { display: flex; flex-direction: column; min-height: 320px; padding: 34px; }
+.start-main h3 { font-size: 30px; font-weight: 900; font-family: var(--fonts-body); margin-top: 14px; }
+.start-main .btn { margin-top: auto; width: fit-content; }
+.start-main__bg { position: absolute; right: -40px; bottom: -60px; width: 260px; opacity: .14; pointer-events: none; }
+.start-tile { display: flex; flex-direction: column; gap: 10px; min-height: 150px; }
+.start-tile h3 { margin-top: 4px; font-size: 18px; }
+.start-tile p { margin-top: 0; }
+.start-tile code { font-size: 12px; background: var(--colors-bg-tile-muted); padding: 1px 6px; border-radius: 6px; }
+
+/* use cases */
+.shot { display: flex; flex-direction: column; }
+.shot__img { margin: 0 -1px -1px; border-top: 1px solid var(--colors-border); flex: 1; min-height: 280px; background: url(./assets/app-editor.png) 18% 22% / 150% auto no-repeat; }
+.shot__head { padding: 26px 28px 20px; display: flex; justify-content: space-between; gap: 16px; align-items: end; flex-wrap: wrap; }
+.usecase { display: flex; flex-direction: column; gap: 6px; }
+.usecase h3 { font-size: 17px; margin-top: 12px; }
+.usecase p { margin-top: 0; font-size: 13.5px; }
+.usecase-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-gap); }
+
+/* features */
+.feature { display: flex; flex-direction: column; gap: 4px; min-height: 172px; }
+.feature h3 { font-size: 16.5px; margin-top: 14px; }
+.feature p { font-size: 13.5px; margin-top: 2px; }
+.feature--big { min-height: 360px; }
+.cursor-gallery { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: auto; padding-top: 24px; }
+.cursor-card { aspect-ratio: 1; border-radius: var(--radii-md); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); display: grid; place-items: center; }
+.scopes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: auto; padding-top: 18px; }
+.scope { display: flex; align-items: center; gap: 8px; padding: 9px 11px; border-radius: var(--radii-md); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-size: 12.5px; font-weight: 700; }
+.scope i { width: 8px; height: 8px; border-radius: 50%; display: block; flex: none; }
+
+/* code */
+.code-tile { display: flex; flex-direction: column; padding: 0; }
+.code-tile__bar { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.08); font-family: var(--fonts-mono); font-size: 12px; color: var(--colors-slate-300); }
+.code-tile__bar .dots { display: flex; gap: 6px; } .code-tile__bar .dots i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,.16); display: block; }
+.code-tile__bar .tag { margin-left: auto; padding: 2px 8px; border-radius: var(--radii-full); background: rgba(255,255,255,.08); font-size: 10.5px; white-space: nowrap; flex: none; }
+.code-tile__bar .file { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-tile pre { margin: 0; padding: 20px 22px 24px; font-size: 13px; line-height: 1.7; overflow-x: auto; flex: 1; }
+.code-tile__foot { padding: 0 22px 22px; }
+.code-tile__foot h3 { font-size: 18px; color: var(--colors-cream-100); margin: 0; }
+.code-tile__foot p { color: rgba(223,230,245,.66); margin-top: 6px; font-size: 13.5px; }
+.tk-k { color: #9ab2f8; } .tk-s { color: #b9e4a6; } .tk-c { color: #6c7a96; font-style: italic; } .tk-n { color: #f1c86c; } .tk-f { color: #ceb0fa; } .tk-p { color: #7cc7e8; } .tk-t { color: #f4a7c1; }
+
+.tiers { display: grid; gap: 8px; margin-top: 18px; }
+.tier { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radii-md); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-size: 13px; }
+.tier b { font-family: var(--fonts-mono); font-size: 12px; padding: 2px 8px; border-radius: var(--radii-full); }
+.tier small { color: var(--colors-fg-muted); font-size: 11.5px; }
+.prompt-mock { margin-top: 18px; padding: 14px; border-radius: var(--radii-md); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); box-shadow: var(--shadows-float); font-size: 13px; }
+.prompt-mock__row { display: flex; gap: 8px; margin-top: 12px; }
+.prompt-mock__row span { flex: 1; text-align: center; padding: 6px; border-radius: var(--radii-sm); font-weight: 700; font-size: 12px; background: var(--colors-bg-tile-muted); }
+.prompt-mock__row span:last-child { background: var(--colors-navy-900); color: var(--colors-cream-100); }
+.arch { display: grid; gap: 8px; margin-top: 18px; font-family: var(--fonts-mono); font-size: 12px; }
+.arch__row { display: flex; align-items: center; gap: 8px; }
+.arch__box { flex: 1; padding: 10px; text-align: center; border-radius: var(--radii-md); border: 1px solid var(--colors-border-strong); background: var(--colors-bg-surface); }
+.arch__box--accent { background: var(--colors-sky-50); border-color: var(--colors-sky-300); }
+.arch__arrow { text-align: center; color: var(--colors-fg-subtle); font-size: 11px; }
+
+/* federation */
+.fed-big { min-height: 380px; display: flex; flex-direction: column; }
+.fed-big > svg { width: 100%; height: auto; margin-top: auto; }
+.fed-big > svg text { font-family: var(--fonts-mono); font-size: 12px; fill: var(--colors-fg); }
+.fed-big > svg .sub { fill: var(--colors-fg-muted); font-size: 10.5px; }
+.term { display: flex; flex-direction: column; }
+.term pre { margin: 16px 0 0; padding: 18px; border-radius: var(--radii-lg); background: rgba(0,0,0,.28); font-size: 12.5px; line-height: 1.8; overflow-x: auto; white-space: pre; }
+.term .btn { margin-top: auto; }
+.term__copy { position: absolute; top: 22px; right: 22px; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: var(--radii-full); border: 1px solid rgba(255,255,255,.14); background: transparent; color: var(--colors-cream-100); font: inherit; font-size: 12px; cursor: pointer; }
+.term__copy:hover { background: rgba(255,255,255,.08); }
+.addr { display: inline-flex; align-items: center; gap: 4px; margin-top: 14px; padding: 8px 12px; border-radius: var(--radii-md); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 13px; width: fit-content; }
+.addr span { color: var(--colors-periwinkle-600); font-weight: 600; }
+
+/* oss */
+.oss { display: grid; grid-template-columns: 1.2fr 1fr; gap: 32px; align-items: center; padding: 48px; }
+.oss h2 { font-size: clamp(26px, 2.8vw, 36px); font-weight: 900; font-family: var(--fonts-body); }
+.oss p { color: rgba(250,246,240,.74); font-size: 15px; margin-top: 14px; max-width: 32em; }
+.oss__cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
+.oss__cta .btn--ghost { background: transparent; color: var(--colors-cream-100); border-color: rgba(255,255,255,.22); }
+.oss__facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.oss__fact { padding: 18px; border-radius: var(--radii-lg); background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08); }
+.oss__fact b { display: block; font-family: var(--fonts-heading); font-size: clamp(17px, 1.8vw, 22px); font-weight: 800; white-space: nowrap; }
+.oss__fact span { font-size: 12.5px; color: rgba(250,246,240,.66); }
+.oss__logo { position: absolute; right: -60px; top: -70px; width: 300px; opacity: .08; pointer-events: none; }
+
+/* footer */
+.footer { margin-top: var(--spacing-section); padding: 56px 0 120px; border-top: 1px solid var(--colors-border); }
+.footer__grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
+.footer h4 { font-size: 12px; font-family: var(--fonts-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--colors-fg-subtle); margin-bottom: 12px; }
+.footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.footer ul a { color: var(--colors-fg-muted); }
+.footer ul a:hover { color: var(--colors-fg); }
+.footer__note { color: var(--colors-fg-muted); font-size: 13px; margin-top: 12px; max-width: 26em; }
+.footer__bottom { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--colors-border); font-size: 12.5px; color: var(--colors-fg-muted); }
+
+/* variant tag */
+.variant-tag { position: fixed; right: 16px; bottom: 16px; z-index: 100; display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radii-full); background: var(--colors-navy-900); color: var(--colors-cream-100); font-size: 12px; font-weight: 700; box-shadow: 0 8px 24px rgba(15, 23, 41, .25); }
+.variant-tag span { opacity: .6; font-weight: 500; }
+
+/* reveal（JS が動いたときだけ・初期表示は隠さない） */
+.js-reveal .reveal:not(.is-in) { opacity: .001; transform: translateY(16px); }
+.reveal { transition: opacity .6s var(--easings-out), transform .6s var(--easings-out); }
+
+/* ============================================================ responsive */
+@media (max-width: 1080px) {
+  .t-headline { grid-column: 1 / 13; grid-row: auto; }
+  .t-logo { grid-column: 1 / 7; grid-row: auto; min-height: 340px; }
+  .t-stat { grid-column: 7 / 13; grid-row: auto; }
+  .t-world { grid-column: 1 / 13; grid-row: auto; }
+  .t-fed { grid-column: 1 / 13; grid-row: auto; }
+  .c-3 { grid-column: span 6; } .c-4 { grid-column: span 6; } .c-5, .c-7, .c-8 { grid-column: span 12; } .c-6 { grid-column: span 6; }
+  .c-4.keep { grid-column: span 4; }
+  .oss { grid-template-columns: 1fr; }
+}
+@media (max-width: 860px) {
+  .nav { display: none; }
+  .menu-btn { display: grid; }
+  .header__actions .btn { display: none; }
+  .header.is-open .nav { display: flex; flex-direction: column; position: absolute; left: 0; right: 0; top: 64px; padding: 12px 16px 18px; background: var(--colors-bg); border-bottom: 1px solid var(--colors-border); }
+  .c-6 { grid-column: span 12; }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  :root { --spacing-tile: 22px; --spacing-section: 72px; --spacing-gap: 10px; }
+  .bento > * { grid-column: 1 / -1 !important; grid-row: auto !important; }
+  .t-headline { padding: 28px 24px; }
+  .t-logo { min-height: 300px; }
+  .t-world { min-height: 460px; }
+  .usecase-grid { grid-template-columns: 1fr; }
+  .oss { padding: 30px 24px; }
+  .oss__facts { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .oss__fact { padding: 14px; }
+  .scopes { grid-template-columns: 1fr; }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+  .footer__grid > :first-child { grid-column: 1 / -1; }
+  .shot__img { min-height: 200px; }
+  /* world.js の HUD は狭い幅でラベルが縦に折れるのでアイコンだけにする */
+  .t-world .uw__hudbtn { font-size: 0; gap: 0; padding: 8px 11px; }
+  .t-world .uw__hudbtn em { top: 0; right: 2px; font-size: 9px; }
+  .t-world__label { bottom: auto; top: 96px; left: 12px; font-size: 11px; }
+  .btn { height: 44px; padding: 0 18px; }
+  .variant-tag { right: 10px; bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .js-reveal .reveal:not(.is-in) { opacity: 1; transform: none; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+<!-- icon sprite（lucide 準拠のストロークアイコン） -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-arrow-up-right" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-5-2"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></symbol>
+  <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+  <symbol id="i-file-code" viewBox="0 0 24 24"><path d="M10 12.5 8 15l2 2.5"/><path d="m14 12.5 2 2.5-2 2.5"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M16 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8Z"/><path d="M15 3v4a2 2 0 0 0 2 2h4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+  <symbol id="i-message" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+  <symbol id="i-coffee" viewBox="0 0 24 24"><path d="M10 2v2"/><path d="M14 2v2"/><path d="M16 8a1 1 0 0 1 1 1v8a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1h14a4 4 0 1 1 0 8h-1"/><path d="M6 2v2"/></symbol>
+  <symbol id="i-presentation" viewBox="0 0 24 24"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></symbol>
+  <symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="1.2"/><circle cx="17.5" cy="10.5" r="1.2"/><circle cx="8.5" cy="7.5" r="1.2"/><circle cx="6.5" cy="12.5" r="1.2"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></symbol>
+  <symbol id="i-film" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/></symbol>
+</svg>
+
+<header class="header" id="top">
+  <div class="container header__inner">
+    <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="">Ubichill <small>Hub</small></a>
+    <nav class="nav" aria-label="メイン">
+      <a href="#docs">ドキュメント</a>
+      <a href="#features">ワールド</a>
+      <a href="#dev">mod</a>
+      <a href="#federation">サーバー</a>
+      <a href="#oss">ニュース</a>
+    </nav>
+    <div class="header__actions">
+      <button class="icon-btn" type="button" aria-label="言語を切り替える"><svg class="icon icon--sm"><use href="#i-globe"/></svg></button>
+      <a class="icon-btn" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="icon icon--sm"><use href="#i-github"/></svg></a>
+      <a class="btn btn--primary btn--sm" href="https://ubichill.com/">アプリを開く<svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></a>
+      <button class="icon-btn menu-btn" type="button" aria-label="メニュー" aria-expanded="false"><svg class="icon icon--sm"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ======================================================== HERO -->
+  <section class="hero">
+    <div class="container bento">
+      <div class="tile t-headline">
+        <div>
+          <a class="pill" href="#federation"><span class="pill__tag"><svg class="icon icon--sm"><use href="#i-megaphone"/></svg>NEW</span>サーバー間の連合（federation v1）に対応しました<svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></a>
+          <h1 class="headline" style="margin-top:26px">カーソルで、<br><span class="headline__mark">そこにいる。</span></h1>
+          <p class="lead">Ubichill は、みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。URL を開くだけ。インストール不要、機能は誰でも URL で追加できる。</p>
+        </div>
+        <div class="cta">
+          <a class="btn btn--primary" href="https://ubichill.com/">アプリを開く<svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></a>
+          <a class="btn btn--ghost" href="#pillars">詳しく知る</a>
+        </div>
+      </div>
+
+      <div class="tile t-logo" data-logo3d-host>
+        <div class="t-logo__glow"></div>
+        <div class="t-logo__ring t-logo__ring--2"></div>
+        <div class="t-logo__ring"></div>
+        <div data-logo3d data-depth="30" data-thickness="12" data-tilt="26" aria-label="Ubichill の 3D ロゴ"></div>
+        <div class="t-logo__caption"><span>ubichill / brand</span><span>hover to tilt</span></div>
+      </div>
+
+      <div class="tile t-world">
+        <div data-world data-frame="1" data-theme="light" data-cursors="5"></div>
+        <div class="t-world__label"><i></i>ここで動かしてみて — ドラッグで描ける</div>
+      </div>
+
+      <div class="tile tile--inverse t-stat">
+        <span class="tile__label"><svg class="icon icon--sm"><use href="#i-zap"/></svg>Zero install</span>
+        <div class="stat-list">
+          <div class="stat"><b>0</b><span>インストールするもの</span></div>
+          <div class="stat"><b>1</b><span>必要なのはブラウザ 1 つ</span></div>
+          <div class="stat"><b>URL</b><span>ワールドも mod も URL で増やす</span></div>
+        </div>
+      </div>
+
+      <div class="tile t-fed">
+        <span class="tile__label"><svg class="icon icon--sm"><use href="#i-share"/></svg>Federation</span>
+        <h3 style="font-size:17px">どのサーバーの人とも、同じ部屋に。</h3>
+        <svg class="fed-svg" viewBox="0 0 300 120" aria-hidden="true">
+          <path id="fed-path" d="M40 60 C 100 10, 200 10, 260 60" fill="none" stroke="#9ab2f8" stroke-width="2" stroke-dasharray="4 5"/>
+          <path d="M40 60 C 100 110, 200 110, 260 60" fill="none" stroke="#ceb0fa" stroke-width="2" stroke-dasharray="4 5"/>
+          <circle class="node" cx="40" cy="60" r="18"/><circle class="node" cx="260" cy="60" r="18"/>
+          <circle cx="150" cy="96" r="12" fill="#eef7fe" stroke="#bde1fb"/>
+          <text x="40" y="64" text-anchor="middle">A</text><text x="260" y="64" text-anchor="middle">B</text>
+          <text x="40" y="96" text-anchor="middle">a.example</text><text x="260" y="96" text-anchor="middle">b.example</text>
+          <g>
+            <path d="M0 0 L12 6.5 L6.5 8 L4 13.5Z" fill="#9ab2f8" stroke="#1b2a44" stroke-width="1.2" stroke-linejoin="round"/>
+            <animateMotion dur="5s" repeatCount="indefinite" rotate="0"><mpath href="#fed-path"/></animateMotion>
+          </g>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== PILLARS -->
+  <section class="section" id="pillars">
+    <div class="container">
+      <div class="section__head reveal">
+        <div>
+          <div class="section__eyebrow">Why Ubichill</div>
+          <h2 class="section__title">重くない、ちょうどいい「いっしょ」。</h2>
+        </div>
+        <p class="section__desc">作業通話の画面共有も、重たい 3D 空間もいらない。ブラウザの中で、カーソルだけでゆるくつながる。</p>
+      </div>
+      <div class="bento">
+        <div class="tile tile--sky pillar c-3 reveal">
+          <span class="pillar__num">01</span>
+          <h3>カーソルだけの<br>ゆるい繋がり</h3>
+          <p>顔出しも声出しもなし。お互いの動線だけが伝わる、ちょうどいい存在感。</p>
+          <div class="pillar__visual mini-cursors" aria-hidden="true">
+            <div class="mini-cursor" style="left:4%;top:4px"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#9ab2f8" stroke="#1b2a44" stroke-width="1.6" stroke-linejoin="round"/></svg><span style="background:#9ab2f8">ありす</span></div>
+            <div class="mini-cursor" style="left:48%;top:26px;animation-delay:-2s"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#ceb0fa" stroke="#1b2a44" stroke-width="1.6" stroke-linejoin="round"/></svg><span style="background:#ceb0fa">ようかん</span></div>
+          </div>
+        </div>
+        <div class="tile tile--peri pillar c-3 reveal">
+          <span class="pillar__num">02</span>
+          <h3>URL を<br>ひらくだけ</h3>
+          <p>インストール不要。低スペックな PC やスマホからでも、ブラウザ 1 つで 1 秒で。</p>
+          <div class="pillar__visual"><div class="url-bar"><svg class="icon icon--sm"><use href="#i-link"/></svg><span><b>ubichill.com</b>/@yokan/room</span><span class="url-bar__go"><svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></span></div></div>
+        </div>
+        <div class="tile tile--lav pillar c-3 reveal">
+          <span class="pillar__num">03</span>
+          <h3>mod で<br>なんでも足せる</h3>
+          <p>ペン・動画・付箋……機能は URL から読み込む mod。ゼロトラストの Worker サンドボックスで安全に動く。</p>
+          <div class="pillar__visual mod-stack">
+            <span class="mod-chip"><i style="background:#93bcf0"></i>pen</span>
+            <span class="mod-chip"><i style="background:#ceb0fa"></i>video-player</span>
+            <span class="mod-chip"><i style="background:#f1c86c"></i>danmaku</span>
+            <span class="mod-chip"><i style="background:#8ad29b"></i>+ URL</span>
+          </div>
+        </div>
+        <div class="tile tile--muted pillar c-3 reveal">
+          <span class="pillar__num">04</span>
+          <h3>中央を<br>持たない</h3>
+          <p>サーバー同士が連合。どのサーバーの人ともフレンドになり、相手の部屋に入れる。</p>
+          <div class="pillar__visual node-row" aria-hidden="true"><span class="node-dot">A</span><span class="node-line"></span><span class="node-dot">B</span><span class="node-line"></span><span class="node-dot">C</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== START -->
+  <section class="section" id="docs">
+    <div class="container">
+      <div class="section__head reveal">
+        <div>
+          <div class="section__eyebrow">Get started</div>
+          <h2 class="section__title">はじめる</h2>
+        </div>
+        <p class="section__desc">遊びに行くのも、建てるのも、作るのも。入り口はひとつずつ用意しています。</p>
+      </div>
+      <div class="bento">
+        <a class="tile tile--inverse start-main c-4 r-2 reveal" href="https://ubichill.com/">
+          <img class="start-main__bg" src="./assets/logo-transparent-sm.png" alt="">
+          <span class="tile__label"><svg class="icon icon--sm"><use href="#i-pointer"/></svg>For everyone</span>
+          <h3>アプリを開く</h3>
+          <p>ubichill.com でアカウントを作って、すぐにホームワールドへ。フレンドを呼べば、そこが作業部屋になる。</p>
+          <span class="btn btn--light" style="margin-top:28px">ubichill.com へ<svg class="icon icon--sm"><use href="#i-arrow-up-right"/></svg></span>
+        </a>
+        <a class="tile start-tile c-4 reveal" href="#federation">
+          <span class="tile__arrow"><svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></span>
+          <span class="tile__icon"><svg class="icon"><use href="#i-server"/></svg></span>
+          <h3>自分のサーバーを建てる</h3>
+          <p>Helm チャート 1 つで k8s に。<code>global.domain</code> を決めるだけ。</p>
+        </a>
+        <a class="tile start-tile c-4 reveal" href="#dev">
+          <span class="tile__arrow"><svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></span>
+          <span class="tile__icon"><svg class="icon"><use href="#i-puzzle"/></svg></span>
+          <h3>mod をつくる</h3>
+          <p><code>@ubichill/sdk</code> と <code>ubi mod create</code> で雛形から。</p>
+        </a>
+        <a class="tile start-tile c-4 reveal" href="#dev">
+          <span class="tile__arrow"><svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></span>
+          <span class="tile__icon"><svg class="icon"><use href="#i-file-code"/></svg></span>
+          <h3>ワールドを書く</h3>
+          <p>World as Code。YAML 1 枚がワールドの唯一の真実。</p>
+        </a>
+        <a class="tile start-tile c-4 reveal" href="https://github.com/ubichill/ubichill">
+          <span class="tile__arrow"><svg class="icon icon--sm"><use href="#i-arrow-up-right"/></svg></span>
+          <span class="tile__icon"><svg class="icon"><use href="#i-github"/></svg></span>
+          <h3>開発に参加する</h3>
+          <p>Issue / PR 歓迎。PR は日本語でできればお願いします。</p>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== USE CASES -->
+  <section class="section" id="usecases">
+    <div class="container">
+      <div class="section__head reveal">
+        <div>
+          <div class="section__eyebrow">Use cases</div>
+          <h2 class="section__title">こんな使い方</h2>
+        </div>
+        <p class="section__desc">ワールドはエディタで組み立てられる。動画を置けば上映会、付箋を貼ればもくもく会。</p>
+      </div>
+      <div class="bento">
+        <div class="tile tile--flush shot c-7 reveal">
+          <div class="shot__head">
+            <div>
+              <span class="tile__label"><svg class="icon icon--sm"><use href="#i-grid"/></svg>Real screenshot</span>
+              <h3>ワールドエディタ</h3>
+              <p>動画プレイヤーやペンをドラッグで配置。YAML にも書き出せる。</p>
+            </div>
+            <a class="btn btn--ghost btn--sm" href="#dev">World as Code<svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></a>
+          </div>
+          <div class="shot__img" role="img" aria-label="Ubichill のワールドエディタの実際の画面"></div>
+        </div>
+        <div class="c-5 usecase-grid">
+          <div class="tile tile--sky usecase reveal"><span class="tile__icon"><svg class="icon"><use href="#i-coffee"/></svg></span><h3>もくもく作業会</h3><p>カメラなしで、誰かがいる気配だけ。集中が続く。</p></div>
+          <div class="tile tile--lav usecase reveal"><span class="tile__icon"><svg class="icon"><use href="#i-film"/></svg></span><h3>動画・映画の同時視聴</h3><p>再生位置はみんなで同期。弾幕も流せる。</p></div>
+          <div class="tile tile--peri usecase reveal"><span class="tile__icon"><svg class="icon"><use href="#i-palette"/></svg></span><h3>お絵描き・ホワイトボード</h3><p>ペンを手に取って、そのまま描く。消しゴムもある。</p></div>
+          <div class="tile tile--muted usecase reveal"><span class="tile__icon"><svg class="icon"><use href="#i-presentation"/></svg></span><h3>イベント・展示・勉強会</h3><p>ワールドを URL で配る。公開範囲も選べる。</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== FEATURES -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="section__head reveal">
+        <div>
+          <div class="section__eyebrow">In the world</div>
+          <h2 class="section__title">ワールドでできること</h2>
+        </div>
+        <p class="section__desc">標準の mod と、部屋のまわりの仕組み。足りなければ mod を足す。</p>
+      </div>
+      <div class="bento">
+        <div class="tile feature feature--big c-4 r-2 reveal">
+          <span class="tile__icon"><svg class="icon"><use href="#i-pointer"/></svg></span>
+          <h3>カーソルがアバター</h3>
+          <p>.cur のカーソルテーマがそのままアバターに。状態（指す・待つ・つかむ）ごとに見た目が変わる。</p>
+          <div class="cursor-gallery" aria-hidden="true">
+            <div class="cursor-card"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#9ab2f8" stroke="#1b2a44" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+            <div class="cursor-card"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#ceb0fa" stroke="#1b2a44" stroke-width="1.4" stroke-linejoin="round"/><circle cx="17" cy="18" r="3.4" fill="#f1c86c" stroke="#1b2a44" stroke-width="1.2"/></svg></div>
+            <div class="cursor-card"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1b2a44" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M18 11V6a2 2 0 0 0-4 0v1M14 10V4a2 2 0 0 0-4 0v2M10 10.5V6a2 2 0 0 0-4 0v8" fill="#bde1fb"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15" fill="#bde1fb"/></svg></div>
+            <div class="cursor-card"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#8ad29b" stroke="#1b2a44" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+            <div class="cursor-card"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#1b2a44" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="12" r="8" fill="#f6f0fe"/><path d="M12 7v5l3 2"/></svg></div>
+            <div class="cursor-card"><svg width="34" height="34" viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#f4a7c1" stroke="#1b2a44" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+          </div>
+        </div>
+        <div class="tile feature c-4 reveal"><span class="tile__icon"><svg class="icon"><use href="#i-pen"/></svg></span><h3>ペン・消しゴム</h3><p>トレイから手に取って描く。線はみんなに同期される。</p></div>
+        <div class="tile feature c-4 reveal"><span class="tile__icon"><svg class="icon"><use href="#i-tv"/></svg></span><h3>動画・ライブの同時視聴</h3><p>YouTube の動画もライブも。プレイリストで順番待ち。</p></div>
+        <div class="tile feature c-4 reveal"><span class="tile__icon"><svg class="icon"><use href="#i-note"/></svg></span><h3>付箋</h3><p>今日のタスク、イベントの告知。部屋に貼っておける。</p></div>
+        <div class="tile feature c-4 reveal"><span class="tile__icon"><svg class="icon"><use href="#i-message"/></svg></span><h3>弾幕</h3><p>コメントを画面に流す。上映会が一気ににぎやかに。</p></div>
+        <div class="tile feature c-3 reveal"><span class="tile__icon"><svg class="icon"><use href="#i-phone"/></svg></span><h3>スマホコントローラー</h3><p>スマホをタッチパッド代わりに。</p></div>
+        <div class="tile feature c-3 reveal"><span class="tile__icon"><svg class="icon"><use href="#i-home"/></svg></span><h3>ホームとランチパッド</h3><p>ログインしたらホームへ。移動は HUD から。</p></div>
+        <div class="tile feature c-6 reveal">
+          <span class="tile__icon"><svg class="icon"><use href="#i-users"/></svg></span>
+          <h3>フレンド・招待・公開範囲</h3>
+          <p>招待とリクエストインバイト。部屋ごとに、誰が見えて誰が入れるかを 4 段階で選ぶ。</p>
+          <div class="scopes">
+            <span class="scope"><i style="background:#8ad29b"></i>パブリック</span>
+            <span class="scope"><i style="background:#9ab2f8"></i>フレンド+</span>
+            <span class="scope"><i style="background:#ceb0fa"></i>フレンドのみ</span>
+            <span class="scope"><i style="background:#f1c86c"></i>招待のみ</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== DEV -->
+  <section class="section" id="dev">
+    <div class="container">
+      <div class="section__head reveal">
+        <div>
+          <div class="section__eyebrow">For developers</div>
+          <h2 class="section__title">mod とワールドは、コードで書く。</h2>
+        </div>
+        <p class="section__desc">mod は Worker で隔離され、<code>@ubichill/sdk</code> だけに依存する。ワールドは YAML で宣言する。</p>
+      </div>
+      <div class="bento">
+        <div class="tile tile--code code-tile c-6 reveal">
+          <div class="code-tile__bar"><span class="dots"><i></i><i></i><i></i></span><span class="file">mods/like/src/button.worker.tsx</span><span class="tag">イメージ</span></div>
+<pre><code><span class="tk-k">const</span> likes = <span class="tk-p">Ubi</span>.state.<span class="tk-f">sync</span>(<span class="tk-n">0</span>);
+
+<span class="tk-p">Ubi</span>.ui.<span class="tk-f">render</span>(() =&gt; (
+  &lt;<span class="tk-t">button</span> onClick={() =&gt; likes.<span class="tk-f">set</span>(likes.<span class="tk-f">get</span>() + <span class="tk-n">1</span>)}&gt;
+    いいね {likes.<span class="tk-f">get</span>()}
+  &lt;/<span class="tk-t">button</span>&gt;
+));</code></pre>
+          <div class="code-tile__foot"><h3>宣言的な状態同期</h3><p><code>Ubi.state.sync</code> ひとつで、全員に共有・永続化。DOM には触らず、UI は VNode で描く。</p></div>
+        </div>
+        <div class="tile tile--code code-tile c-6 reveal">
+          <div class="code-tile__bar"><span class="dots"><i></i><i></i><i></i></span><span class="file">worlds/chill-room.yaml</span><span class="tag">World as Code</span></div>
+<pre><code><span class="tk-p">apiVersion</span>: <span class="tk-s">ubichill.com/v1alpha1</span>
+<span class="tk-p">kind</span>: <span class="tk-s">World</span>
+<span class="tk-p">metadata</span>:
+  <span class="tk-p">name</span>: <span class="tk-s">chill-room</span>
+<span class="tk-p">spec</span>:
+  <span class="tk-p">displayName</span>: <span class="tk-s">チルな作業部屋</span>
+  <span class="tk-p">capacity</span>: { <span class="tk-p">max</span>: <span class="tk-n">20</span>, <span class="tk-p">default</span>: <span class="tk-n">10</span> }
+  <span class="tk-p">dependencies</span>:
+    - <span class="tk-p">name</span>: <span class="tk-s">pen</span>
+    - <span class="tk-p">name</span>: <span class="tk-s">video-player</span></code></pre>
+          <div class="code-tile__foot"><h3>ワールド = URL</h3><p>YAML が唯一の真実。GitHub に置いても、ほかのサーバーに置いても、URL で開ける。</p></div>
+        </div>
+        <div class="tile c-4 reveal">
+          <span class="tile__label"><svg class="icon icon--sm"><use href="#i-shield"/></svg>Zero trust</span>
+          <h3>権限は、使うときに聞く</h3>
+          <p>危険度ティアごとに、初回使用時だけ確認。決めたことは覚えておく。</p>
+          <div class="tiers">
+            <div class="tier"><b style="background:#e4f5ec;color:var(--colors-mint-700)">safe</b><span>描画・状態同期</span><small>確認なし</small></div>
+            <div class="tier"><b style="background:#fdf3d8;color:var(--colors-amber-700)">sensitive</b><span>外部への fetch</span><small>ドメインごと</small></div>
+            <div class="tier"><b style="background:#f9e4e1;color:#922b21">dangerous</b><span>強い権限</span><small>厳格に確認</small></div>
+          </div>
+        </div>
+        <div class="tile tile--sky c-4 reveal">
+          <span class="tile__label"><svg class="icon icon--sm"><use href="#i-code"/></svg>Static analysis</span>
+          <h3>権限の宣言は書かない</h3>
+          <p>ビルド時に Worker のコードを静的解析して、必要な権限を自動で導き出す。</p>
+          <div class="prompt-mock" aria-hidden="true">
+            <b>「video-player」が次の接続を求めています</b>
+            <div style="color:var(--colors-fg-muted);font-family:var(--fonts-mono);font-size:12px;margin-top:4px">www.youtube.com</div>
+            <div class="prompt-mock__row"><span>拒否</span><span>許可</span></div>
+          </div>
+        </div>
+        <div class="tile c-4 reveal">
+          <span class="tile__label"><svg class="icon icon--sm"><use href="#i-zap"/></svg>Architecture</span>
+          <h3>軽さのための分離</h3>
+          <p>UI は完全 CSR。部屋の同期は独立した Go のサーバーが受け持つ。</p>
+          <div class="arch" aria-hidden="true">
+            <div class="arch__row"><span class="arch__box arch__box--accent">Browser (Vite CSR)</span></div>
+            <div class="arch__arrow">WebSocket</div>
+            <div class="arch__row"><span class="arch__box">Go instance</span><span class="arch__box">API / DB</span></div>
+            <div class="arch__row"><span class="arch__box" style="border-style:dashed">mod Worker × n</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== FEDERATION / SELF-HOST -->
+  <section class="section" id="federation">
+    <div class="container">
+      <div class="section__head reveal">
+        <div>
+          <div class="section__eyebrow">Federation &amp; self-host</div>
+          <h2 class="section__title">自分のサーバーで、みんなとつながる。</h2>
+        </div>
+        <p class="section__desc">部屋のことは部屋のサーバー、人のことはその人のホームのサーバーが決める。中央のサーバーは置かない。</p>
+      </div>
+      <div class="bento">
+        <div class="tile tile--peri fed-big c-7 reveal">
+          <span class="tile__label"><svg class="icon icon--sm"><use href="#i-share"/></svg>ActivityPub-shaped</span>
+          <h3>部屋には住所がある</h3>
+          <p>どのサーバーの部屋にも、<code>/instance/:住所</code> で入れる。フレンド申請や招待は AS2 の activity でやりとりし、Ed25519 + RFC 9421 で署名する。</p>
+          <div class="addr">chill-room<span>@</span>yokan.example</div>
+          <svg viewBox="0 0 640 170" aria-hidden="true">
+            <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#4f6ad8"/></marker></defs>
+            <path d="M120 90 C 220 20, 300 20, 320 70" fill="none" stroke="#4f6ad8" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#arr)"/>
+            <path d="M520 90 C 420 20, 340 20, 330 66" fill="none" stroke="#8a5cd6" stroke-width="1.6" stroke-dasharray="5 5" marker-end="url(#arr)"/>
+            <rect x="30" y="92" width="180" height="58" rx="14" fill="#fffdf9" stroke="#cebca2"/>
+            <text x="50" y="117">ubichill.com</text><text class="sub" x="50" y="136">ありす のホーム</text>
+            <rect x="250" y="76" width="140" height="64" rx="14" fill="#1b2a44"/>
+            <text x="268" y="102" fill="#faf6f0" style="fill:#faf6f0">chill-room</text><text x="268" y="122" style="fill:#9ea7bd;font-size:10.5px">@yokan.example</text>
+            <rect x="430" y="92" width="180" height="58" rx="14" fill="#fffdf9" stroke="#cebca2"/>
+            <text x="450" y="117">b.example</text><text class="sub" x="450" y="136">haku のホーム</text>
+          </svg>
+        </div>
+        <div class="tile tile--inverse term c-5 reveal">
+          <span class="tile__label"><svg class="icon icon--sm"><use href="#i-terminal"/></svg>Self-host with Helm</span>
+          <h3>Helm チャート 1 つで建つ</h3>
+          <p>DB のパスワードは自動生成。メール認証を使わない設定もできる。</p>
+          <button class="term__copy" type="button" data-copy><svg class="icon icon--sm"><use href="#i-copy"/></svg><span>コピー</span></button>
+<pre id="helm"><span class="tk-c"># チャートを追加して</span>
+helm repo add ubichill \
+  https://ubichill.github.io/ubichill
+<span class="tk-c"># ドメインを決めてインストール</span>
+helm install ubichill ubichill/ubichill \
+  -n ubichill --create-namespace \
+  --set global.domain=<span class="tk-n">&lt;your-domain&gt;</span></pre>
+          <a class="btn btn--light btn--sm" href="#docs" style="margin-top:22px;width:fit-content">セルフホストのガイド<svg class="icon icon--sm"><use href="#i-arrow-right"/></svg></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== OSS -->
+  <section class="section" id="oss">
+    <div class="container">
+      <div class="tile tile--inverse oss reveal">
+        <img class="oss__logo" src="./assets/logo-transparent.png" alt="">
+        <div>
+          <div class="section__eyebrow" style="color:var(--colors-slate-300)">Open source</div>
+          <h2 style="margin-top:10px">Ubichill はオープンソース。<br>公式 mod だけ作る、もウェルカム。</h2>
+          <p>ソースコードは GitHub で公開しています。Issue も PR も歓迎。PR は日本語でできればお願いします。</p>
+          <div class="oss__cta">
+            <a class="btn btn--light" href="https://github.com/ubichill/ubichill"><svg class="icon icon--sm"><use href="#i-github"/></svg>GitHub を見る</a>
+            <a class="btn btn--ghost" href="#docs"><svg class="icon icon--sm"><use href="#i-book"/></svg>コントリビュートガイド</a>
+          </div>
+        </div>
+        <div class="oss__facts">
+          <div class="oss__fact"><b>AGPL-3.0</b><span>独立した mod には追加的許可</span></div>
+          <div class="oss__fact"><b>Helm</b><span>自分のクラスタへ</span></div>
+          <div class="oss__fact"><b>Go + Vite</b><span>インスタンスと UI を分離</span></div>
+          <div class="oss__fact"><b>v1alpha1</b><span>World の CRD 形式</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="">Ubichill</a>
+        <p class="footer__note">みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。</p>
+      </div>
+      <div><h4>Product</h4><ul><li><a href="https://ubichill.com/">アプリを開く</a></li><li><a href="#features">ワールド</a></li><li><a href="#federation">サーバー</a></li><li><a href="#oss">ニュース</a></li></ul></div>
+      <div><h4>Docs</h4><ul><li><a href="#docs">ドキュメント</a></li><li><a href="#dev">API</a></li><li><a href="#dev">Architecture</a></li><li><a href="#docs">Roadmap</a></li></ul></div>
+      <div><h4>Community</h4><ul><li><a href="https://github.com/ubichill/ubichill">GitHub</a></li><li><a href="#oss">ライセンス</a></li><li><a href="#oss">行動規範</a></li></ul></div>
+    </div>
+    <div class="footer__bottom"><span>© Ubichill Project</span><span>AGPL-3.0-only</span></div>
+  </div>
+</footer>
+
+<a class="variant-tag" href="./index.html">案E · Bento <span>一覧へ</span></a>
+
+<script type="module" src="./assets/logo3d.js"></script>
+<script type="module" src="./assets/world.js"></script>
+<script>
+  // reveal: 画面外の要素だけ隠してからフェードイン（初期表示中の要素は隠さない）
+  const vh = window.innerHeight;
+  document.querySelectorAll('.reveal').forEach((el) => { if (el.getBoundingClientRect().top < vh) el.classList.add('is-in'); });
+  document.documentElement.classList.add('js-reveal');
+  const io = new IntersectionObserver((entries) => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target); }
+  }, { rootMargin: '0px 0px -8% 0px' });
+  document.querySelectorAll('.reveal:not(.is-in)').forEach((el) => io.observe(el));
+  // mobile menu
+  const header = document.querySelector('.header');
+  document.querySelector('.menu-btn').addEventListener('click', (e) => {
+    const open = header.classList.toggle('is-open');
+    e.currentTarget.setAttribute('aria-expanded', String(open));
+  });
+  // copy
+  document.querySelector('[data-copy]').addEventListener('click', async (e) => {
+    const text = document.getElementById('helm').innerText.split('\n').filter((l) => !l.startsWith('#')).join('\n');
+    try { await navigator.clipboard.writeText(text); e.currentTarget.querySelector('span').textContent = 'コピーしました'; } catch {}
+  });
+</script>
+</body>
+</html>

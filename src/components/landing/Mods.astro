@@ -1,0 +1,168 @@
+---
+import { css } from 'styled-system/css';
+import Icon from '../Icon.astro';
+
+const commands = [
+  ['ubichill dev', '手元で動かす'],
+  ['ubichill build', 'ビルド'],
+  ['ubichill login', '公開の準備'],
+  ['ubichill publish', '署名して公開'],
+  ['ubichill ci create', 'CI から公開'],
+];
+const tiers = [
+  { key: 'safe', text: '確認なし', cls: 'safe' },
+  { key: 'sensitive', text: '初めて使うときに確認', cls: 'sensitive' },
+  { key: 'dangerous', text: 'まとめて拒否できる', cls: 'dangerous' },
+];
+
+const band = css({
+  position: 'relative',
+  overflow: 'hidden',
+  marginTop: 'clamp(80px, 10vw, 140px)',
+  padding: 'clamp(80px, 10vw, 140px) 0',
+  maxWidth: 'wide',
+  marginInline: 'auto',
+  borderRadius: 'xl',
+  bg: 'bg.inverse',
+  color: 'fg.inverse',
+  smDown: { borderRadius: 0 },
+  _before: {
+    content: '""',
+    position: 'absolute',
+    width: '600px',
+    height: '600px',
+    right: '-200px',
+    top: '-300px',
+    borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(154,178,248,.35), transparent 70%)',
+  },
+});
+const inner = css({
+  position: 'relative',
+  width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
+  marginInline: 'auto',
+});
+const eyebrow = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  textStyle: 'eyebrow',
+  color: 'brand.periwinkle',
+  _before: { content: '""', width: '18px', height: '2px', borderRadius: '2px', bg: 'currentColor' },
+});
+const h2 = css({ marginTop: '12px', textStyle: 'h2' });
+const lead = css({ marginTop: '16px', color: 'fg.inverseMuted' });
+const grid = css({
+  marginTop: '48px',
+  display: 'grid',
+  gridTemplateColumns: '1.15fr 1fr 1fr',
+  gap: '18px',
+  lgDown: { gridTemplateColumns: '1fr 1fr', '& > :first-child': { gridColumn: 'span 2' } },
+  smDown: { gridTemplateColumns: '1fr', '& > :first-child': { gridColumn: 'auto' } },
+});
+const card = css({
+  borderRadius: 'lg',
+  bg: 'rgba(255,255,255,.05)',
+  boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.09)',
+  overflow: 'hidden',
+  display: 'flex',
+  flexDirection: 'column',
+  '& h3': { display: 'flex', alignItems: 'center', gap: '10px', padding: '22px 24px 0', textStyle: 'h3' },
+  '& pre': {
+    margin: '18px 0 0',
+    padding: '18px 22px',
+    bg: 'rgba(0,0,0,.25)',
+    textStyle: 'mono',
+    overflowX: 'auto',
+    flex: 1,
+    color: '#dfe6f5',
+  },
+  '& .k': { color: 'brand.lavender' },
+  '& .p': { color: 'brand.periwinkle' },
+  '& .n': { color: 'status.warn' },
+});
+const cmds = css({
+  margin: '18px 24px 24px',
+  display: 'grid',
+  gap: '6px',
+  '& li': {
+    display: 'flex',
+    justifyContent: 'space-between',
+    gap: '12px',
+    padding: '10px 12px',
+    borderRadius: '12px',
+    bg: 'rgba(255,255,255,.05)',
+  },
+  '& code': { fontFamily: 'mono', fontSize: '12.5px', color: 'brand.periwinkle', whiteSpace: 'nowrap' },
+  '& span': { fontSize: '12.5px', color: 'fg.inverseMuted', whiteSpace: 'nowrap' },
+});
+const tierList = css({
+  margin: '18px 24px 24px',
+  display: 'grid',
+  gap: '10px',
+  '& li': {
+    display: 'grid',
+    gridTemplateColumns: 'auto 1fr',
+    gap: '12px',
+    alignItems: 'center',
+    padding: '14px',
+    borderRadius: 'md',
+    bg: 'rgba(255,255,255,.05)',
+  },
+  '& b': { fontFamily: 'mono', fontSize: '11.5px', padding: '2px 9px', borderRadius: 'full', fontWeight: '500' },
+  '& span': { fontSize: '13px', color: 'rgba(248,243,234,.78)' },
+  '& .safe b': { bg: 'rgba(138,210,155,.18)', color: '#a6e3b4' },
+  '& .sensitive b': { bg: 'rgba(241,200,108,.18)', color: '#f1c86c' },
+  '& .dangerous b': { bg: 'rgba(255,143,143,.18)', color: '#ff9f9f' },
+});
+---
+
+<section class={band} id="mods" aria-labelledby="mods-title">
+  <div class={inner}>
+    <span class={eyebrow}>mod</span>
+    <h2 class={h2} id="mods-title">mod はコードで書く。</h2>
+    <p class={lead}>TypeScript で書いて、Worker のサンドボックスで動く。</p>
+    <div class={grid}>
+      <article class={card}>
+        <h3><Icon name="file-code" />いいねボタン</h3>
+        <pre><code><span class="k">const</span> like = Ubi.state.<span class="p">define</span>({'{'}
+  count: Ubi.state.<span class="p">sync</span>(<span class="n">0</span>),
+{'}'});
+
+<span class="k">export default function</span> <span class="p">LikeButton</span>() {'{'}
+  <span class="k">return</span> (
+    &lt;<span class="p">button</span> onClick={'{'}() =&gt; like.local.count++{'}'}&gt;
+      いいね {'{'}like.local.count{'}'}
+    &lt;/<span class="p">button</span>&gt;
+  );
+{'}'}</code></pre>
+      </article>
+      <article class={card}>
+        <h3><Icon name="terminal" />@ubichill/cli</h3>
+        <ul class={cmds}>
+          {
+            commands.map(([cmd, text]) => (
+              <li>
+                <code>{cmd}</code>
+                <span>{text}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </article>
+      <article class={card}>
+        <h3><Icon name="shield" />権限</h3>
+        <ul class={tierList}>
+          {
+            tiers.map((t) => (
+              <li class={t.cls}>
+                <b>{t.key}</b>
+                <span>{t.text}</span>
+              </li>
+            ))
+          }
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>

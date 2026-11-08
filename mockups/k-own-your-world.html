@@ -1,0 +1,954 @@
+<!doctype html>
+<!--
+  案K · Own Your World（A × J の統合案）
+  A のシンプルなヒーロー（見出し＋実画面の枠＋3D ロゴ）に、「ワールドも mod も自分で持てる」「分散」を載せた。
+  ヒーローの画面は <video> の枠。本番で無音ループ動画に差し替える（いまは poster に実画面）。
+  文章は見出し＋一言まで。カーソルの演出は入れない。
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ubichill Hub — 案K Own Your World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=M+PLUS+Rounded+1c:wght@400;500;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Design tokens（PandaCSS の tokens / semanticTokens に移植する前提）
+   ============================================================ */
+:root {
+  /* --- tokens.colors --- */
+  --colors-cream-50: #fdfbf7;
+  --colors-cream-100: #faf6f0;
+  --colors-cream-200: #f5ecdf;
+  --colors-cream-300: #ede4d6;
+  --colors-sand-400: #cebca2;
+  --colors-navy-950: #121c30;
+  --colors-navy-900: #1b2a44;
+  --colors-navy-700: #263d68;
+  --colors-navy-500: #56627a;
+  --colors-navy-300: #9ea7bd;
+  --colors-sky-200: #bde1fb;
+  --colors-sky-100: #e3f2fd;
+  --colors-periwinkle-300: #9ab2f8;
+  --colors-periwinkle-100: #e3e9fd;
+  --colors-lavender-300: #ceb0fa;
+  --colors-lavender-100: #f1e8fe;
+  --colors-blue-500: #4780e0;
+  --colors-mist-100: #eceef8;
+  --colors-white: #ffffff;
+  --colors-green-400: #8ad29b;
+  --colors-yellow-300: #f1c86c;
+  --colors-red-500: #c0392b;
+
+  /* --- semanticTokens.colors --- */
+  --colors-bg: var(--colors-cream-100);
+  --colors-bg-surface: var(--colors-white);
+  --colors-bg-subtle: var(--colors-cream-200);
+  --colors-bg-hero: var(--colors-mist-100);
+  --colors-bg-inverse: var(--colors-navy-900);
+  --colors-fg: var(--colors-navy-900);
+  --colors-fg-muted: var(--colors-navy-500);
+  --colors-fg-subtle: var(--colors-navy-300);
+  --colors-fg-inverse: #f8f3ea;
+  --colors-accent: var(--colors-navy-900);
+  --colors-accent-hover: var(--colors-navy-700);
+  --colors-accent-fg: #f8f3ea;
+  --colors-highlight: var(--colors-blue-500);
+  --colors-border: rgba(27, 42, 68, 0.1);
+  --colors-border-strong: rgba(27, 42, 68, 0.18);
+  --gradients-brand: linear-gradient(100deg, #7cc0f4 0%, #8fa6f6 45%, #b893f6 100%);
+  --gradients-brand-soft: linear-gradient(135deg, var(--colors-sky-200), var(--colors-periwinkle-300) 50%, var(--colors-lavender-300));
+
+  /* --- tokens.radii --- */
+  --radii-sm: 10px;
+  --radii-md: 16px;
+  --radii-lg: 24px;
+  --radii-xl: 36px;
+  --radii-full: 999px;
+
+  /* --- tokens.fonts --- */
+  --fonts-heading: 'Nunito', 'M PLUS Rounded 1c', system-ui, sans-serif;
+  --fonts-body: 'M PLUS Rounded 1c', 'Nunito', system-ui, sans-serif;
+  --fonts-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* --- tokens.shadows --- */
+  --shadows-card: 0 8px 24px rgba(27, 42, 68, 0.08);
+  --shadows-float: 0 30px 70px rgba(27, 42, 68, 0.18);
+  --shadows-button: 0 8px 20px rgba(27, 42, 68, 0.22);
+
+  /* --- tokens.spacing / sizes --- */
+  --spacing-section: clamp(80px, 10vw, 140px);
+  --spacing-gutter: clamp(20px, 4vw, 40px);
+  --sizes-container: 1160px;
+}
+
+/* ============================================================ base */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: auto; }
+body {
+  margin: 0;
+  background: var(--colors-bg);
+  color: var(--colors-fg);
+  font-family: var(--fonts-body);
+  font-size: 16px;
+  line-height: 1.8;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, p { margin: 0; }
+.container { width: min(var(--sizes-container), 100% - var(--spacing-gutter) * 2); margin-inline: auto; }
+.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ic--sm { width: 16px; height: 16px; }
+.ic--lg { width: 26px; height: 26px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* ============================================================ buttons (recipe: button) */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 48px; padding: 0 26px;
+  border-radius: var(--radii-full);
+  font-family: var(--fonts-body); font-weight: 700; font-size: 15px;
+  border: 0; cursor: pointer; white-space: nowrap;
+  transition: transform .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn--primary { background: var(--colors-accent); color: var(--colors-accent-fg); box-shadow: var(--shadows-button); }
+.btn--primary:hover { background: var(--colors-accent-hover); }
+.btn--secondary { background: var(--colors-bg-surface); color: var(--colors-fg); box-shadow: inset 0 0 0 1px var(--colors-border); }
+.btn--ghost { background: transparent; color: var(--colors-fg); box-shadow: inset 0 0 0 1.5px var(--colors-border-strong); }
+.btn--sm { height: 38px; padding: 0 16px; font-size: 13.5px; }
+.btn--inverse { background: var(--colors-white); color: var(--colors-navy-900); }
+
+/* ============================================================ header */
+.header {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--colors-bg) 82%, transparent);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid transparent;
+}
+.header__inner { height: 68px; display: flex; align-items: center; gap: 22px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--fonts-heading); font-weight: 900; font-size: 21px; letter-spacing: -.01em; }
+.brand img { width: 26px; height: auto; }
+.header__divider { width: 1px; height: 26px; background: var(--colors-border-strong); }
+.nav { display: flex; gap: 4px; }
+.nav a { padding: 6px 14px; border-radius: var(--radii-full); font-size: 14.5px; font-weight: 500; color: var(--colors-fg); }
+.nav a:hover { background: var(--colors-bg-subtle); }
+.header__actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--colors-bg-subtle); color: var(--colors-fg); border: 0; cursor: pointer;
+}
+.icon-btn:hover { background: var(--colors-cream-300); }
+.menu-btn { display: none; }
+
+/* ============================================================ hero */
+.hero { position: relative; padding: 12px var(--spacing-gutter) 0; }
+.hero__card {
+  position: relative; overflow: hidden;
+  max-width: 1400px; margin-inline: auto;
+  border-radius: var(--radii-xl);
+  background: var(--colors-bg-hero);
+  padding: clamp(56px, 7vw, 96px) 0 clamp(150px, 14vw, 190px);
+  isolation: isolate;
+}
+.blob { position: absolute; border-radius: 50%; z-index: -1; }
+.blob--peri { width: 760px; height: 760px; right: -170px; top: -260px; background: radial-gradient(circle at 35% 40%, #b9c9fb, var(--colors-periwinkle-300) 70%); }
+.blob--lav { width: 420px; height: 420px; right: 260px; bottom: -250px; background: radial-gradient(circle at 50% 30%, #e2d0fd, var(--colors-lavender-300) 75%); opacity: .9; }
+.blob--sky { width: 520px; height: 520px; left: -200px; bottom: -330px; background: radial-gradient(circle at 60% 30%, #def0fe, var(--colors-sky-200) 70%); }
+.hero__dots {
+  position: absolute; inset: 0; z-index: -1; opacity: .5;
+  background-image: radial-gradient(rgba(27,42,68,.18) 1px, transparent 1.2px);
+  background-size: 26px 26px;
+  -webkit-mask-image: linear-gradient(100deg, #000 0%, transparent 55%);
+  mask-image: linear-gradient(100deg, #000 0%, transparent 55%);
+}
+.hero__inner { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.hero h1 {
+  font-family: var(--fonts-heading); font-weight: 900;
+  font-size: clamp(44px, 5.8vw, 82px); line-height: 1.04; letter-spacing: -.025em;
+}
+.hero h1 .grad { background: var(--gradients-brand); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero__lead { margin-top: 26px; max-width: 34em; font-size: clamp(15px, 1.3vw, 17px); color: var(--colors-fg); }
+.news-pill {
+  margin-top: 26px; display: inline-flex; align-items: center; gap: 10px;
+  padding: 5px 16px 5px 5px; border-radius: var(--radii-full);
+  background: var(--colors-bg-surface); box-shadow: inset 0 0 0 2px var(--colors-periwinkle-300);
+  font-size: 14px; font-weight: 500; max-width: 100%;
+}
+.news-pill__icon { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--gradients-brand-soft); color: var(--colors-navy-900); flex: none; }
+.news-pill b { font-family: var(--fonts-heading); font-weight: 800; }
+.news-pill span.t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero__cta { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 14px; }
+
+.hero__visual { position: relative; min-height: 460px; perspective: 1600px; }
+.shot {
+  position: absolute; right: -6%; top: 6%; width: 112%; margin: 0;
+  border-radius: 14px; overflow: hidden; background: var(--colors-white);
+  box-shadow: var(--shadows-float);
+  transform: rotateY(-16deg) rotateX(6deg) rotateZ(1deg);
+  transform-origin: left center;
+}
+.shot__bar { height: 30px; display: flex; align-items: center; gap: 6px; padding: 0 12px; background: var(--colors-cream-100); border-bottom: 1px solid var(--colors-border); }
+.shot__bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--colors-cream-300); display: block; }
+.shot__url { margin-left: 10px; font-size: 10.5px; color: var(--colors-fg-muted); font-family: var(--fonts-mono); }
+.shot img { width: 100%; aspect-ratio: 2513 / 1295; object-fit: cover; object-position: left top; }
+.hero__logo { position: absolute; left: -4%; bottom: -4%; width: clamp(200px, 21vw, 300px); aspect-ratio: 667 / 761; z-index: 2; }
+.cursor-chip { position: absolute; z-index: 3; display: flex; align-items: flex-start; gap: 0; pointer-events: none; animation: drift 7s ease-in-out infinite; }
+.cursor-chip svg { width: 22px; height: 22px; filter: drop-shadow(0 2px 3px rgba(27,42,68,.25)); }
+.cursor-chip span { margin: 16px 0 0 -4px; padding: 2px 9px; border-radius: var(--radii-full); font-size: 11.5px; font-weight: 700; color: var(--colors-navy-900); box-shadow: 0 2px 8px rgba(27,42,68,.15); white-space: nowrap; }
+.cursor-chip--2 { animation-delay: -2.5s; animation-duration: 8s; }
+.cursor-chip--3 { animation-delay: -5s; animation-duration: 9s; }
+@keyframes drift { 0%, 100% { transform: translate(0, 0); } 33% { transform: translate(18px, -10px); } 66% { transform: translate(-10px, 12px); } }
+
+.hero__barcode {
+  position: absolute; right: 30px; bottom: 26px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px;
+  font-family: var(--fonts-mono); font-size: 11px; letter-spacing: .5em; color: rgba(27,42,68,.45);
+}
+.hero__barcode i { display: block; width: 120px; height: 28px; background: repeating-linear-gradient(90deg, rgba(27,42,68,.4) 0 2px, transparent 2px 4px, rgba(27,42,68,.4) 4px 5px, transparent 5px 8px, rgba(27,42,68,.4) 8px 11px, transparent 11px 13px); }
+
+/* pillars（ヒーロー下端に食い込む） */
+.pillars {
+  position: relative; z-index: 3;
+  margin-top: calc(clamp(150px, 14vw, 190px) * -1 + 40px);
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px;
+}
+.pillar {
+  position: relative; padding: 34px 26px 28px; text-align: center;
+  border-radius: var(--radii-lg);
+  background: color-mix(in srgb, var(--colors-white) 78%, transparent);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadows-card), inset 0 0 0 1px rgba(255,255,255,.7);
+}
+.pillar::before { content: ""; position: absolute; left: 20px; top: 20px; width: 10px; height: 10px; border-radius: 50%; background: var(--colors-border-strong); }
+.pillar__icon { width: 60px; height: 60px; margin: 0 auto 14px; border-radius: 20px; display: grid; place-items: center; color: var(--colors-navy-900); }
+.pillar:nth-child(1) .pillar__icon { background: var(--colors-sky-100); }
+.pillar:nth-child(2) .pillar__icon { background: var(--colors-periwinkle-100); }
+.pillar:nth-child(3) .pillar__icon { background: var(--colors-lavender-100); }
+.pillar:nth-child(4) .pillar__icon { background: #e6f5ea; }
+.pillar h3 { font-size: 18px; font-weight: 800; }
+.pillar p { margin-top: 10px; font-size: 13.5px; line-height: 1.85; color: var(--colors-fg-muted); text-align: left; }
+.scroll-band {
+  margin-top: 36px; padding: 26px 0; text-align: center;
+  font-family: var(--fonts-heading); font-weight: 900; letter-spacing: .5em; font-size: 14px;
+  background-image: radial-gradient(rgba(27,42,68,.16) 1.3px, transparent 1.4px); background-size: 24px 24px;
+}
+
+/* ============================================================ sections */
+.section { padding: var(--spacing-section) 0 0; }
+.eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: var(--fonts-heading); font-weight: 800; font-size: 13px; letter-spacing: .18em; text-transform: uppercase; color: var(--colors-highlight); }
+.eyebrow::before { content: ""; width: 18px; height: 2px; border-radius: 2px; background: currentColor; }
+.section h2 { margin-top: 12px; font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; line-height: 1.35; letter-spacing: -.01em; }
+.section__lead { margin-top: 16px; max-width: 40em; color: var(--colors-fg-muted); }
+.section__head--center { text-align: center; }
+.section__head--center .section__lead { margin-inline: auto; }
+
+/* get started */
+.start { display: grid; grid-template-columns: 1fr 1.25fr; gap: 56px; align-items: start; }
+.start__art { margin-top: 36px; position: relative; aspect-ratio: 4 / 3; border-radius: var(--radii-lg); background: var(--gradients-brand-soft); overflow: hidden; }
+.start__art::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.55) 1.3px, transparent 1.4px); background-size: 22px 22px; }
+.start__art img { position: absolute; width: 44%; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-8deg); filter: drop-shadow(0 20px 30px rgba(27,42,68,.25)); }
+.start__list { list-style: none; margin: 0; padding: 8px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.start__item a { display: grid; grid-template-columns: 56px 1fr 28px; gap: 18px; align-items: center; padding: 20px; border-radius: var(--radii-md); transition: background .15s; }
+.start__item a:hover { background: var(--colors-cream-100); }
+.start__item + .start__item { border-top: 1px solid var(--colors-border); }
+.start__icon { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; background: var(--colors-cream-200); }
+.start__item h3 { font-size: 17px; font-weight: 800; }
+.start__item p { font-size: 13.5px; color: var(--colors-fg-muted); line-height: 1.7; margin-top: 2px; }
+.start__item code { font-family: var(--fonts-mono); font-size: 12px; padding: 1px 6px; border-radius: 6px; background: var(--colors-cream-200); }
+.start__arrow { color: var(--colors-fg-subtle); }
+
+/* use cases */
+.cases { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+.case { border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); overflow: hidden; }
+.case__art { position: relative; height: 170px; overflow: hidden; }
+.case__art--work { background: linear-gradient(160deg, var(--colors-sky-100), var(--colors-sky-200)); }
+.case__art--watch { background: linear-gradient(160deg, #2a3a66, #6b5aa8 60%, #f0a6c4); }
+.case__art--draw { background: linear-gradient(160deg, var(--colors-lavender-100), var(--colors-lavender-300)); }
+.case__art--event { background: linear-gradient(160deg, #fdf5e2, var(--colors-yellow-300)); }
+.case__body { padding: 20px 22px 24px; }
+.case__tag { font-family: var(--fonts-heading); font-size: 11.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--colors-fg-subtle); }
+.case h3 { margin-top: 4px; font-size: 17px; font-weight: 800; }
+.case p { margin-top: 8px; font-size: 13.5px; color: var(--colors-fg-muted); line-height: 1.8; }
+/* case illustrations（CSS のみの小さな情景） */
+.mini-note { position: absolute; width: 74px; height: 62px; border-radius: 4px; box-shadow: 0 6px 14px rgba(27,42,68,.12); }
+.mini-note::before, .mini-note::after { content: ""; position: absolute; left: 10px; right: 14px; height: 4px; border-radius: 2px; background: rgba(27,42,68,.18); }
+.mini-note::before { top: 14px; } .mini-note::after { top: 26px; right: 26px; }
+.mini-screen { position: absolute; left: 22%; top: 20%; width: 56%; height: 52%; border-radius: 8px; background: rgba(0,0,0,.25); box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); display: grid; place-items: center; color: #fff; }
+.mini-cursor { position: absolute; width: 18px; height: 18px; }
+.mini-cursor path { stroke: var(--colors-navy-900); stroke-width: 1.6; stroke-linejoin: round; }
+.mini-stroke { position: absolute; inset: 0; width: 100%; height: 100%; }
+.mini-stroke path { fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; }
+.mini-stage { position: absolute; left: 14%; right: 14%; bottom: 0; height: 30%; border-radius: 10px 10px 0 0; background: rgba(255,255,255,.7); }
+.mini-frame { position: absolute; width: 50px; height: 40px; top: 22%; border-radius: 6px; background: rgba(255,255,255,.8); box-shadow: 0 4px 10px rgba(27,42,68,.12); }
+
+/* features */
+.features { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.feature-shot { grid-column: span 3; display: grid; grid-template-columns: 1.6fr 1fr; gap: 0; border-radius: var(--radii-lg); overflow: hidden; background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.feature-shot__img { background: var(--colors-cream-200); padding: 22px 0 0 22px; }
+.feature-shot__img img { border-radius: 12px 0 0 0; box-shadow: -4px -4px 30px rgba(27,42,68,.12); aspect-ratio: 16 / 9; object-fit: cover; object-position: left top; }
+.feature-shot__body { padding: 36px; display: flex; flex-direction: column; justify-content: center; }
+.feature-shot__body h3 { font-size: 22px; font-weight: 800; }
+.feature-shot__body p { margin-top: 12px; font-size: 14.5px; color: var(--colors-fg-muted); }
+.feature-shot__body .chip { margin-top: 18px; align-self: flex-start; font-size: 12px; font-weight: 700; padding: 3px 12px; border-radius: var(--radii-full); background: #e4f5ec; color: #1e7e46; }
+.feature { padding: 26px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.feature__head { display: flex; align-items: center; gap: 12px; }
+.feature__icon { width: 42px; height: 42px; border-radius: 14px; display: grid; place-items: center; background: var(--colors-cream-200); }
+.feature h3 { font-size: 16.5px; font-weight: 800; }
+.feature p { margin-top: 12px; font-size: 13.5px; color: var(--colors-fg-muted); line-height: 1.85; }
+
+/* developers（暗い帯） */
+.dev { margin-top: var(--spacing-section); padding: var(--spacing-section) 0; background: var(--colors-bg-inverse); color: var(--colors-fg-inverse); border-radius: var(--radii-xl); max-width: 1400px; margin-inline: auto; position: relative; overflow: hidden; }
+.dev::before { content: ""; position: absolute; width: 600px; height: 600px; right: -200px; top: -300px; border-radius: 50%; background: radial-gradient(circle, rgba(154,178,248,.35), transparent 70%); }
+.dev .eyebrow { color: var(--colors-periwinkle-300); }
+.dev .section__lead { color: rgba(248,243,234,.7); }
+.dev__grid { margin-top: 48px; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 18px; position: relative; }
+.code-card { border-radius: var(--radii-lg); background: rgba(255,255,255,.05); box-shadow: inset 0 0 0 1px rgba(255,255,255,.09); overflow: hidden; display: flex; flex-direction: column; }
+.code-card__head { padding: 22px 24px 0; }
+.code-card__head h3 { display: flex; align-items: center; gap: 10px; font-size: 17px; font-weight: 800; }
+.code-card__head p { margin-top: 8px; font-size: 13.5px; color: rgba(248,243,234,.68); line-height: 1.8; }
+pre.code { margin: 18px 0 0; padding: 18px 22px; background: rgba(0,0,0,.25); font-family: var(--fonts-mono); font-size: 12.5px; line-height: 1.75; overflow-x: auto; flex: 1; color: #dfe6f5; }
+.tok-k { color: #ceb0fa; } .tok-s { color: #a6e3b4; } .tok-c { color: #7d8aa6; } .tok-n { color: #f1c86c; } .tok-p { color: #9ab2f8; }
+.tiers { list-style: none; margin: 18px 24px 24px; padding: 0; display: grid; gap: 10px; }
+.tier { display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: start; padding: 14px; border-radius: var(--radii-md); background: rgba(255,255,255,.05); }
+.tier b { display: inline-block; font-family: var(--fonts-mono); font-size: 11.5px; padding: 2px 9px; border-radius: var(--radii-full); }
+.tier--safe b { background: rgba(138,210,155,.18); color: #a6e3b4; }
+.tier--sensitive b { background: rgba(241,200,108,.18); color: #f1c86c; }
+.tier--dangerous b { background: rgba(255,143,143,.18); color: #ff9f9f; }
+.tier span { font-size: 13px; color: rgba(248,243,234,.78); line-height: 1.7; }
+
+/* federation + self host */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 48px; }
+.panel { padding: 36px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); position: relative; overflow: hidden; }
+.panel h3 { font-size: 22px; font-weight: 800; }
+.panel > p { margin-top: 10px; font-size: 14.5px; color: var(--colors-fg-muted); }
+.fed { position: relative; margin-top: 26px; height: 230px; border-radius: var(--radii-md); background: var(--colors-cream-100); overflow: hidden; }
+.fed svg.links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fed svg.links path { fill: none; stroke: var(--colors-periwinkle-300); stroke-width: 2; stroke-dasharray: 5 6; animation: dash 1.6s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -22; } }
+.node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.node__disc { width: 58px; height: 58px; border-radius: 18px; display: grid; place-items: center; background: var(--colors-white); box-shadow: var(--shadows-card); }
+.node__disc img { width: 30px; }
+.node span { font-family: var(--fonts-mono); font-size: 11px; color: var(--colors-fg-muted); background: var(--colors-white); padding: 1px 8px; border-radius: var(--radii-full); white-space: nowrap; }
+.traveler { position: absolute; left: 0; top: 0; offset-path: path('M 90 70 C 200 20, 300 20, 420 80'); animation: travel 5s ease-in-out infinite; }
+.traveler svg { width: 20px; height: 20px; }
+@keyframes travel { 0% { offset-distance: 0%; } 45%, 55% { offset-distance: 100%; } 100% { offset-distance: 0%; } }
+.scopes { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; }
+.scopes span { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: var(--radii-full); background: var(--colors-cream-200); }
+.scopes i { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.addr { margin-top: 18px; font-family: var(--fonts-mono); font-size: 13px; padding: 10px 14px; border-radius: var(--radii-sm); background: var(--colors-cream-100); box-shadow: inset 0 0 0 1px var(--colors-border); }
+.addr b { color: var(--colors-highlight); font-weight: 500; }
+.terminal { margin-top: 26px; border-radius: var(--radii-md); background: var(--colors-navy-950); color: #dfe6f5; overflow: hidden; }
+.terminal__bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; background: rgba(255,255,255,.04); }
+.terminal__bar i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.18); display: block; }
+.terminal__bar button { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; border: 0; background: rgba(255,255,255,.08); color: #dfe6f5; font-size: 11.5px; padding: 4px 10px; border-radius: var(--radii-full); cursor: pointer; font-family: var(--fonts-body); }
+.terminal pre { margin: 0; padding: 16px 18px 20px; font-family: var(--fonts-mono); font-size: 12.5px; line-height: 1.8; overflow-x: auto; }
+.facts { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.fact { padding: 14px; border-radius: var(--radii-md); background: var(--colors-cream-100); }
+.fact b { display: block; font-family: var(--fonts-heading); font-weight: 900; font-size: 18px; }
+.fact span { font-size: 12px; color: var(--colors-fg-muted); line-height: 1.5; display: block; margin-top: 2px; }
+
+/* open source */
+.oss { position: relative; overflow: hidden; margin-top: var(--spacing-section); border-radius: var(--radii-xl); padding: clamp(48px, 7vw, 88px); background: var(--gradients-brand-soft); display: grid; grid-template-columns: 1.3fr 1fr; gap: 40px; align-items: center; }
+.oss::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.5) 1.3px, transparent 1.4px); background-size: 24px 24px; -webkit-mask-image: linear-gradient(90deg, transparent, #000); mask-image: linear-gradient(90deg, transparent, #000); }
+.oss h2 { font-size: clamp(28px, 3.4vw, 42px); font-weight: 800; line-height: 1.35; position: relative; }
+.oss p { margin-top: 16px; position: relative; max-width: 34em; }
+.oss__cta { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 12px; position: relative; }
+.oss__logo { position: relative; justify-self: center; width: min(260px, 70%); aspect-ratio: 667 / 761; }
+.oss__avatars { margin-top: 26px; display: flex; align-items: center; gap: 12px; position: relative; font-size: 13px; font-weight: 700; }
+.oss__avatars span { display: flex; }
+.oss__avatars i { width: 32px; height: 32px; border-radius: 50%; border: 3px solid var(--colors-white); margin-left: -10px; display: block; }
+.oss__avatars i:first-child { margin-left: 0; }
+
+/* footer */
+.footer { margin-top: var(--spacing-section); padding: 64px 0 40px; border-top: 1px solid var(--colors-border); }
+.footer__grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
+.footer__brand p { margin-top: 14px; font-size: 13.5px; color: var(--colors-fg-muted); max-width: 22em; }
+.footer h4 { margin: 0 0 12px; font-family: var(--fonts-heading); font-size: 13px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; color: var(--colors-fg-subtle); }
+.footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.footer ul a:hover { color: var(--colors-highlight); }
+.footer__bottom { margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--colors-border); display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--colors-fg-muted); }
+.made-by { display: flex; align-items: center; gap: 10px; }
+.made-by img { width: 22px; }
+
+/* 案ラベル */
+.variant-label { position: fixed; right: 16px; bottom: 16px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: var(--radii-full); background: var(--colors-navy-900); color: var(--colors-fg-inverse); font-size: 12px; font-weight: 700; box-shadow: var(--shadows-button); }
+.variant-label a { padding: 4px 10px; border-radius: var(--radii-full); background: rgba(255,255,255,.14); }
+
+/* ============================================================ responsive */
+@media (max-width: 1080px) {
+  .nav a { padding: 6px 10px; }
+  .pillars { grid-template-columns: repeat(2, 1fr); }
+  .cases { grid-template-columns: repeat(2, 1fr); }
+  .dev__grid { grid-template-columns: 1fr 1fr; }
+  .dev__grid .code-card:first-child { grid-column: span 2; }
+}
+@media (max-width: 900px) {
+  .nav, .header__divider { display: none; }
+  .menu-btn { display: grid; }
+  .hero__inner { grid-template-columns: minmax(0, 1fr); }
+  .hero__visual { min-height: 0; aspect-ratio: 4 / 3; margin-top: 10px; }
+  .shot { right: 0; width: 96%; }
+  .start, .split, .oss { grid-template-columns: 1fr; }
+  .features { grid-template-columns: 1fr 1fr; }
+  .feature-shot { grid-column: span 2; grid-template-columns: 1fr; }
+  .feature-shot__img { padding: 18px 18px 0; }
+  .feature-shot__img img { border-radius: 12px 12px 0 0; }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+  .footer__brand { grid-column: span 2; }
+}
+@media (max-width: 640px) {
+  body { font-size: 15px; }
+  .header__actions .btn, .header__actions .icon-btn--lang { display: none; }
+  .hero { padding-inline: 10px; }
+  .hero__card { border-radius: 28px; }
+  .hero__inner { width: calc(100% - 40px); }
+  .blob--peri { width: 480px; height: 480px; right: -220px; top: auto; bottom: 120px; }
+  .blob--lav { right: -120px; }
+  .hero__barcode { display: none; }
+  .hero__visual { aspect-ratio: 1 / 1; }
+  .shot { top: 4%; width: 100%; transform: rotateY(-10deg) rotateX(4deg); }
+  .hero__logo { width: 46%; left: -2%; bottom: 2%; }
+  .pillars, .cases, .features, .dev__grid { grid-template-columns: 1fr; }
+  .feature-shot, .dev__grid .code-card:first-child { grid-column: auto; }
+  .pillar p { text-align: center; }
+  .start__item a { grid-template-columns: 48px 1fr 20px; gap: 14px; padding: 16px 12px; }
+  .start__icon { width: 48px; height: 48px; border-radius: 15px; }
+  .panel { padding: 24px; }
+  .facts { grid-template-columns: 1fr; }
+  .dev { border-radius: 0; }
+  .oss { border-radius: 28px; padding: 36px 24px; }
+  .footer__grid { grid-template-columns: 1fr; }
+  .footer__brand { grid-column: auto; }
+  .variant-label { right: 10px; bottom: 10px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+
+/* ============================================================
+   案K 追加分（A のトークン・部品をそのまま使い、足りない部品だけ足す）
+   ============================================================ */
+:root {
+  --colors-green-100: #e4f5ec;
+  --colors-green-700: #1e7e46;
+  --colors-sky-50: #f0f7ff;
+  --colors-grid-line: rgba(71, 128, 224, 0.08);
+}
+
+/* ---- ヒーロー：動画の枠（本番は無音ループ動画。いまは poster に実画面） ---- */
+.shot video { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; object-position: left top; display: block; background: var(--colors-cream-200); }
+.pillar p { text-align: center; }
+
+/* ---- 共通の小物 ---- */
+.badge-signed { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 800; padding: 3px 10px; border-radius: var(--radii-full); background: var(--colors-green-100); color: var(--colors-green-700); white-space: nowrap; }
+.host { display: inline-flex; align-items: center; padding: 6px 12px; border-radius: var(--radii-full); background: var(--colors-white); box-shadow: inset 0 0 0 1px var(--colors-border); font-family: var(--fonts-mono); font-size: 12px; }
+.host.is-on { background: var(--colors-navy-900); color: var(--colors-white); box-shadow: none; }
+
+/* ---- つくる ---- */
+.create { margin-top: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.way { border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); overflow: hidden; display: flex; flex-direction: column; }
+.way__body { padding: 28px 32px 22px; }
+.way__tag { display: inline-flex; align-items: center; gap: 8px; font-family: var(--fonts-heading); font-size: 12px; font-weight: 800; letter-spacing: .14em; color: var(--colors-fg-subtle); }
+.way h3 { margin-top: 4px; font-size: 22px; font-weight: 800; }
+.way__art { flex: 1; min-height: 280px; display: flex; }
+.way__art--editor { padding: 24px 0 0 32px; background: linear-gradient(160deg, var(--colors-sky-100), var(--colors-periwinkle-100)); }
+.way__art--editor img { width: 100%; height: 100%; min-height: 256px; border-radius: 12px 0 0 0; box-shadow: -6px -6px 30px rgba(27,42,68,.12); object-fit: cover; object-position: left top; }
+.way__art--code { flex-direction: column; justify-content: center; gap: 12px; padding: 24px 28px; background: var(--colors-navy-950); color: #dfe6f5; }
+.msg { align-self: flex-end; max-width: 92%; padding: 9px 14px; border-radius: 16px 16px 4px 16px; background: var(--colors-periwinkle-300); color: var(--colors-navy-900); font-size: 13px; font-weight: 700; }
+.way__art--code pre { margin: 0; padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,.05); font-family: var(--fonts-mono); font-size: 12px; line-height: 1.75; overflow-x: auto; }
+.term-line { font-family: var(--fonts-mono); font-size: 12px; padding: 10px 14px; border-radius: 12px; background: rgba(255,255,255,.05); white-space: nowrap; overflow-x: auto; }
+.term-line .d { color: #7d8aa6; } .term-line .g { color: #a6e3b4; }
+
+/* ---- 持つ ---- */
+.own { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 56px; align-items: center; }
+.points { list-style: none; padding: 0; margin: 32px 0 0; display: grid; gap: 16px; }
+.point { display: grid; grid-template-columns: 44px 1fr; gap: 14px; align-items: center; }
+.point__icon { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; }
+.point:nth-child(1) .point__icon { background: var(--colors-sky-100); }
+.point:nth-child(2) .point__icon { background: var(--colors-periwinkle-100); }
+.point:nth-child(3) .point__icon { background: var(--colors-lavender-100); }
+.point:nth-child(4) .point__icon { background: #e6f5ea; }
+.point h3 { font-size: 16px; font-weight: 800; line-height: 1.4; }
+.point p { font-size: 13.5px; color: var(--colors-fg-muted); line-height: 1.6; }
+.own__art { position: relative; padding: 28px 0 28px 28px; }
+.own__art::before { content: ""; position: absolute; inset: 0 -40px 0 0; border-radius: var(--radii-xl); background: var(--gradients-brand-soft); opacity: .55; }
+.filecard { position: relative; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-float); overflow: hidden; }
+.filecard__head { display: flex; align-items: center; gap: 10px; padding: 16px 20px; border-bottom: 1px solid var(--colors-border); font-family: var(--fonts-mono); font-size: 13.5px; }
+.filecard__head .badge-signed { margin-left: auto; }
+.filecard dl { margin: 0; padding: 6px 20px 4px; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: 18px; }
+.filecard dt, .filecard dd { padding: 11px 0; border-bottom: 1px dashed var(--colors-border); }
+.filecard dt { font-size: 12.5px; color: var(--colors-fg-muted); white-space: nowrap; }
+.filecard dd { margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; font-family: var(--fonts-mono); font-size: 12.5px; overflow-wrap: anywhere; }
+.filecard dd .ok { color: var(--colors-green-700); display: inline-flex; }
+.filecard dl > :nth-last-child(-n+2) { border-bottom: 0; }
+.filecard__hosts { padding: 16px 20px 18px; background: var(--colors-cream-100); display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* ---- mod（暗い帯）追加 ---- */
+.cmds { list-style: none; margin: 18px 24px 24px; padding: 0; display: grid; gap: 6px; }
+.cmds li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: rgba(255,255,255,.05); }
+.cmds code { font-family: var(--fonts-mono); font-size: 12.5px; color: var(--colors-periwinkle-300); white-space: nowrap; }
+.cmds span { font-size: 12.5px; color: rgba(248,243,234,.7); white-space: nowrap; }
+
+/* ---- 分散 ---- */
+.layers3 { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.layer { display: grid; grid-template-columns: 52px 1fr; gap: 6px 16px; align-items: center; padding: 22px 24px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.layer__icon { grid-row: span 2; width: 52px; height: 52px; border-radius: 17px; display: grid; place-items: center; }
+.layer:nth-child(1) .layer__icon { background: var(--colors-sky-100); }
+.layer:nth-child(2) .layer__icon { background: var(--colors-periwinkle-100); }
+.layer:nth-child(3) .layer__icon { background: var(--colors-lavender-100); }
+.layer h3 { font-size: 17px; font-weight: 800; line-height: 1.4; }
+.layer .addr { margin: 0; padding: 4px 10px; font-size: 12px; justify-self: start; overflow-wrap: anywhere; }
+.fedmap { position: relative; margin-top: 18px; height: 400px; border-radius: var(--radii-lg); overflow: hidden; box-shadow: var(--shadows-card); background-color: var(--colors-sky-50); background-image: linear-gradient(var(--colors-grid-line) 1px, transparent 1px), linear-gradient(90deg, var(--colors-grid-line) 1px, transparent 1px); background-size: 34px 34px; }
+.fedmap__links { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fedmap__links line { stroke: rgba(27, 42, 68, .28); stroke-width: 1.6; stroke-dasharray: 5 7; vector-effect: non-scaling-stroke; animation: dash 1.8s linear infinite; }
+.snode { position: absolute; transform: translate(-50%, -26px); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.snode__disc { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; background: var(--colors-white); box-shadow: 0 0 0 5px rgba(154,178,248,.25), var(--shadows-card); }
+.snode__disc img { width: 26px; }
+.snode b { font-family: var(--fonts-mono); font-size: 11.5px; font-weight: 500; padding: 2px 9px; border-radius: var(--radii-full); background: var(--colors-white); box-shadow: 0 2px 8px rgba(27,42,68,.08); white-space: nowrap; }
+.snode--you .snode__disc { outline: 2px dashed var(--colors-lavender-300); outline-offset: 6px; }
+.servers { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.server { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 14px 16px; border-radius: var(--radii-md); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.server__icon { width: 40px; height: 40px; border-radius: 13px; display: grid; place-items: center; background: var(--colors-cream-200); }
+.server b { font-family: var(--fonts-mono); font-size: 13px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.server__n { font-size: 12px; font-weight: 800; color: var(--colors-fg-muted); display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.server__n i { width: 7px; height: 7px; border-radius: 50%; background: var(--colors-green-400); display: block; }
+.selfhost { margin-top: 18px; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 28px; align-items: center; padding: 24px 28px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.selfhost h3 { font-size: 19px; font-weight: 800; white-space: nowrap; }
+.selfhost .terminal { margin: 0; }
+
+/* ---- 探す ---- */
+.worlds { margin-top: 48px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.wcard { border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); overflow: hidden; transition: transform .2s ease, box-shadow .2s ease; }
+.wcard:hover { transform: translateY(-4px); box-shadow: var(--shadows-float); }
+.wcard__art { position: relative; height: 168px; overflow: hidden; }
+.wcard__host { position: absolute; left: 12px; top: 12px; z-index: 2; font-family: var(--fonts-mono); font-size: 11px; padding: 3px 10px; border-radius: var(--radii-full); background: rgba(255,255,255,.9); color: var(--colors-navy-900); }
+.wcard__body { padding: 16px 20px 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wcard h3 { font-size: 16px; font-weight: 800; }
+.wcard__by { display: block; font-family: var(--fonts-mono); font-size: 11.5px; color: var(--colors-fg-muted); }
+.explore-cta { margin-top: 28px; display: flex; justify-content: center; }
+
+/* ---- はじめる ---- */
+.go { margin-top: 40px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+.go__item { display: flex; flex-direction: column; gap: 10px; padding: 22px 20px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); transition: transform .15s ease; }
+.go__item:hover { transform: translateY(-3px); }
+.go__icon { width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center; background: var(--colors-cream-200); }
+.go__item h3 { font-size: 16px; font-weight: 800; }
+.go__item code { margin-top: auto; align-self: flex-start; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: var(--fonts-mono); font-size: 11.5px; padding: 3px 9px; border-radius: 8px; background: var(--colors-navy-900); color: #dfe6f5; }
+
+/* ---- レスポンシブ（案K 分） ---- */
+@media (max-width: 1080px) {
+  .go { grid-template-columns: repeat(3, 1fr); }
+  .servers, .worlds { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 900px) {
+  .create, .own, .layers3 { grid-template-columns: minmax(0, 1fr); }
+  .own__art { padding-left: 0; }
+  .own__art::before { inset: 0 -20px; }
+  .selfhost { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+}
+@media (max-width: 640px) {
+  .servers, .worlds { grid-template-columns: minmax(0, 1fr); }
+  .go { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .go__item { padding: 18px 16px; }
+  .way__body { padding: 22px 22px 18px; }
+  .way__art--editor { padding: 18px 0 0 18px; }
+  .way__art--code { padding: 18px; }
+  .fedmap { height: 440px; }
+  .snode__disc { width: 44px; height: 44px; } .snode__disc img { width: 22px; }
+  .snode b { font-size: 10px; }
+  .selfhost { padding: 20px; }
+  .variant-label { font-size: 0; gap: 0; padding: 6px; }
+  .variant-label a { font-size: 11px; }
+}
+
+</style>
+</head>
+<body>
+<!-- アイコン（lucide 風）スプライト -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-ur" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+    <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+    <symbol id="i-lang" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+    <symbol id="i-file-code" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></symbol>
+    <symbol id="i-pr" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+    <symbol id="i-tv" viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><polygon points="7 4 20 12 7 20 7 4"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  </defs>
+</svg>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+    <symbol id="i-badge-check" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4"/><path d="M22 5h-4"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><line x1="12" x2="20" y1="19" y2="19"/></symbol>
+    <symbol id="i-git" viewBox="0 0 24 24"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></symbol>
+    <symbol id="i-layout" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></symbol>
+    <symbol id="i-box" viewBox="0 0 24 24"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.3 7 8.7 5 8.7-5"/></symbol>
+  </defs>
+</svg>
+
+<header class="header">
+  <div class="container header__inner">
+    <a class="brand" href="#"><img src="./assets/logo-transparent-sm.png" alt="" />Ubichill</a>
+    <span class="header__divider" aria-hidden="true"></span>
+    <nav class="nav" aria-label="メイン">
+      <a href="#explore">ワールド</a>
+      <a href="#create">つくる</a>
+      <a href="#federation">サーバー</a>
+      <a href="#start">ドキュメント</a>
+      <a href="#">ニュース</a>
+    </nav>
+    <div class="header__actions">
+      <button class="icon-btn icon-btn--lang" type="button" aria-label="言語を切り替える"><svg class="ic"><use href="#i-lang" /></svg></button>
+      <a class="icon-btn" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="ic"><use href="#i-github" /></svg></a>
+      <a class="btn btn--primary btn--sm" href="https://ubichill.com/">アプリを開く</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="メニュー"><svg class="ic"><use href="#i-menu" /></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__card">
+      <div class="blob blob--peri" aria-hidden="true"></div>
+      <div class="blob blob--lav" aria-hidden="true"></div>
+      <div class="blob blob--sky" aria-hidden="true"></div>
+      <div class="hero__dots" aria-hidden="true"></div>
+
+      <div class="container hero__inner">
+        <div class="hero__copy">
+          <h1 id="hero-title">Build. Own.<br />Connect.<br />with <span class="grad">Ubichill</span>.</h1>
+          <p class="hero__lead">ワールドも mod も、自分で作って、自分で持てる。<br />中央のない 2D メタバース。</p>
+          <a class="news-pill" href="#federation">
+            <span class="news-pill__icon"><svg class="ic ic--sm"><use href="#i-megaphone" /></svg></span>
+            <span class="t"><b>federation v1</b> サーバー間の連合に対応</span>
+            <svg class="ic ic--sm"><use href="#i-arrow" /></svg>
+          </a>
+          <div class="hero__cta">
+            <a class="btn btn--primary" href="https://ubichill.com/">アプリを開く<svg class="ic ic--sm"><use href="#i-arrow-ur" /></svg></a>
+            <a class="btn btn--secondary" href="#about">詳しく知る</a>
+          </div>
+        </div>
+        <div class="hero__visual" data-logo3d-host>
+          <figure class="shot">
+            <div class="shot__bar"><i></i><i></i><i></i><span class="shot__url">ubichill.com</span></div>
+            <!-- 本番はワールドの様子の動画（無音ループの WebM / MP4）に差し替える。いまは poster に実画面 -->
+            <video poster="./assets/app-editor.png" muted loop playsinline autoplay preload="none" aria-label="Ubichill のワールドの様子"></video>
+          </figure>
+          <div class="hero__logo" data-logo3d data-depth="30" data-thickness="12" data-tilt="18"></div>
+        </div>
+      </div>
+
+      <div class="hero__barcode" aria-hidden="true"><i></i>UBICHILL *</div>
+    </div>
+
+    <div class="container pillars" id="about">
+      <article class="pillar">
+        <div class="pillar__icon"><svg class="ic ic--lg"><use href="#i-key" /></svg></div>
+        <h3>自分で持てる</h3>
+        <p>置き場所は自分で決める。</p>
+      </article>
+      <article class="pillar">
+        <div class="pillar__icon"><svg class="ic ic--lg"><use href="#i-layout" /></svg></div>
+        <h3>ブラウザで作れる</h3>
+        <p>エディタで置くだけ。</p>
+      </article>
+      <article class="pillar">
+        <div class="pillar__icon"><svg class="ic ic--lg"><use href="#i-code" /></svg></div>
+        <h3>コードで書ける</h3>
+        <p>YAML と TypeScript。AI にも頼める。</p>
+      </article>
+      <article class="pillar">
+        <div class="pillar__icon"><svg class="ic ic--lg"><use href="#i-network" /></svg></div>
+        <h3>中央を持たない</h3>
+        <p>サーバー同士がつながる。</p>
+      </article>
+    </div>
+  </section>
+
+  <!-- ======================================================== CREATE -->
+  <section class="section" id="create" aria-labelledby="create-title">
+    <div class="container">
+      <div class="section__head--center">
+        <span class="eyebrow">Create</span>
+        <h2 id="create-title"><span style="display:inline-block">エディタでも、</span><span style="display:inline-block">コードでも。</span></h2>
+      </div>
+      <div class="create">
+        <article class="way">
+          <div class="way__body">
+            <span class="way__tag"><svg class="ic ic--sm"><use href="#i-layout" /></svg>ブラウザ</span>
+            <h3>置いて、つなげるだけ。</h3>
+          </div>
+          <div class="way__art way__art--editor">
+            <img src="./assets/app-editor.png" alt="ブラウザのワールドエディタ" loading="lazy" />
+          </div>
+        </article>
+        <article class="way">
+          <div class="way__body">
+            <span class="way__tag"><svg class="ic ic--sm"><use href="#i-sparkles" /></svg>コード</span>
+            <h3>AI に頼んでもいい。</h3>
+          </div>
+          <div class="way__art way__art--code">
+            <div class="msg">ペンと動画がある作業部屋を作って</div>
+<pre><span class="tok-c"># worlds/chill-room.yaml</span>
+<span class="tok-k">kind</span>: World
+<span class="tok-k">metadata</span>: { <span class="tok-k">name</span>: <span class="tok-s">chill-room</span> }
+<span class="tok-k">spec</span>:
+  <span class="tok-k">dependencies</span>:
+    - <span class="tok-k">name</span>: <span class="tok-s">pen</span>
+    - <span class="tok-k">name</span>: <span class="tok-s">video-player</span></pre>
+            <div class="term-line"><span class="d">$</span> npx ubichill dev&nbsp;&nbsp;<span class="g">➜</span> localhost:3333</div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== OWN -->
+  <section class="section" id="own" aria-labelledby="own-title">
+    <div class="container own">
+      <div>
+        <span class="eyebrow">Own</span>
+        <h2 id="own-title">作ったものは、<br />自分の場所に。</h2>
+        <p class="section__lead">ワールドも mod も URL。どこに置いても、署名で本物とわかる。</p>
+        <ul class="points">
+          <li class="point"><span class="point__icon"><svg class="ic"><use href="#i-link" /></svg></span><div><h3>ワールド＝URL</h3><p>開けば、だれでも入れる。</p></div></li>
+          <li class="point"><span class="point__icon"><svg class="ic"><use href="#i-key" /></svg></span><div><h3>鍵は手元に</h3><p>サーバーは秘密鍵を預からない。</p></div></li>
+          <li class="point"><span class="point__icon"><svg class="ic"><use href="#i-badge-check" /></svg></span><div><h3>作者署名</h3><p>改ざんとなりすましを見分ける。</p></div></li>
+          <li class="point"><span class="point__icon"><svg class="ic"><use href="#i-git" /></svg></span><div><h3>ただのファイル</h3><p>Git で管理して、持ち出せる。</p></div></li>
+        </ul>
+      </div>
+      <div class="own__art">
+        <article class="filecard" aria-label="署名されたワールドの例">
+          <div class="filecard__head"><svg class="ic"><use href="#i-file-code" /></svg>chill-room.yaml<span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg>作者署名あり</span></div>
+          <dl>
+            <dt>作者</dt><dd>@yokan@yokan.example</dd>
+            <dt>置き場所</dt><dd>yokan.github.io/worlds/chill-room.yaml</dd>
+            <dt>署名</dt><dd>ed25519<span class="ok"><svg class="ic ic--sm"><use href="#i-check" /></svg></span></dd>
+            <dt>内容</dt><dd>sha256-9f2c…e41a<span class="ok"><svg class="ic ic--sm"><use href="#i-check" /></svg></span></dd>
+          </dl>
+          <div class="filecard__hosts">
+            <span class="host">Ubichill</span>
+            <span class="host is-on">GitHub Pages</span>
+            <span class="host">自分のサーバー</span>
+            <span class="host">S3</span>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== MOD（暗い帯） -->
+  <section class="dev" id="mods" aria-labelledby="mods-title">
+    <div class="container" style="position:relative">
+      <span class="eyebrow">mod</span>
+      <h2 id="mods-title" style="margin-top:12px;font-size:clamp(28px,3.4vw,42px);font-weight:800;line-height:1.35">mod はコードで書く。</h2>
+      <p class="section__lead">TypeScript で書いて、Worker のサンドボックスで動く。</p>
+      <div class="dev__grid">
+        <article class="code-card">
+          <div class="code-card__head"><h3><svg class="ic"><use href="#i-file-code" /></svg>いいねボタン</h3></div>
+<pre class="code"><span class="tok-k">const</span> like = Ubi.state.<span class="tok-p">define</span>({
+  count: Ubi.state.<span class="tok-p">sync</span>(<span class="tok-n">0</span>),
+});
+
+<span class="tok-k">export default function</span> <span class="tok-p">LikeButton</span>() {
+  <span class="tok-k">return</span> (
+    &lt;<span class="tok-p">button</span> onClick={() =&gt; like.local.count++}&gt;
+      いいね {like.local.count}
+    &lt;/<span class="tok-p">button</span>&gt;
+  );
+}</pre>
+        </article>
+        <article class="code-card">
+          <div class="code-card__head"><h3><svg class="ic"><use href="#i-terminal" /></svg>@ubichill/cli</h3></div>
+          <ul class="cmds">
+            <li><code>ubichill dev</code><span>手元で動かす</span></li>
+            <li><code>ubichill build</code><span>ビルド</span></li>
+            <li><code>ubichill login</code><span>公開の準備</span></li>
+            <li><code>ubichill publish</code><span>署名して公開</span></li>
+            <li><code>ubichill ci create</code><span>CI から公開</span></li>
+          </ul>
+        </article>
+        <article class="code-card">
+          <div class="code-card__head"><h3><svg class="ic"><use href="#i-shield" /></svg>権限</h3></div>
+          <ul class="tiers">
+            <li class="tier tier--safe"><b>safe</b><span>確認なし</span></li>
+            <li class="tier tier--sensitive"><b>sensitive</b><span>初めて使うときに確認</span></li>
+            <li class="tier tier--dangerous"><b>dangerous</b><span>まとめて拒否できる</span></li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== FEDERATION -->
+  <section class="section" id="federation" aria-labelledby="fed-title">
+    <div class="container">
+      <div class="section__head--center">
+        <span class="eyebrow">Decentralized</span>
+        <h2 id="fed-title">中央がない。</h2>
+        <p class="section__lead">人も、部屋も、作品も、それぞれの場所に。</p>
+      </div>
+
+      <div class="layers3">
+        <article class="layer"><span class="layer__icon"><svg class="ic ic--lg"><use href="#i-users" /></svg></span><h3>人は、ホームサーバーに</h3><p class="addr"><b>@yokan</b>@yokan.example</p></article>
+        <article class="layer"><span class="layer__icon"><svg class="ic ic--lg"><use href="#i-home" /></svg></span><h3>部屋は、部屋のサーバーに</h3><p class="addr"><b>chill-room</b>@yokan.example</p></article>
+        <article class="layer"><span class="layer__icon"><svg class="ic ic--lg"><use href="#i-box" /></svg></span><h3>作品は、作者の URL に</h3><p class="addr"><b>mio.dev</b>/mods/like/</p></article>
+      </div>
+
+      <div class="fedmap" aria-label="サーバー同士が中心なくつながっている図">
+        <svg class="fedmap__links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <line x1="14" y1="30" x2="40" y2="20" /><line x1="14" y1="30" x2="26" y2="72" /><line x1="40" y1="20" x2="76" y2="26" />
+          <line x1="26" y1="72" x2="56" y2="62" /><line x1="56" y1="62" x2="86" y2="70" /><line x1="76" y1="26" x2="86" y2="70" />
+          <line x1="40" y1="20" x2="56" y2="62" /><line x1="14" y1="30" x2="56" y2="62" /><line x1="76" y1="26" x2="56" y2="62" />
+        </svg>
+        <div class="snode" style="left:14%;top:30%"><span class="snode__disc"><img src="./assets/logo-transparent-sm.png" alt="" /></span><b>ubichill.com</b></div>
+        <div class="snode" style="left:40%;top:20%"><span class="snode__disc"><img src="./assets/logo-transparent-sm.png" alt="" /></span><b>yokan.example</b></div>
+        <div class="snode" style="left:26%;top:72%"><span class="snode__disc"><img src="./assets/logo-transparent-sm.png" alt="" /></span><b>school.ac.jp</b></div>
+        <div class="snode" style="left:56%;top:62%"><span class="snode__disc"><img src="./assets/logo-transparent-sm.png" alt="" /></span><b>mio.dev</b></div>
+        <div class="snode" style="left:76%;top:26%"><span class="snode__disc"><img src="./assets/logo-transparent-sm.png" alt="" /></span><b>cafe.example</b></div>
+        <div class="snode snode--you" style="left:86%;top:70%"><span class="snode__disc"><img src="./assets/logo-transparent-sm.png" alt="" /></span><b>your.server</b></div>
+      </div>
+
+      <div class="servers" aria-label="サーバーの例">
+        <a class="server" href="#"><span class="server__icon"><svg class="ic"><use href="#i-globe" /></svg></span><b>ubichill.com</b><span class="server__n"><i></i>128</span></a>
+        <a class="server" href="#"><span class="server__icon"><svg class="ic"><use href="#i-home" /></svg></span><b>yokan.example</b><span class="server__n"><i></i>3</span></a>
+        <a class="server" href="#"><span class="server__icon"><svg class="ic"><use href="#i-puzzle" /></svg></span><b>mio.dev</b><span class="server__n"><i></i>5</span></a>
+        <a class="server" href="#"><span class="server__icon"><svg class="ic"><use href="#i-book" /></svg></span><b>school.ac.jp</b><span class="server__n"><i></i>12</span></a>
+        <a class="server" href="#"><span class="server__icon"><svg class="ic"><use href="#i-tv" /></svg></span><b>cafe.example</b><span class="server__n"><i></i>8</span></a>
+        <a class="server" href="#"><span class="server__icon"><svg class="ic"><use href="#i-pen" /></svg></span><b>art.example</b><span class="server__n"><i></i>4</span></a>
+      </div>
+
+      <div class="selfhost">
+        <h3>自分のサーバーを建てる</h3>
+        <div class="terminal">
+<pre>helm install ubichill ubichill/ubichill -n ubichill \
+  --create-namespace --set global.domain=<span class="tok-n">your.server</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== EXPLORE -->
+  <section class="section" id="explore" aria-labelledby="explore-title">
+    <div class="container">
+      <div class="section__head--center">
+        <span class="eyebrow">Explore</span>
+        <h2 id="explore-title">ほかの人のワールドへ。</h2>
+      </div>
+      <div class="worlds">
+        <a class="wcard" href="#">
+          <div class="wcard__art" style="background:linear-gradient(160deg,#2a3a66,#6b5aa8 60%,#f0a6c4)"><span class="wcard__host">ubichill.com</span><span class="mini-screen"><svg class="ic"><use href="#i-play" /></svg></span></div>
+          <div class="wcard__body"><div><h3>週末の映画鑑賞会</h3><span class="wcard__by">@haku@ubichill.com</span></div><span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg></span></div>
+        </a>
+        <a class="wcard" href="#">
+          <div class="wcard__art case__art--work"><span class="wcard__host">yokan.github.io</span><span class="mini-note" style="left:20%;top:36%;background:#fff3b8;transform:rotate(-5deg)"></span><span class="mini-note" style="left:58%;top:44%;background:#fff;transform:rotate(4deg)"></span></div>
+          <div class="wcard__body"><div><h3>チルな作業部屋</h3><span class="wcard__by">@yokan@yokan.example</span></div><span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg></span></div>
+        </a>
+        <a class="wcard" href="#">
+          <div class="wcard__art case__art--draw"><span class="wcard__host">mio.dev</span><svg class="mini-stroke" viewBox="0 0 300 168" preserveAspectRatio="none"><path d="M40 116 C 90 36, 140 156, 200 66 S 270 86, 280 56" stroke="#fff" /><path d="M60 60 q 30 -30 60 0" stroke="#9ab2f8" /></svg></div>
+          <div class="wcard__body"><div><h3>みんなのアトリエ</h3><span class="wcard__by">@mio@mio.dev</span></div><span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg></span></div>
+        </a>
+        <a class="wcard" href="#">
+          <div class="wcard__art case__art--event"><span class="wcard__host">school.ac.jp</span><span class="mini-frame" style="left:18%"></span><span class="mini-frame" style="left:42%"></span><span class="mini-frame" style="left:66%"></span><span class="mini-stage"></span></div>
+          <div class="wcard__body"><div><h3>ゼミの輪読会</h3><span class="wcard__by">@lab@school.ac.jp</span></div><span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg></span></div>
+        </a>
+        <a class="wcard" href="#">
+          <div class="wcard__art" style="background:linear-gradient(160deg,#121c30,#263d68)"><span class="wcard__host">ubichill.com</span><svg class="mini-stroke" viewBox="0 0 300 168" preserveAspectRatio="none" style="opacity:.85"><path d="M40 66 h 90" stroke="#9ab2f8" stroke-width="6" /><path d="M150 96 h 110" stroke="#ceb0fa" stroke-width="6" /><path d="M70 126 h 70" stroke="#bde1fb" stroke-width="6" /><path d="M180 46 h 60" stroke="#f1c86c" stroke-width="6" /></svg></div>
+          <div class="wcard__body"><div><h3>弾幕ライブ</h3><span class="wcard__by">@rin@ubichill.com</span></div><span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg></span></div>
+        </a>
+        <a class="wcard" href="#">
+          <div class="wcard__art" style="background-image:linear-gradient(rgba(255,255,255,.4) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.4) 1px,transparent 1px),linear-gradient(160deg,#e6f5ea,#8ad29b);background-size:22px 22px,22px 22px,auto"><span class="wcard__host">taro.dev</span><span class="mini-note" style="left:42%;top:36%;background:#fff;border-radius:14px;width:60px;height:60px"></span></div>
+          <div class="wcard__body"><div><h3>WASM のおもちゃ箱</h3><span class="wcard__by">@taro@taro.dev</span></div><span class="badge-signed"><svg class="ic ic--sm"><use href="#i-badge-check" /></svg></span></div>
+        </a>
+      </div>
+      <div class="explore-cta"><a class="btn btn--primary" href="https://ubichill.com/">ワールドを探す<svg class="ic ic--sm"><use href="#i-arrow-ur" /></svg></a></div>
+    </div>
+  </section>
+
+  <!-- ======================================================== START -->
+  <section class="section" id="start" aria-labelledby="start-title">
+    <div class="container">
+      <div class="section__head--center">
+        <span class="eyebrow">Get started</span>
+        <h2 id="start-title">はじめる</h2>
+      </div>
+      <div class="go">
+        <a class="go__item" href="https://ubichill.com/"><span class="go__icon"><svg class="ic"><use href="#i-login" /></svg></span><h3>入ってみる</h3><code>ubichill.com</code></a>
+        <a class="go__item" href="#create"><span class="go__icon"><svg class="ic"><use href="#i-layout" /></svg></span><h3>エディタで作る</h3><code>ブラウザだけ</code></a>
+        <a class="go__item" href="#mods"><span class="go__icon"><svg class="ic"><use href="#i-terminal" /></svg></span><h3>コードで作る</h3><code>npx ubichill dev</code></a>
+        <a class="go__item" href="#own"><span class="go__icon"><svg class="ic"><use href="#i-upload" /></svg></span><h3>公開する</h3><code>ubichill publish</code></a>
+        <a class="go__item" href="#federation"><span class="go__icon"><svg class="ic"><use href="#i-server" /></svg></span><h3>サーバーを建てる</h3><code>helm install</code></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== OSS -->
+  <section class="container oss" aria-labelledby="oss-title">
+    <div>
+      <h2 id="oss-title">オープンソース。</h2>
+      <p>AGPL-3.0。PR は日本語でも歓迎。</p>
+      <div class="oss__cta">
+        <a class="btn btn--primary" href="https://github.com/ubichill/ubichill"><svg class="ic ic--sm"><use href="#i-github" /></svg>GitHub</a>
+      </div>
+    </div>
+    <div class="oss__logo" data-logo3d data-depth="22" data-thickness="10" data-tilt="14" data-shadow="0"></div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__brand">
+        <a class="brand" href="#"><img src="./assets/logo-transparent-sm.png" alt="" />Ubichill</a>
+        <p>自分で持てる、分散型の 2D メタバース。</p>
+      </div>
+      <div><h4>つくる</h4><ul><li><a href="#">エディタ</a></li><li><a href="#">World as Code</a></li><li><a href="#">mod SDK</a></li><li><a href="#">CLI</a></li></ul></div>
+      <div><h4>分散</h4><ul><li><a href="#">連合</a></li><li><a href="#">サーバー一覧</a></li><li><a href="#">セルフホスト</a></li><li><a href="#">作者署名</a></li></ul></div>
+      <div><h4>コミュニティ</h4><ul><li><a href="https://github.com/ubichill/ubichill">GitHub</a></li><li><a href="#">ニュース</a></li><li><a href="#">ブランド素材</a></li></ul></div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Ubichill Project · AGPL-3.0-only</span>
+    </div>
+  </div>
+</footer>
+
+<div class="variant-label">案K · Own Your World <a href="./index.html">一覧へ</a></div>
+
+<script type="module" src="./assets/logo3d.js"></script>
+</body>
+</html>

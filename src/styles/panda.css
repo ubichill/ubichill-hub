@@ -1,0 +1,2 @@
+/* PandaCSS のレイヤー宣言。PostCSS プラグインがここに生成した CSS を差し込む */
+@layer reset, base, tokens, recipes, utilities;

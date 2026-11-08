@@ -1,0 +1,74 @@
+---
+import { css } from 'styled-system/css';
+import { site } from '../../data/site';
+import Icon, { type IconName } from '../Icon.astro';
+import Section from '../Section.astro';
+
+const items: { icon: IconName; title: string; code: string; href: string }[] = [
+  { icon: 'login', title: '入ってみる', code: 'ubichill.com', href: site.app },
+  { icon: 'layout', title: 'エディタで作る', code: 'ブラウザだけ', href: '/docs/create/editor/' },
+  { icon: 'terminal', title: 'コードで作る', code: 'npx ubichill dev', href: '/docs/mods/' },
+  { icon: 'upload', title: '公開する', code: 'ubichill publish', href: '/docs/publish/' },
+  { icon: 'server', title: 'サーバーを建てる', code: 'helm install', href: '/docs/servers/self-hosting/' },
+];
+
+const grid = css({
+  marginTop: '40px',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(5, 1fr)',
+  gap: '14px',
+  lgDown: { gridTemplateColumns: 'repeat(3, 1fr)' },
+  smDown: { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' },
+});
+const item = css({
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  padding: '22px 20px',
+  borderRadius: 'lg',
+  bg: 'bg.surface',
+  boxShadow: 'card',
+  transition: 'transform 150ms ease',
+  _hover: { transform: 'translateY(-3px)' },
+  smDown: { padding: '18px 16px' },
+  '& .icon': {
+    width: '46px',
+    height: '46px',
+    borderRadius: '15px',
+    display: 'grid',
+    placeItems: 'center',
+    bg: 'bg.subtle',
+  },
+  '& h3': { fontSize: '16px', fontWeight: '800' },
+  '& code': {
+    marginTop: 'auto',
+    alignSelf: 'flex-start',
+    maxWidth: '100%',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontFamily: 'mono',
+    fontSize: '11.5px',
+    padding: '3px 9px',
+    borderRadius: '8px',
+    bg: 'accent',
+    color: 'accent.fg',
+  },
+});
+---
+
+<Section id="start" eyebrow="Get started" title="はじめる" center>
+  <div class={grid}>
+    {
+      items.map((it) => (
+        <a class={item} href={it.href} rel={it.href.startsWith('http') ? 'noopener' : undefined}>
+          <span class="icon">
+            <Icon name={it.icon} />
+          </span>
+          <h3>{it.title}</h3>
+          <code>{it.code}</code>
+        </a>
+      ))
+    }
+  </div>
+</Section>

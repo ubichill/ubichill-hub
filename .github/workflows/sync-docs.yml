@@ -1,0 +1,39 @@
+# ubichill 本体のドキュメントを取り込み直し、差分があれば PR を作る。
+# 手動（workflow_dispatch）か、毎週月曜の朝に動く。
+name: Sync docs from ubichill
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 0 * * 1"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ubichill/ubichill
+          path: .cache/ubichill
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: package.json
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm sync-docs
+        env:
+          UBICHILL_DIR: ${{ github.workspace }}/.cache/ubichill
+      - uses: peter-evans/create-pull-request@v7
+        with:
+          branch: chore/sync-docs
+          title: "docs: ubichill 本体のドキュメントを同期"
+          commit-message: "docs: ubichill 本体のドキュメントを同期"
+          body: |
+            `pnpm sync-docs` の結果。元ファイルは `src/content/synced.json` を参照。
+          labels: documentation

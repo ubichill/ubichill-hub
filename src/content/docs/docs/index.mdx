@@ -1,0 +1,54 @@
+---
+title: ドキュメント
+description: Ubichill の使い方・ワールドと mod の作り方・公開・サーバーの建て方。
+tableOfContents: false
+---
+
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
+
+Ubichill は、ワールドも mod も自分で作って、自分で持てる 2D メタバース。
+ここには使う人・作る人・サーバーを建てる人のための説明をまとめている。
+
+<CardGrid>
+  <Card title="使う" icon="rocket">
+    アカウントを作って、ホームワールドに入る。ランチパッドで部屋を探し、フレンドを招く。
+
+    [はじめかた](/docs/getting-started/) · [しくみと用語](/docs/concepts/)
+  </Card>
+  <Card title="ワールドをつくる" icon="pencil">
+    ブラウザのエディタで置くか、YAML で書く。中身はおなじ。
+
+    [エディタで作る](/docs/create/editor/) · [World as Code](/docs/create/world-as-code/) · [AI と一緒に](/docs/create/with-ai/)
+  </Card>
+  <Card title="mod をつくる" icon="seti:typescript">
+    TypeScript で書いて、Worker のサンドボックスで動かす。権限は使った API から自動で決まる。
+
+    [はじめての mod](/docs/mods/) · [API](/docs/mods/api/) · [CLI](/docs/mods/cli/)
+  </Card>
+  <Card title="公開する" icon="approve-check">
+    署名して、好きな場所に置く。Web でも CLI でも CI でも。
+
+    [署名して公開する](/docs/publish/)
+  </Card>
+  <Card title="サーバー" icon="laptop">
+    中央のない連合。自分のサーバーを Helm で建てる。
+
+    [連合のしくみ](/docs/servers/federation/) · [公開範囲と招待](/docs/servers/access/) · [セルフホスト](/docs/servers/self-hosting/)
+  </Card>
+  <Card title="内部設計" icon="document">
+    アーキテクチャ・プロトコル・コントリビュート。
+
+    [アーキテクチャ](/docs/internals/architecture/) · [コントリビュート](/docs/internals/contributing/)
+  </Card>
+</CardGrid>
+
+## AI に渡す
+
+ワールドの YAML や mod のコードを AI に書いてもらうときは、[`/llms.txt`](/llms.txt)（このドキュメントの目次）か
+[`/llms-full.txt`](/llms-full.txt)（全文）を渡す。書き方は [AI と一緒に作る](/docs/create/with-ai/)。
+
+## 本体リポジトリとの関係
+
+リファレンス（API・フォーマット・CLI・権限・アーキテクチャ）は
+[ubichill 本体リポジトリ](https://github.com/ubichill/ubichill)のドキュメントをそのまま取り込んでいる。
+ページ冒頭に「本体から同期」とあるものは、直すときは本体リポジトリへ。

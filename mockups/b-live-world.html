@@ -1,0 +1,767 @@
+<!doctype html>
+<!--
+  案B · Live World
+  コンセプト: ヒーロー全面が「動いている ubichill のワールド」。みんなのカーソルが動き回り、描き、動画の前に集まる。
+            訪問者のマウスも「あなた」としてワールドに入り、ドラッグで描ける。見出しはガラスのカードで浮かせ、3D ロゴも
+            ワールドに置かれたエンティティ（エディタ風の点線枠とラベル付き）として浮かぶ。
+  狙い: 説明より先に「カーソルが集まる」を体験させる。ページ全体もワールドの方眼の上にエンティティを並べた見た目で統一する。
+  向いている点: プロダクトの核（そこにいる感）が一瞬で伝わる / アプリ本体（#F0F8FF・navy・HUD）と見た目が直結
+  弱い点: JS が動かないと魅力が半減（静止画フォールバック必須）/ ヒーローの情報が散りやすい / スマホでは体験が弱まる
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ubichill Hub — 案B Live World</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Design tokens（PandaCSS の tokens / semanticTokens に移植する前提）
+   ============================================================ */
+:root {
+  /* --- tokens.colors --- */
+  --colors-world-50: #f7fbff;
+  --colors-world-100: #f0f8ff; /* ワールド既定背景 */
+  --colors-world-200: #e2effb;
+  --colors-navy-950: #0f1729;
+  --colors-navy-900: #1b2a44;
+  --colors-navy-800: #22345a;
+  --colors-navy-500: #56627a;
+  --colors-navy-300: #9ea7bd;
+  --colors-blue-500: #4780e0;
+  --colors-blue-600: #3a6cc4;
+  --colors-sky-200: #bde1fb;
+  --colors-periwinkle-300: #9ab2f8;
+  --colors-lavender-300: #ceb0fa;
+  --colors-pink-300: #f4a7c1;
+  --colors-green-400: #8ad29b;
+  --colors-yellow-300: #f1c86c;
+  --colors-note-yellow: #fff3b8;
+  --colors-white: #ffffff;
+
+  /* --- semanticTokens.colors --- */
+  --colors-bg: var(--colors-world-100);
+  --colors-bg-surface: var(--colors-white);
+  --colors-bg-glass: rgba(255, 255, 255, 0.78);
+  --colors-bg-hud: rgba(15, 23, 41, 0.92);
+  --colors-bg-hud-item: rgba(255, 255, 255, 0.06);
+  --colors-fg: var(--colors-navy-900);
+  --colors-fg-muted: var(--colors-navy-500);
+  --colors-fg-subtle: var(--colors-navy-300);
+  --colors-fg-hud: rgba(255, 255, 255, 0.9);
+  --colors-fg-hud-muted: rgba(255, 255, 255, 0.6);
+  --colors-accent: var(--colors-blue-500);
+  --colors-accent-hover: var(--colors-blue-600);
+  --colors-accent-fg: var(--colors-white);
+  --colors-border: rgba(27, 42, 68, 0.12);
+  --colors-border-hud: rgba(255, 255, 255, 0.1);
+  --colors-grid: rgba(27, 42, 68, 0.1);
+  --colors-selection: rgba(71, 128, 224, 0.75); /* エディタの選択枠 */
+  --colors-chip: var(--colors-navy-900); /* エンティティラベル */
+
+  /* --- tokens.radii --- */
+  --radii-xs: 6px;
+  --radii-sm: 10px;
+  --radii-md: 14px;
+  --radii-lg: 20px;
+  --radii-full: 999px;
+
+  /* --- tokens.fonts --- */
+  --fonts-body: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --fonts-heading: 'Inter', 'Noto Sans JP', system-ui, sans-serif;
+  --fonts-mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  /* --- tokens.shadows --- */
+  --shadows-card: 0 8px 24px rgba(27, 42, 68, 0.08);
+  --shadows-glass: 0 20px 50px rgba(27, 42, 68, 0.16);
+  --shadows-hud: 0 12px 32px rgba(15, 23, 41, 0.35);
+
+  /* --- tokens.spacing / sizes --- */
+  --spacing-section: clamp(80px, 10vw, 128px);
+  --spacing-gutter: clamp(20px, 4vw, 40px);
+  --sizes-container: 1180px;
+  --sizes-header: 60px;
+}
+
+/* ============================================================ base */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background-color: var(--colors-bg);
+  background-image: radial-gradient(var(--colors-grid) 1.2px, transparent 1.3px);
+  background-size: 22px 22px;
+  color: var(--colors-fg);
+  font-family: var(--fonts-body);
+  font-size: 16px;
+  line-height: 1.75;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+h1, h2, h3, h4, p { margin: 0; }
+code { font-family: var(--fonts-mono); font-size: .88em; }
+.container { width: min(var(--sizes-container), 100% - var(--spacing-gutter) * 2); margin-inline: auto; }
+.ic { width: 20px; height: 20px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ic--sm { width: 16px; height: 16px; }
+.ic--lg { width: 24px; height: 24px; }
+
+/* recipe: button */
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 46px; padding: 0 22px; border-radius: var(--radii-sm); border: 0; cursor: pointer; font-family: var(--fonts-body); font-size: 15px; font-weight: 700; white-space: nowrap; transition: background .15s, transform .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn--primary { background: var(--colors-accent); color: var(--colors-accent-fg); box-shadow: 0 8px 18px rgba(71, 128, 224, .3); }
+.btn--primary:hover { background: var(--colors-accent-hover); }
+.btn--navy { background: var(--colors-navy-900); color: var(--colors-white); }
+.btn--outline { background: var(--colors-bg-surface); color: var(--colors-fg); box-shadow: inset 0 0 0 1px var(--colors-border); }
+.btn--sm { height: 36px; padding: 0 14px; font-size: 13.5px; }
+
+/* recipe: entity（エディタ風の点線枠＋ラベル） */
+.entity { position: relative; }
+.entity::after { content: ""; position: absolute; inset: -7px; border: 1.5px dashed transparent; border-radius: calc(var(--radii-lg) + 6px); pointer-events: none; transition: border-color .15s; }
+.entity:hover::after, .entity.is-selected::after { border-color: var(--colors-selection); }
+.entity__chip { position: absolute; left: -2px; top: -30px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: var(--radii-xs); background: var(--colors-chip); color: var(--colors-white); font-family: var(--fonts-mono); font-size: 10.5px; font-weight: 500; letter-spacing: .01em; white-space: nowrap; }
+.entity__chip i { font-style: normal; opacity: .6; }
+
+/* section heading */
+.section { padding-top: var(--spacing-section); }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font-family: var(--fonts-mono); font-size: 12px; font-weight: 500; color: var(--colors-accent); }
+.kicker::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: currentColor; }
+.section h2 { margin-top: 10px; font-size: clamp(28px, 3.6vw, 44px); font-weight: 900; line-height: 1.3; letter-spacing: -.02em; }
+.section__lead { margin-top: 14px; max-width: 38em; color: var(--colors-fg-muted); }
+
+/* ============================================================ header */
+.header { position: sticky; top: 0; z-index: 60; height: var(--sizes-header); background: rgba(255, 255, 255, .92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid var(--colors-border); }
+.header__inner { height: 100%; display: flex; align-items: center; gap: 24px; }
+.brand { display: flex; align-items: center; gap: 9px; font-weight: 800; font-size: 18px; letter-spacing: -.01em; }
+.brand img { width: 24px; height: auto; }
+.brand small { font-family: var(--fonts-mono); font-size: 11px; font-weight: 500; color: var(--colors-fg-muted); padding: 1px 6px; border-radius: var(--radii-xs); background: var(--colors-world-200); }
+.nav { display: flex; gap: 2px; }
+.nav a { padding: 6px 12px; border-radius: var(--radii-sm); font-size: 14px; font-weight: 500; color: var(--colors-fg-muted); }
+.nav a:hover { color: var(--colors-fg); background: var(--colors-world-100); }
+.header__actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.icon-btn { width: 36px; height: 36px; border-radius: var(--radii-sm); display: grid; place-items: center; color: var(--colors-fg-muted); background: transparent; border: 0; cursor: pointer; }
+.icon-btn:hover { background: var(--colors-world-100); color: var(--colors-fg); }
+.menu-btn { display: none; }
+
+/* ============================================================ hero */
+.hero { position: relative; height: clamp(640px, calc(100svh - var(--sizes-header)), 940px); border-bottom: 1px solid var(--colors-border); }
+/* world.js が注入する .uw{position:relative;touch-action:none} に後勝ちされないよう詳細度を上げる */
+.hero__world, .hero__world.uw { position: absolute; inset: 0; touch-action: pan-y; }
+/* world.js の HUD は left:50% のため狭い画面で縮んでラベルが縦に折れる。幅を内容に合わせる */
+.uw .uw__hud { width: max-content; }
+.hero__overlay { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+.hero__overlay > * { pointer-events: auto; }
+.hero__card {
+  position: absolute; left: clamp(20px, 4vw, 56px); bottom: clamp(84px, 11vh, 120px);
+  width: min(560px, calc(100% - 40px)); padding: 30px 32px 30px;
+  border-radius: var(--radii-lg); background: var(--colors-bg-glass);
+  backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: var(--shadows-glass), inset 0 0 0 1px rgba(255, 255, 255, .8);
+}
+.hint { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; border-radius: var(--radii-full); background: var(--colors-world-200); font-size: 12px; font-weight: 600; color: var(--colors-navy-800); }
+.hint__dot { width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center; background: var(--colors-navy-900); color: var(--colors-white); }
+.hint__dot .ic { width: 12px; height: 12px; }
+.hero h1 { margin-top: 16px; font-size: clamp(40px, 5vw, 66px); font-weight: 900; line-height: 1.12; letter-spacing: -.03em; }
+.hero h1 em { font-style: normal; background: linear-gradient(100deg, #6fb6ef, #8b9ff5 50%, #b48cf3); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero__lead { margin-top: 16px; font-size: 15px; color: var(--colors-fg-muted); }
+.news { margin-top: 18px; display: inline-flex; align-items: center; gap: 10px; max-width: 100%; padding: 6px 12px 6px 6px; border-radius: var(--radii-sm); background: var(--colors-white); box-shadow: inset 0 0 0 1px var(--colors-border); font-size: 13px; }
+.news b { flex: none; font-family: var(--fonts-mono); font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: var(--radii-xs); background: var(--colors-navy-900); color: var(--colors-white); }
+.news span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero__cta { margin-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+.hero__logo-wrap { position: absolute; right: clamp(24px, 6vw, 96px); top: clamp(70px, 12vh, 120px); width: clamp(150px, 16vw, 230px); }
+.hero__logo { width: 100%; aspect-ratio: 667 / 761; }
+.hero__logo-wrap.entity::after { inset: -14px; border-radius: 18px; border-color: var(--colors-selection); }
+.hero__logo-wrap .entity__chip { top: -40px; left: -14px; }
+.hero__scroll { position: absolute; left: clamp(20px, 4vw, 56px); bottom: 26px; display: flex; align-items: center; gap: 8px; font-family: var(--fonts-mono); font-size: 11px; color: var(--colors-fg-muted); padding: 6px 10px; border-radius: var(--radii-full); background: var(--colors-bg-glass); }
+
+/* ============================================================ pillars（エンティティとして並ぶ柱） */
+.pillars { margin-top: 64px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px 22px; }
+.pillar { padding: 0; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.pillar__art { position: relative; height: 150px; border-radius: var(--radii-lg) var(--radii-lg) 0 0; overflow: hidden; background-color: var(--colors-world-100); background-image: radial-gradient(var(--colors-grid) 1.2px, transparent 1.3px); background-size: 16px 16px; }
+.pillar__body { padding: 20px 22px 24px; }
+.pillar h3 { font-size: 17px; font-weight: 800; letter-spacing: -.01em; }
+.pillar p { margin-top: 8px; font-size: 13.5px; line-height: 1.85; color: var(--colors-fg-muted); }
+.pa-cursor { position: absolute; display: flex; align-items: flex-start; animation: pa-drift 6s ease-in-out infinite; }
+.pa-cursor svg { width: 18px; height: 18px; filter: drop-shadow(0 2px 2px rgba(27,42,68,.2)); }
+.pa-cursor span { margin: 13px 0 0 -3px; padding: 1px 7px; border-radius: var(--radii-full); font-size: 10px; font-weight: 700; white-space: nowrap; }
+@keyframes pa-drift { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(14px, -8px); } }
+.pa-url { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 82%; height: 40px; border-radius: var(--radii-sm); background: var(--colors-white); box-shadow: var(--shadows-card); display: flex; align-items: center; gap: 8px; padding: 0 12px; font-family: var(--fonts-mono); font-size: 11.5px; color: var(--colors-fg-muted); white-space: nowrap; overflow: hidden; }
+.pa-url b { color: var(--colors-fg); font-weight: 500; }
+.pa-url .caret { width: 1.5px; height: 16px; background: var(--colors-accent); animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.pa-mods { position: absolute; inset: 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pa-mods span { display: grid; place-items: center; gap: 2px; border-radius: var(--radii-sm); background: var(--colors-white); box-shadow: var(--shadows-card); font-family: var(--fonts-mono); font-size: 9.5px; color: var(--colors-fg-muted); padding: 6px 2px; }
+.pa-mods span.is-new { box-shadow: inset 0 0 0 1.5px var(--colors-accent); color: var(--colors-accent); }
+.pa-net { position: absolute; inset: 0; width: 100%; height: 100%; }
+.pa-net path { fill: none; stroke: var(--colors-periwinkle-300); stroke-width: 2; stroke-dasharray: 4 5; animation: dash 1.4s linear infinite; }
+.pa-net circle { fill: var(--colors-white); stroke: var(--colors-navy-900); stroke-width: 1.5; }
+@keyframes dash { to { stroke-dashoffset: -18; } }
+
+/* ============================================================ launchpad（はじめる） */
+.launchpad { margin-top: 48px; padding: 14px; border-radius: 22px; background: var(--colors-bg-hud); color: var(--colors-fg-hud); box-shadow: var(--shadows-hud); }
+.launchpad__bar { display: flex; align-items: center; gap: 10px; padding: 8px 10px 16px; border-bottom: 1px solid var(--colors-border-hud); }
+.launchpad__bar h3 { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.launchpad__bar span { margin-left: auto; font-family: var(--fonts-mono); font-size: 11px; color: var(--colors-fg-hud-muted); }
+.launchpad__grid { margin-top: 14px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+.lp-tile { display: flex; flex-direction: column; gap: 10px; min-height: 196px; padding: 18px; border-radius: var(--radii-md); background: var(--colors-bg-hud-item); box-shadow: inset 0 0 0 1px var(--colors-border-hud); transition: background .15s, transform .15s; }
+.lp-tile:hover { background: rgba(255, 255, 255, .1); transform: translateY(-2px); }
+.lp-tile__icon { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: var(--colors-navy-900); }
+.lp-tile h4 { font-size: 15px; font-weight: 700; color: var(--colors-white); }
+.lp-tile p { font-size: 12.5px; line-height: 1.7; color: var(--colors-fg-hud-muted); }
+.lp-tile code { color: var(--colors-periwinkle-300); }
+.lp-tile__go { margin-top: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--colors-periwinkle-300); }
+.lp-tile--primary { background: linear-gradient(150deg, rgba(71, 128, 224, .45), rgba(154, 178, 248, .2)); }
+
+/* ============================================================ use cases（小さなワールド 4 つ） */
+.cases { margin-top: 56px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 40px 24px; }
+.case { border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.case__world, .case__world.uw { position: relative; height: 270px; border-radius: var(--radii-lg) var(--radii-lg) 0 0; }
+.case__body { display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: start; padding: 20px 24px 24px; }
+.case__icon { grid-row: span 2; width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; background: var(--colors-world-200); }
+.case h3 { font-size: 17px; font-weight: 800; }
+.case p { font-size: 13.5px; color: var(--colors-fg-muted); line-height: 1.8; }
+
+/* ============================================================ features（実際の画面） */
+.feat { margin-top: 56px; display: grid; grid-template-columns: 1.35fr 1fr; gap: 36px; align-items: start; }
+.feat__shot { position: sticky; top: calc(var(--sizes-header) + 48px); }
+.shot { margin: 0; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-glass); overflow: hidden; }
+.shot__bar { height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--colors-border); }
+.shot__dots { display: flex; gap: 6px; } .shot__dots i { width: 10px; height: 10px; border-radius: 50%; display: block; }
+.shot__url { flex: 1; max-width: 360px; margin: 0 auto; height: 22px; border-radius: 7px; background: var(--colors-world-100); display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px; font-weight: 600; color: var(--colors-fg-muted); }
+.shot img { width: 100%; aspect-ratio: 2513 / 1295; object-fit: cover; object-position: left top; }
+.shot figcaption { display: flex; align-items: center; gap: 10px; padding: 12px 16px; font-size: 12.5px; color: var(--colors-fg-muted); border-top: 1px solid var(--colors-border); }
+.shot figcaption b { flex: none; white-space: nowrap; font-family: var(--fonts-mono); font-size: 10.5px; font-weight: 500; padding: 2px 8px; border-radius: var(--radii-xs); background: #e4f5ec; color: #1e7e46; }
+.feat-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.feat-list li { display: grid; grid-template-columns: 38px 1fr; gap: 14px; padding: 12px 14px; border-radius: var(--radii-md); transition: background .15s; }
+.feat-list li:hover { background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.feat-list__icon { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; background: var(--colors-bg-surface); box-shadow: inset 0 0 0 1px var(--colors-border); }
+.feat-list h3 { font-size: 15px; font-weight: 700; }
+.feat-list p { font-size: 13px; line-height: 1.7; color: var(--colors-fg-muted); }
+
+/* ============================================================ developers */
+.dev { margin-top: 56px; display: grid; grid-template-columns: 1fr 1.25fr; gap: 40px; align-items: start; }
+.dev__facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.dev__facts li { display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 16px; border-radius: var(--radii-md); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.dev__facts .ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--colors-navy-900); color: var(--colors-white); }
+.dev__facts h3 { font-size: 15px; font-weight: 700; }
+.dev__facts p { font-size: 13px; line-height: 1.7; color: var(--colors-fg-muted); }
+.hud { min-width: 0; border-radius: 18px; background: var(--colors-bg-hud); color: var(--colors-fg-hud); box-shadow: var(--shadows-hud); }
+.tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--colors-border-hud); overflow-x: auto; }
+.tab { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border-radius: 9px; border: 0; background: transparent; color: var(--colors-fg-hud-muted); font-family: var(--fonts-mono); font-size: 12px; cursor: pointer; white-space: nowrap; }
+.tab[aria-selected="true"] { background: rgba(255, 255, 255, .12); color: var(--colors-white); }
+.tab-panel { padding: 4px 0 0; }
+.tab-panel[hidden] { display: none; }
+.tab-panel pre { margin: 0; padding: 18px 22px 22px; font-family: var(--fonts-mono); font-size: 13px; line-height: 1.8; overflow-x: auto; color: #dfe6f5; counter-reset: ln; }
+.tab-panel pre .l { display: block; }
+.tab-panel pre .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 2.2em; margin-right: 12px; text-align: right; color: rgba(255, 255, 255, .25); }
+.tok-k { color: #ceb0fa; } .tok-s { color: #a6e3b4; } .tok-c { color: #7d8aa6; } .tok-n { color: #f1c86c; } .tok-p { color: #9ab2f8; }
+.hud__foot { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--colors-border-hud); font-size: 12px; color: var(--colors-fg-hud-muted); }
+.hud__foot i { width: 8px; height: 8px; border-radius: 50%; background: #40c057; display: block; }
+.tiers { list-style: none; margin: 0; padding: 18px; display: grid; gap: 10px; }
+.tier { display: grid; grid-template-columns: 110px 1fr; gap: 14px; align-items: center; padding: 14px; border-radius: 12px; background: var(--colors-bg-hud-item); }
+.tier b { justify-self: start; font-family: var(--fonts-mono); font-size: 12px; padding: 3px 10px; border-radius: var(--radii-full); }
+.tier--safe b { background: rgba(138, 210, 155, .18); color: #a6e3b4; }
+.tier--sensitive b { background: rgba(241, 200, 108, .18); color: #f1c86c; }
+.tier--dangerous b { background: rgba(255, 143, 143, .18); color: #ff9f9f; }
+.tier span { font-size: 13px; color: var(--colors-fg-hud); line-height: 1.7; }
+
+/* ============================================================ federation */
+.fed { margin-top: 56px; position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 90px; }
+.fed__server { position: relative; }
+.fed__label { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.fed__label img { width: 22px; }
+.fed__label b { font-family: var(--fonts-mono); font-size: 13px; font-weight: 700; }
+.fed__label span { margin-left: auto; font-size: 11.5px; font-weight: 600; padding: 2px 10px; border-radius: var(--radii-full); background: var(--colors-bg-surface); box-shadow: inset 0 0 0 1px var(--colors-border); color: var(--colors-fg-muted); }
+.fed__world, .fed__world.uw { position: relative; height: 300px; border-radius: var(--radii-lg); box-shadow: var(--shadows-glass); }
+.fed__bridge { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 20; width: 150px; height: 120px; pointer-events: none; }
+.fed__bridge svg { width: 100%; height: 100%; overflow: visible; }
+.fed__bridge path { fill: none; stroke: var(--colors-accent); stroke-width: 2; stroke-dasharray: 5 6; animation: dash 1.4s linear infinite; }
+.fed__packet { position: absolute; left: 0; top: 0; display: flex; align-items: flex-start; offset-path: path('M 0 70 C 40 0, 110 0, 150 70'); offset-rotate: 0deg; animation: hop 4.5s ease-in-out infinite; }
+.fed__packet svg { width: 20px; height: 20px; filter: drop-shadow(0 2px 3px rgba(27,42,68,.3)); }
+.fed__packet span { margin: 14px 0 0 -3px; padding: 1px 7px; border-radius: var(--radii-full); background: var(--colors-lavender-300); font-size: 10px; font-weight: 700; white-space: nowrap; }
+@keyframes hop { 0%, 12% { offset-distance: 0%; } 50%, 62% { offset-distance: 100%; } 100% { offset-distance: 0%; } }
+.fed__info { margin-top: 40px; display: grid; grid-template-columns: 1fr 1.6fr; gap: 24px; align-items: start; }
+.addr-card { padding: 22px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.addr-card h3 { font-size: 15px; font-weight: 700; }
+.addr-card .addr { margin-top: 12px; font-family: var(--fonts-mono); font-size: 14px; padding: 12px 14px; border-radius: var(--radii-sm); background: var(--colors-world-100); word-break: break-all; }
+.addr-card .addr b { color: var(--colors-accent); font-weight: 500; }
+.addr-card p { margin-top: 12px; font-size: 13px; color: var(--colors-fg-muted); line-height: 1.75; }
+.scopes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.scope { padding: 16px 18px; border-radius: var(--radii-md); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.scope h4 { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 700; }
+.scope h4 i { width: 10px; height: 10px; border-radius: 3px; display: block; }
+.scope p { margin-top: 4px; font-size: 12.5px; color: var(--colors-fg-muted); line-height: 1.7; }
+
+/* ============================================================ self-host + OSS */
+.host { margin-top: 56px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 24px; align-items: stretch; }
+.host__term { min-width: 0; display: flex; flex-direction: column; }
+.host__term pre { flex: 1; margin: 0; padding: 20px 22px; font-family: var(--fonts-mono); font-size: 13px; line-height: 1.85; overflow-x: auto; color: #dfe6f5; }
+.host__term .prompt { color: var(--colors-green-400); user-select: none; }
+.copy-btn { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border: 0; border-radius: 8px; background: rgba(255, 255, 255, .1); color: var(--colors-fg-hud); font-family: var(--fonts-body); font-size: 12px; cursor: pointer; }
+.host__steps { list-style: none; margin: 0; padding: 0 22px 22px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.host__steps li { padding: 12px; border-radius: 12px; background: var(--colors-bg-hud-item); font-size: 12px; line-height: 1.6; color: var(--colors-fg-hud-muted); }
+.host__steps b { display: block; font-family: var(--fonts-mono); font-size: 11px; color: var(--colors-periwinkle-300); margin-bottom: 2px; }
+.oss { position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 30px; border-radius: 18px; background: var(--colors-bg-surface); box-shadow: var(--shadows-card); }
+.oss::before { content: ""; position: absolute; width: 260px; height: 260px; right: -120px; top: -140px; border-radius: 50%; background: radial-gradient(circle at 40% 60%, var(--colors-lavender-300), var(--colors-periwinkle-300) 50%, transparent 72%); opacity: .4; }
+.oss__badge { position: relative; align-self: flex-start; font-family: var(--fonts-mono); font-size: 11px; padding: 2px 9px; border-radius: var(--radii-xs); background: var(--colors-navy-900); color: var(--colors-white); }
+.oss h3 { position: relative; margin-top: 14px; font-size: 24px; font-weight: 900; letter-spacing: -.02em; line-height: 1.4; }
+.oss p { position: relative; margin-top: 10px; font-size: 14px; color: var(--colors-fg-muted); }
+.oss__cta { position: relative; margin-top: auto; padding-top: 22px; display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* ============================================================ footer（HUD 風） */
+.footer { margin-top: var(--spacing-section); background: var(--colors-navy-950); color: var(--colors-fg-hud); }
+.footer__inner { padding: 56px 0 28px; }
+.footer__grid { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
+.footer .brand { color: var(--colors-white); }
+.footer .brand small { background: rgba(255, 255, 255, .1); color: var(--colors-fg-hud-muted); }
+.footer__tag { margin-top: 12px; font-size: 13px; color: var(--colors-fg-hud-muted); max-width: 22em; }
+.footer h4 { margin-bottom: 12px; font-family: var(--fonts-mono); font-size: 11.5px; font-weight: 500; color: var(--colors-fg-hud-muted); }
+.footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: 14px; }
+.footer ul a:hover { color: var(--colors-periwinkle-300); }
+.footer__bottom { margin-top: 44px; padding-top: 20px; border-top: 1px solid var(--colors-border-hud); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--colors-fg-hud-muted); }
+.footer__online { display: inline-flex; align-items: center; gap: 8px; font-family: var(--fonts-mono); }
+.footer__online i { width: 8px; height: 8px; border-radius: 50%; background: #40c057; display: block; box-shadow: 0 0 0 4px rgba(64, 192, 87, .18); }
+
+/* SECTION-CSS */
+
+/* 案ラベル */
+.variant-label { position: fixed; right: 16px; bottom: 16px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: var(--radii-full); background: var(--colors-navy-900); color: var(--colors-white); font-size: 12px; font-weight: 700; box-shadow: var(--shadows-hud); }
+.variant-label a { padding: 4px 10px; border-radius: var(--radii-full); background: rgba(255, 255, 255, .14); }
+
+/* ============================================================ responsive */
+@media (max-width: 1100px) {
+  .pillars { grid-template-columns: repeat(2, 1fr); }
+  .launchpad__grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 960px) {
+  .nav { display: none; }
+  .menu-btn { display: grid; }
+  .feat, .dev, .host, .fed__info { grid-template-columns: 1fr; }
+  .feat { gap: 28px; }
+  .feat__shot { position: relative; top: auto; }
+  .feat-list { grid-template-columns: 1fr 1fr; }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+  .footer__grid > :first-child { grid-column: span 2; }
+}
+@media (max-width: 720px) {
+  .header__actions .btn, .header__actions .icon-btn--lang { display: none; }
+  .hero { height: auto; border-bottom: 0; }
+  .hero__world, .hero__world.uw { position: relative; inset: auto; height: 62svh; min-height: 420px; }
+  .hero__overlay { position: relative; inset: auto; pointer-events: auto; }
+  .hero__card { position: relative; left: auto; bottom: auto; width: auto; margin: 14px 14px 0; padding: 24px 22px; }
+  .hero__logo-wrap { position: absolute; top: -330px; right: 22px; width: 104px; }
+  .hero__logo-wrap .entity__chip { display: none; }
+  .hero__scroll { display: none; }
+  .pillars, .cases, .feat-list { grid-template-columns: 1fr; }
+  .launchpad { padding: 10px; }
+  .launchpad__grid { grid-template-columns: 1fr; }
+  .lp-tile { min-height: 0; }
+  .lp-tile__go { margin-top: 2px; }
+  .fed { grid-template-columns: 1fr; gap: 88px; }
+  .fed__bridge { transform: translate(-50%, -50%) rotate(90deg); }
+  .fed__packet span { display: none; }
+  .fed__world, .fed__world.uw { height: 260px; }
+  .host__steps { grid-template-columns: 1fr; }
+  .tier { grid-template-columns: 1fr; gap: 6px; }
+  .footer__grid { grid-template-columns: 1fr; }
+  .footer__grid > :first-child { grid-column: auto; }
+  .variant-label { right: 10px; bottom: 10px; font-size: 11px; }
+}
+@media (max-width: 520px) {
+  .scopes { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 38px; }
+  .tab-panel pre, .host__term pre { font-size: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  html { scroll-behavior: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- アイコン（lucide 風）スプライト -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+    <symbol id="i-arrow-ur" viewBox="0 0 24 24"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></symbol>
+    <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+    <symbol id="i-lang" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+    <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"/></symbol>
+    <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+    <symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+    <symbol id="i-file-code" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></symbol>
+    <symbol id="i-pr" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></symbol>
+    <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.950A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></symbol>
+    <symbol id="i-tv" viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2"/><polyline points="17 2 12 7 7 2"/></symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+    <symbol id="i-note" viewBox="0 0 24 24"><path d="M15.5 3H5a2 2 0 0 0-2 2v14c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2V8.5L15.5 3Z"/><path d="M15 3v6h6"/></symbol>
+    <symbol id="i-zap" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.020A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2"/><path d="M12 18h.01"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+    <symbol id="i-user-plus" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6"/><path d="M22 11h-6"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+    <symbol id="i-terminal" viewBox="0 0 24 24"><polyline points="4 17 10 11 4 5"/><path d="M12 19h8"/></symbol>
+    <symbol id="i-layers" viewBox="0 0 24 24"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  </defs>
+</svg>
+
+<header class="header">
+  <div class="container header__inner">
+    <a class="brand" href="#"><img src="./assets/logo-transparent-sm.png" alt="" />Ubichill<small>hub</small></a>
+    <nav class="nav" aria-label="メイン">
+      <a href="#launchpad">ドキュメント</a>
+      <a href="#features">ワールド</a>
+      <a href="#dev">mod</a>
+      <a href="#servers">サーバー</a>
+      <a href="#">ニュース</a>
+    </nav>
+    <div class="header__actions">
+      <button class="icon-btn icon-btn--lang" type="button" aria-label="言語を切り替える"><svg class="ic"><use href="#i-lang" /></svg></button>
+      <a class="icon-btn" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="ic"><use href="#i-github" /></svg></a>
+      <a class="btn btn--navy btn--sm" href="https://ubichill.com/">アプリを開く</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="メニュー"><svg class="ic"><use href="#i-menu" /></svg></button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- ======================================================== HERO（動くワールド） -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__world" data-world data-theme="light" data-cursors="6" data-grid="dots"></div>
+    <div class="hero__overlay">
+      <div class="hero__logo-wrap entity is-selected" data-logo3d-host>
+        <span class="entity__chip">logo <i>·</i> brand:logo3d</span>
+        <div class="hero__logo" data-logo3d data-depth="26" data-thickness="11" data-tilt="20"></div>
+      </div>
+      <div class="hero__card">
+        <span class="hint"><span class="hint__dot"><svg class="ic"><use href="#i-pointer" /></svg></span>あなたのカーソルも参加中。ドラッグで描けます</span>
+        <h1 id="hero-title">カーソルで、<br /><em>そこにいる。</em></h1>
+        <p class="hero__lead">Ubichill は、みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。URL を開くだけ。インストール不要、機能は誰でも URL で追加できる。</p>
+        <a class="news" href="#servers"><b>NEW</b><span>サーバー間の連合（federation v1）に対応しました</span><svg class="ic ic--sm"><use href="#i-arrow" /></svg></a>
+        <div class="hero__cta">
+          <a class="btn btn--primary" href="https://ubichill.com/">アプリを開く<svg class="ic ic--sm"><use href="#i-arrow-ur" /></svg></a>
+          <a class="btn btn--outline" href="#about">詳しく知る</a>
+        </div>
+      </div>
+      <a class="hero__scroll" href="#about"><svg class="ic ic--sm"><use href="#i-arrow-down" /></svg>scroll</a>
+    </div>
+  </section>
+
+  <!-- ======================================================== PILLARS -->
+  <section class="section" id="about" aria-labelledby="about-title">
+    <div class="container">
+      <span class="kicker">world://about</span>
+      <h2 id="about-title">重くない。遠くない。<br />ちょうどいい「いっしょ」。</h2>
+      <p class="section__lead">通話アプリほど構えなくていいし、チャットほど離れてもいない。カーソルが見えるだけで、同じ部屋にいる感じがちゃんとある。</p>
+      <div class="pillars">
+        <article class="pillar entity">
+          <span class="entity__chip">pillar-01 <i>·</i> presence</span>
+          <div class="pillar__art" aria-hidden="true">
+            <div class="pa-cursor" style="left:16%;top:22%"><svg viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#9ab2f8" stroke="#1b2a44" stroke-width="1.6" stroke-linejoin="round" /></svg><span style="background:#9ab2f8">ありす</span></div>
+            <div class="pa-cursor" style="left:58%;top:30%;animation-delay:-2s"><svg viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#ceb0fa" stroke="#1b2a44" stroke-width="1.6" stroke-linejoin="round" /></svg><span style="background:#ceb0fa">ようかん</span></div>
+            <div class="pa-cursor" style="left:34%;top:60%;animation-delay:-4s"><svg viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#8ad29b" stroke="#1b2a44" stroke-width="1.6" stroke-linejoin="round" /></svg><span style="background:#8ad29b">ねこ</span></div>
+          </div>
+          <div class="pillar__body"><h3>カーソルだけのゆるい繋がり</h3><p>顔出しも声出しもなし。お互いの動線だけが伝わる、ちょうどいい存在感。</p></div>
+        </article>
+        <article class="pillar entity">
+          <span class="entity__chip">pillar-02 <i>·</i> url</span>
+          <div class="pillar__art" aria-hidden="true">
+            <div class="pa-url"><svg class="ic ic--sm"><use href="#i-lock" /></svg>ubichill.com/<b>@yokan/chill</b><span class="caret"></span></div>
+          </div>
+          <div class="pillar__body"><h3>URL をひらくだけ</h3><p>インストール不要。低スペックな PC やスマホからでも、ブラウザ 1 つで 1 秒で。</p></div>
+        </article>
+        <article class="pillar entity">
+          <span class="entity__chip">pillar-03 <i>·</i> mods</span>
+          <div class="pillar__art" aria-hidden="true">
+            <div class="pa-mods">
+              <span><svg class="ic ic--sm"><use href="#i-pen" /></svg>pen</span>
+              <span><svg class="ic ic--sm"><use href="#i-tv" /></svg>video</span>
+              <span><svg class="ic ic--sm"><use href="#i-note" /></svg>note</span>
+              <span><svg class="ic ic--sm"><use href="#i-zap" /></svg>danmaku</span>
+              <span><svg class="ic ic--sm"><use href="#i-phone" /></svg>mobile</span>
+              <span class="is-new"><svg class="ic ic--sm"><use href="#i-link" /></svg>your-mod</span>
+            </div>
+          </div>
+          <div class="pillar__body"><h3>mod でなんでも足せる</h3><p>ペン・動画・付箋…機能は URL から読み込む mod。ゼロトラストの Worker サンドボックスで安全に動く。</p></div>
+        </article>
+        <article class="pillar entity">
+          <span class="entity__chip">pillar-04 <i>·</i> federation</span>
+          <div class="pillar__art" aria-hidden="true">
+            <svg class="pa-net" viewBox="0 0 260 150" preserveAspectRatio="xMidYMid meet"><path d="M50 50 L130 100 L210 45 M50 50 L210 45" /><circle cx="50" cy="50" r="13" /><circle cx="210" cy="45" r="13" /><circle cx="130" cy="100" r="13" /></svg>
+          </div>
+          <div class="pillar__body"><h3>中央を持たない</h3><p>サーバー同士が連合。どのサーバーの人ともフレンドになり、相手の部屋に入れる。</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== LAUNCHPAD（はじめる） -->
+  <section class="section" id="launchpad" aria-labelledby="start-title">
+    <div class="container">
+      <span class="kicker">world://launchpad</span>
+      <h2 id="start-title">どこから入る？</h2>
+      <p class="section__lead">遊びに行くだけなら URL を開くだけ。自分の場所がほしくなったら、サーバーも mod もワールドも自分でつくれます。</p>
+      <div class="launchpad">
+        <div class="launchpad__bar"><h3><svg class="ic ic--sm"><use href="#i-rocket" /></svg>ランチパッド</h3><span>5 items</span></div>
+        <div class="launchpad__grid">
+          <a class="lp-tile lp-tile--primary" href="https://ubichill.com/">
+            <span class="lp-tile__icon" style="background:var(--colors-sky-200)"><svg class="ic"><use href="#i-rocket" /></svg></span>
+            <h4>アプリを開く</h4><p>ubichill.com でアカウントを作って、すぐにホームワールドへ。</p>
+            <span class="lp-tile__go">ubichill.com<svg class="ic ic--sm"><use href="#i-arrow-ur" /></svg></span>
+          </a>
+          <a class="lp-tile" href="#servers">
+            <span class="lp-tile__icon" style="background:var(--colors-periwinkle-300)"><svg class="ic"><use href="#i-server" /></svg></span>
+            <h4>自分のサーバーを建てる</h4><p>Helm チャート 1 つで Kubernetes に。DB も同梱。</p>
+            <span class="lp-tile__go">セルフホスト<svg class="ic ic--sm"><use href="#i-arrow" /></svg></span>
+          </a>
+          <a class="lp-tile" href="#dev">
+            <span class="lp-tile__icon" style="background:var(--colors-lavender-300)"><svg class="ic"><use href="#i-puzzle" /></svg></span>
+            <h4>mod をつくる</h4><p><code>@ubichill/sdk</code> と <code>ubi mod create</code> で機能を足す。</p>
+            <span class="lp-tile__go">SDK ドキュメント<svg class="ic ic--sm"><use href="#i-arrow" /></svg></span>
+          </a>
+          <a class="lp-tile" href="#dev">
+            <span class="lp-tile__icon" style="background:var(--colors-green-400)"><svg class="ic"><use href="#i-file-code" /></svg></span>
+            <h4>ワールドを書く</h4><p>World as Code。YAML 1 枚がワールドの唯一の真実。</p>
+            <span class="lp-tile__go">WaC ガイド<svg class="ic ic--sm"><use href="#i-arrow" /></svg></span>
+          </a>
+          <a class="lp-tile" href="https://github.com/ubichill/ubichill">
+            <span class="lp-tile__icon" style="background:var(--colors-yellow-300)"><svg class="ic"><use href="#i-pr" /></svg></span>
+            <h4>開発に参加する</h4><p>Issue / PR 歓迎。PR は日本語で OK。</p>
+            <span class="lp-tile__go">GitHub<svg class="ic ic--sm"><use href="#i-arrow-ur" /></svg></span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== USE CASES -->
+  <section class="section" aria-labelledby="cases-title">
+    <div class="container">
+      <span class="kicker">world://use-cases</span>
+      <h2 id="cases-title">こんな部屋が、URL 1 つで</h2>
+      <p class="section__lead">どれも同じ Ubichill。置く mod とワールドの YAML を変えるだけで、作業部屋にも上映会にも会場にもなる。</p>
+      <div class="cases">
+        <article class="case entity">
+          <span class="entity__chip">mokumoku <i>·</i> notes</span>
+          <div class="case__world" data-world data-theme="cream" data-frame="1" data-cursors="3" data-video="0" data-hud="0" data-tray="0"></div>
+          <div class="case__body"><span class="case__icon"><svg class="ic"><use href="#i-note" /></svg></span><h3>もくもく作業会</h3><p>それぞれの作業をしながら、ときどき付箋で声をかける。</p></div>
+        </article>
+        <article class="case entity">
+          <span class="entity__chip">watch-party <i>·</i> video-player</span>
+          <div class="case__world" data-world data-theme="dark" data-frame="1" data-cursors="4" data-notes="0" data-hud="0" data-tray="0"></div>
+          <div class="case__body"><span class="case__icon"><svg class="ic"><use href="#i-tv" /></svg></span><h3>動画・映画の同時視聴</h3><p>再生も一時停止もみんなで同期。弾幕を流してもいい。</p></div>
+        </article>
+        <article class="case entity">
+          <span class="entity__chip">whiteboard <i>·</i> pen</span>
+          <div class="case__world" data-world data-theme="light" data-grid="lines" data-frame="1" data-cursors="3" data-video="0" data-notes="0" data-hud="0"></div>
+          <div class="case__body"><span class="case__icon"><svg class="ic"><use href="#i-pen" /></svg></span><h3>お絵描き・ホワイトボード</h3><p>トレイからペンを持って、同じキャンバスに同時に描く。ここでも描けます。</p></div>
+        </article>
+        <article class="case entity">
+          <span class="entity__chip">event <i>·</i> video-player + note</span>
+          <div class="case__world" data-world data-theme="light" data-frame="1" data-cursors="7" data-hud="0" data-tray="0"></div>
+          <div class="case__body"><span class="case__icon"><svg class="ic"><use href="#i-layers" /></svg></span><h3>イベント・展示・勉強会</h3><p>ワールドを YAML で用意して、URL を配るだけで会場になる。</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== FEATURES -->
+  <section class="section" id="features" aria-labelledby="features-title">
+    <div class="container">
+      <span class="kicker">world://features</span>
+      <h2 id="features-title">ワールドでできること</h2>
+      <p class="section__lead">ワールドはエンティティと mod の組み合わせ。エディタで置いて、そのまま YAML に書き出せます。</p>
+      <div class="feat">
+        <div class="entity is-selected feat__shot" style="border-radius:var(--radii-lg)">
+          <span class="entity__chip">screenshot <i>·</i> world-editor</span>
+          <figure class="shot">
+            <div class="shot__bar"><span class="shot__dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></span><span class="shot__url"><svg class="ic" style="width:11px;height:11px"><use href="#i-lock" /></svg>ubichill.com/worlds/chiruwa/edit</span><span style="width:46px"></span></div>
+            <img src="./assets/app-editor.png" alt="Ubichill のワールドエディタ。左にヒエラルキー、中央のキャンバスに動画プレイヤーとペンを配置している" />
+            <figcaption><b>実際の画面</b>ワールドエディタ — ヒエラルキー・キャンバス・アセット</figcaption>
+          </figure>
+        </div>
+        <ul class="feat-list">
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-pointer" /></svg></span><span><h3>カーソルアバター</h3><p>.cur のカーソルテーマがそのままアバターに。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-pen" /></svg></span><span><h3>ペン・消しゴム</h3><p>描いた線はワールドに残り、みんなに同期される。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-tv" /></svg></span><span><h3>動画・ライブの同時視聴</h3><p>URL を貼るだけでプレイリストに。再生位置も共有。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-note" /></svg></span><span><h3>付箋・弾幕</h3><p>メモを貼ったり、画面にコメントを流したり。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-phone" /></svg></span><span><h3>スマホコントローラー</h3><p>スマホからでもカーソルを動かして参加できる。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-home" /></svg></span><span><h3>ホームとランチパッド</h3><p>ログインしたら自分のホームへ。移動も設定も HUD で。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-user-plus" /></svg></span><span><h3>フレンド・招待</h3><p>フレンドの現在地へ飛ぶ、招待する、リクエストインバイト。</p></span></li>
+          <li><span class="feat-list__icon"><svg class="ic"><use href="#i-eye" /></svg></span><span><h3>公開範囲 4 種</h3><p>パブリック・フレンド+・フレンドのみ・招待のみ。</p></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== DEVELOPERS -->
+  <section class="section" id="dev" aria-labelledby="dev-title">
+    <div class="container">
+      <span class="kicker">world://build</span>
+      <h2 id="dev-title">ワールドは YAML、<br />機能は mod。</h2>
+      <p class="section__lead">どちらも URL で配れる。権限は、使う人が握る。</p>
+      <div class="dev">
+        <ul class="dev__facts">
+          <li><span class="ico"><svg class="ic"><use href="#i-shield" /></svg></span><span><h3>ゼロトラストの Worker サンドボックス</h3><p>mod は Web Worker に隔離して実行。Host との境界は postMessage の一点だけ。</p></span></li>
+          <li><span class="ico"><svg class="ic"><use href="#i-code" /></svg></span><span><h3>権限は書かなくていい</h3><p>使った API からビルド時に静的解析で自動導出。初回使用時にだけ確認する。</p></span></li>
+          <li><span class="ico"><svg class="ic"><use href="#i-layers" /></svg></span><span><h3>宣言的な状態同期</h3><p><code>Ubi.state.sync()</code> 1 つで、全員共有・個人ごと・揮発を切り替え。</p></span></li>
+          <li><span class="ico"><svg class="ic"><use href="#i-terminal" /></svg></span><span><h3>完全 CSR + Go</h3><p>UI は Vite の CSR。インスタンス通信は独立した Go の WebSocket サーバー。</p></span></li>
+        </ul>
+        <div class="hud entity">
+          <span class="entity__chip" style="top:-30px">code <i>·</i> hud:panel</span>
+          <div class="tabs" role="tablist" aria-label="コード例">
+            <button class="tab" role="tab" aria-selected="true" aria-controls="tp-mod" id="tab-mod"><svg class="ic ic--sm"><use href="#i-code" /></svg>button.worker.tsx</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="tp-world" id="tab-world" tabindex="-1"><svg class="ic ic--sm"><use href="#i-file-code" /></svg>chill-room.yaml</button>
+            <button class="tab" role="tab" aria-selected="false" aria-controls="tp-perm" id="tab-perm" tabindex="-1"><svg class="ic ic--sm"><use href="#i-shield" /></svg>permissions</button>
+          </div>
+          <div class="tab-panel" role="tabpanel" id="tp-mod" aria-labelledby="tab-mod">
+<pre><span class="l"><span class="tok-c">// mods/like/src/button.worker.tsx</span></span><span class="l"><span class="tok-k">const</span> likes = Ubi.state.<span class="tok-p">sync</span>(<span class="tok-n">0</span>);</span><span class="l"></span><span class="l">Ubi.ui.<span class="tok-p">render</span>(() =&gt; (</span><span class="l">  &lt;<span class="tok-k">button</span> onClick={() =&gt; likes.<span class="tok-p">set</span>(likes.<span class="tok-p">get</span>() + <span class="tok-n">1</span>)}&gt;</span><span class="l">    いいね {likes.<span class="tok-p">get</span>()}</span><span class="l">  &lt;/<span class="tok-k">button</span>&gt;</span><span class="l">));</span></pre>
+          </div>
+          <div class="tab-panel" role="tabpanel" id="tp-world" aria-labelledby="tab-world" hidden>
+<pre><span class="l"><span class="tok-c"># worlds/chill-room.yaml</span></span><span class="l"><span class="tok-k">apiVersion</span>: <span class="tok-s">ubichill.com/v1alpha1</span></span><span class="l"><span class="tok-k">kind</span>: <span class="tok-s">World</span></span><span class="l"><span class="tok-k">metadata</span>:</span><span class="l">  <span class="tok-k">name</span>: <span class="tok-s">chill-room</span></span><span class="l">  <span class="tok-k">version</span>: <span class="tok-s">"1.0.0"</span></span><span class="l"><span class="tok-k">spec</span>:</span><span class="l">  <span class="tok-k">displayName</span>: <span class="tok-s">チルな作業部屋</span></span><span class="l">  <span class="tok-k">capacity</span>: { <span class="tok-k">max</span>: <span class="tok-n">20</span>, <span class="tok-k">default</span>: <span class="tok-n">10</span> }</span><span class="l">  <span class="tok-k">dependencies</span>:</span><span class="l">    - <span class="tok-k">name</span>: <span class="tok-s">pen</span></span><span class="l">    - <span class="tok-k">name</span>: <span class="tok-s">video-player</span></span></pre>
+          </div>
+          <div class="tab-panel" role="tabpanel" id="tp-perm" aria-labelledby="tab-perm" hidden>
+            <ul class="tiers">
+              <li class="tier tier--safe"><b>safe</b><span>描画・自分の状態・mod 自身のアセット。確認なしで動く</span></li>
+              <li class="tier tier--sensitive"><b>sensitive</b><span>外部への fetch など。接続先ドメインごとに初回だけ確認</span></li>
+              <li class="tier tier--dangerous"><b>dangerous</b><span>強い権限。シールド設定（なし / 確認 / 厳格 / 拒否）で拒否もできる</span></li>
+            </ul>
+          </div>
+          <div class="hud__foot"><i></i>capability はビルド時に自動生成 — mod.json の手書きは不要</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== FEDERATION -->
+  <section class="section" id="servers" aria-labelledby="fed-title">
+    <div class="container">
+      <span class="kicker">world://federation</span>
+      <h2 id="fed-title">どのサーバーの人とも、<br />同じ部屋に。</h2>
+      <p class="section__lead">Ubichill は中央のサーバーを置きません。部屋のことは部屋のサーバーが、人のことはその人のホームのサーバーが決めます。ActivityPub（AS2）の形で、署名は Ed25519 + RFC 9421。</p>
+      <div class="fed">
+        <div class="fed__server">
+          <div class="fed__label"><img src="./assets/logo-transparent-sm.png" alt="" /><b>ubichill.com</b><span>ホームのサーバー</span></div>
+          <div class="fed__world" data-world data-theme="cream" data-cursors="2" data-video="0" data-hud="0" data-tray="0" data-you="0"></div>
+        </div>
+        <div class="fed__bridge" aria-hidden="true">
+          <svg viewBox="0 0 150 120"><path d="M 0 70 C 40 0, 110 0, 150 70" /></svg>
+          <div class="fed__packet"><svg viewBox="0 0 24 24"><path d="M4 2.5 19.5 11l-6.6 1.9L9.6 19.6z" fill="#ceb0fa" stroke="#1b2a44" stroke-width="1.6" stroke-linejoin="round" /></svg><span>ようかん</span></div>
+        </div>
+        <div class="fed__server">
+          <div class="fed__label"><img src="./assets/logo-transparent-sm.png" alt="" /><b>chill.example</b><span>部屋のサーバー</span></div>
+          <div class="fed__world" data-world data-theme="light" data-cursors="4" data-notes="0" data-hud="0" data-tray="0" data-you="0"></div>
+        </div>
+      </div>
+      <div class="fed__info">
+        <div class="addr-card">
+          <h3>部屋の住所</h3>
+          <div class="addr">chill-room<b>@chill.example</b></div>
+          <p>どのサーバーの画面からでも、住所を開けば相手のサーバーの部屋に入れる。フレンド申請・招待・リクエストインバイトもサーバーをまたいで届く。</p>
+        </div>
+        <div class="scopes">
+          <div class="scope"><h4><i style="background:var(--colors-green-400)"></i>パブリック</h4><p>だれでも一覧で見つけられて、ログインしていれば入れる。</p></div>
+          <div class="scope"><h4><i style="background:var(--colors-sky-200)"></i>フレンド+</h4><p>中にいる人のフレンドまで見えて、入れる。</p></div>
+          <div class="scope"><h4><i style="background:var(--colors-periwinkle-300)"></i>フレンドのみ</h4><p>作成者のフレンドだけが見えて、入れる。</p></div>
+          <div class="scope"><h4><i style="background:var(--colors-lavender-300)"></i>招待のみ</h4><p>見えても、入るには招待が要る。合言葉ではなく「だれか」で決める。</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ======================================================== SELF HOST + OSS -->
+  <section class="section" aria-labelledby="host-title">
+    <div class="container">
+      <span class="kicker">world://self-host</span>
+      <h2 id="host-title">自分の場所は、自分で建てる。</h2>
+      <p class="section__lead"><code>global.domain</code> を決めるだけで、Ingress も CORS も認証の URL も導出されます。DB は同梱の PostgreSQL がパスワードまで自動生成。</p>
+      <div class="host">
+        <div class="hud host__term entity">
+          <span class="entity__chip">terminal <i>·</i> helm</span>
+          <div class="tabs"><span class="tab" aria-selected="true"><svg class="ic ic--sm"><use href="#i-terminal" /></svg>zsh</span><button class="copy-btn" type="button"><svg class="ic ic--sm"><use href="#i-copy" /></svg>コピー</button></div>
+<pre><span class="prompt">$ </span><span class="tok-p">helm</span> repo add ubichill https://ubichill.github.io/ubichill
+<span class="prompt">$ </span><span class="tok-p">helm</span> install ubichill ubichill/ubichill \
+    -n ubichill --create-namespace \
+    --set global.domain=<span class="tok-s">&lt;your-domain&gt;</span>
+<span class="tok-c"># => https://&lt;your-domain&gt; でワールドが開く</span></pre>
+          <ol class="host__steps">
+            <li><b>01 domain</b>ドメインを決める</li>
+            <li><b>02 install</b>Helm で入れる</li>
+            <li><b>03 federate</b>ほかのサーバーと連合</li>
+          </ol>
+        </div>
+        <div class="oss entity">
+          <span class="entity__chip">oss <i>·</i> AGPL-3.0</span>
+          <span class="oss__badge">open source</span>
+          <h3>Ubichill はずっと、<br />オープン。</h3>
+          <p>ソースコードは AGPL-3.0 で公開（独立した mod には追加的許可あり）。Issue / PR 歓迎、PR は日本語で OK。公式 mod だけ作る、もウェルカム。</p>
+          <div class="oss__cta">
+            <a class="btn btn--navy" href="https://github.com/ubichill/ubichill"><svg class="ic ic--sm"><use href="#i-github" /></svg>GitHub</a>
+            <a class="btn btn--outline" href="#"><svg class="ic ic--sm"><use href="#i-book" /></svg>コントリビュート</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__grid">
+      <div>
+        <a class="brand" href="#"><img src="./assets/logo-transparent-sm.png" alt="" />Ubichill<small>hub</small></a>
+        <p class="footer__tag">みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。</p>
+      </div>
+      <div><h4>product</h4><ul><li><a href="https://ubichill.com/">アプリを開く</a></li><li><a href="#features">ワールド</a></li><li><a href="#dev">mod</a></li><li><a href="#servers">サーバー</a></li></ul></div>
+      <div><h4>docs</h4><ul><li><a href="#">はじめに</a></li><li><a href="#">API</a></li><li><a href="#">Architecture</a></li><li><a href="#">Roadmap</a></li></ul></div>
+      <div><h4>community</h4><ul><li><a href="https://github.com/ubichill/ubichill">GitHub</a></li><li><a href="#">ニュース</a></li><li><a href="#">ライセンス</a></li><li><a href="#">行動規範</a></li></ul></div>
+    </div>
+    <div class="footer__bottom">
+      <span>© 2026 Ubichill Project · AGPL-3.0-only</span>
+      <span class="footer__online"><i></i>ubichill.com — online</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // コード例のタブ切替（矢印キー対応）
+  (() => {
+    const tabs = [...document.querySelectorAll('#dev [role="tab"]')];
+    const select = (tab) => {
+      for (const t of tabs) {
+        const on = t === tab;
+        t.setAttribute('aria-selected', String(on));
+        t.tabIndex = on ? 0 : -1;
+        document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+      }
+      tab.focus();
+    };
+    tabs.forEach((tab, i) => {
+      tab.addEventListener('click', () => select(tab));
+      tab.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') select(tabs[(i + 1) % tabs.length]);
+        if (e.key === 'ArrowLeft') select(tabs[(i - 1 + tabs.length) % tabs.length]);
+      });
+    });
+  })();
+</script>
+
+<div class="variant-label">案B · Live World <a href="./index.html">一覧へ</a></div>
+
+<script type="module" src="./assets/logo3d.js"></script>
+<script type="module" src="./assets/world.js"></script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+---
+import { css } from 'styled-system/css';
+import { nav, site } from '../data/site';
+import Button from './Button.astro';
+import Icon from './Icon.astro';
+import ThemeToggle from './ThemeToggle.astro';
+
+const header = css({
+  position: 'sticky',
+  top: 0,
+  zIndex: 50,
+  bg: 'bg.header',
+  backdropFilter: 'blur(14px)',
+});
+const inner = css({
+  width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
+  marginInline: 'auto',
+  height: '68px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '22px',
+});
+const brand = css({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '10px',
+  fontFamily: 'heading',
+  fontWeight: '900',
+  fontSize: '21px',
+  letterSpacing: '-0.01em',
+  '& img': { width: '26px', height: 'auto' },
+});
+const divider = css({ width: '1px', height: '26px', bg: 'border.strong', mdDown: { display: 'none' } });
+const links = css({
+  display: 'flex',
+  gap: '4px',
+  mdDown: { display: 'none' },
+  '& a': { padding: '6px 14px', borderRadius: 'full', fontSize: '14.5px', fontWeight: '500' },
+  '& a:hover': { bg: 'bg.subtle' },
+});
+const actions = css({ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '8px' });
+const iconBtn = css({
+  width: '40px',
+  height: '40px',
+  borderRadius: '50%',
+  display: 'grid',
+  placeItems: 'center',
+  bg: 'bg.subtle',
+  color: 'fg',
+  _hover: { bg: 'border.strong' },
+});
+const menuBtn = css({ display: 'none', mdDown: { display: 'grid' } });
+const appBtn = css({ smDown: { display: 'none' } });
+const mobileNav = css({
+  display: 'none',
+  borderTop: '1px solid {colors.border}',
+  bg: 'bg.header',
+  padding: '12px clamp(20px, 4vw, 40px) 18px',
+  '&[data-open]': { display: 'grid', gap: '4px' },
+  '& a': { padding: '12px 14px', borderRadius: 'md', fontWeight: '700' },
+  '& a:hover': { bg: 'bg.subtle' },
+  md: { display: 'none !important' },
+});
+---
+
+<header class={header}>
+  <div class={inner}>
+    <a class={brand} href="/"><img src="/logo/logo-transparent-sm.png" alt="" width="26" height="30" />{site.name}</a>
+    <span class={divider} aria-hidden="true"></span>
+    <nav class={links} aria-label="メイン">
+      {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    </nav>
+    <div class={actions}>
+      <ThemeToggle />
+      <a class={iconBtn} href={site.repo} aria-label="GitHub" rel="noopener"><Icon name="github" /></a>
+      <Button class={appBtn} href={site.app} size="sm">アプリを開く</Button>
+      <button class:list={[iconBtn, menuBtn]} type="button" aria-label="メニュー" aria-expanded="false" data-menu-toggle>
+        <Icon name="menu" />
+      </button>
+    </div>
+  </div>
+  <nav class={mobileNav} aria-label="メイン（モバイル）" data-mobile-nav>
+    {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+    <a href={site.app} rel="noopener">アプリを開く</a>
+  </nav>
+</header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const menu = document.querySelector<HTMLElement>('[data-mobile-nav]');
+  toggle?.addEventListener('click', () => {
+    const open = menu?.toggleAttribute('data-open') ?? false;
+    toggle.setAttribute('aria-expanded', String(open));
+  });
+</script>

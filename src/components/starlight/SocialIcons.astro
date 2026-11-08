@@ -1,0 +1,32 @@
+---
+/** Starlight のヘッダー右側。既定のアイコンに「アプリを開く」を足す */
+import Default from '@astrojs/starlight/components/SocialIcons.astro';
+import { site } from '../../data/site';
+---
+
+<a class="app-link" href={site.app} rel="noopener">アプリを開く</a>
+<Default><slot /></Default>
+
+<style>
+  .app-link {
+    display: inline-flex;
+    align-items: center;
+    height: 2.25rem;
+    padding-inline: 0.9rem;
+    border-radius: 999px;
+    background: var(--colors-accent);
+    color: var(--colors-accent-fg);
+    font-size: var(--sl-text-sm);
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+  .app-link:hover {
+    background: var(--colors-accent-hover);
+  }
+  @media (max-width: 50rem) {
+    .app-link {
+      display: none;
+    }
+  }
+</style>

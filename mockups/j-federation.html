@@ -1,0 +1,1155 @@
+<!--
+  案J · Federation
+  コンセプト: 「連合」が主役。サーバー（ノード）が網の目につながる星図のヒーローで、みんなのカーソルが
+              ノードからノードへ移動する。中心のない網＝中央を持たない Ubichill を一目で見せる。
+              明るい青図（blueprint）の地に、ロゴ 3 色をサーバーごとの色として使う。
+  狙い:       Misskey Hub の「サーバーを探す」導線を Ubichill 流に。使う人には「どのサーバーの人とも同じ部屋に」、
+              建てる人には「あなたのサーバーも網の一部に」を伝える。シーケンス図で仕組みも見せる。
+  向いている点: 他の 2D メタバースとの差別化（分散・Web の思想）が最も強く出る / サーバー一覧ページへ自然につながる
+  弱い点:     「カーソルでゆるく過ごす」という体験の気持ちよさは二番手になる / 連合を知らない人には抽象的
+-->
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Ubichill — どのサーバーの人とも、同じ部屋に。（案J · Federation）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Design tokens（PandaCSS の tokens / semanticTokens に移植する前提）
+   ============================================================ */
+:root {
+  /* --- tokens.colors --- */
+  --colors-white: #ffffff;
+  --colors-sky-25: #f8fbff;
+  --colors-sky-50: #f0f7ff;   /* ワールド既定背景 #F0F8FF に寄せる */
+  --colors-sky-100: #e2eefd;
+  --colors-sky-200: #c8dcf7;
+  --colors-sky-300: #a9c6ef;
+  --colors-navy-950: #0d1629;
+  --colors-navy-900: #13203a;
+  --colors-navy-700: #1b2a44; /* アプリ本体の primary */
+  --colors-navy-500: #4b5b7a;
+  --colors-navy-300: #8e9bb5;
+  --colors-blue-500: #4780e0; /* アプリ本体の primaryHighlight */
+  --colors-blue-600: #3468c6;
+  --colors-logo-blue: #bde1fb;
+  --colors-logo-peri: #9ab2f8;
+  --colors-logo-lav: #ceb0fa;
+  --colors-node-mint: #8ad29b;
+  --colors-node-pink: #f4a7c1;
+  --colors-node-sun: #f1c86c;
+
+  /* --- semanticTokens.colors --- */
+  --colors-bg: var(--colors-sky-50);
+  --colors-bg-canvas: var(--colors-sky-25);
+  --colors-bg-surface: var(--colors-white);
+  --colors-bg-inverted: var(--colors-navy-900);
+  --colors-fg: var(--colors-navy-900);
+  --colors-fg-muted: var(--colors-navy-500);
+  --colors-fg-subtle: var(--colors-navy-300);
+  --colors-fg-inverted: #eef3fc;
+  --colors-border: rgba(27, 42, 68, 0.12);
+  --colors-border-strong: rgba(27, 42, 68, 0.22);
+  --colors-grid: rgba(71, 128, 224, 0.09);
+  --colors-link-line: rgba(71, 128, 224, 0.38);
+  --colors-accent: var(--colors-blue-500);
+  --colors-accent-hover: var(--colors-blue-600);
+  --colors-accent-subtle: rgba(71, 128, 224, 0.1);
+  --colors-accent-fg: var(--colors-white);
+
+  /* --- fonts --- */
+  --fonts-display: "Outfit", "Zen Kaku Gothic New", system-ui, sans-serif;
+  --fonts-body: "Zen Kaku Gothic New", "Outfit", system-ui, sans-serif;
+  --fonts-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+
+  /* --- fontSizes --- */
+  --font-sizes-display: clamp(2.1rem, 4.1vw, 3.3rem);
+  --font-sizes-h2: clamp(1.7rem, 3.4vw, 2.6rem);
+  --font-sizes-lead: clamp(1rem, 1.3vw, 1.125rem);
+
+  /* --- radii --- */
+  --radii-sm: 8px;
+  --radii-md: 12px;
+  --radii-lg: 20px;
+  --radii-xl: 28px;
+  --radii-full: 9999px;
+
+  /* --- shadows --- */
+  --shadows-node: 0 6px 18px rgba(27, 42, 68, 0.12);
+  --shadows-card: 0 1px 2px rgba(27, 42, 68, 0.04), 0 12px 32px -12px rgba(27, 42, 68, 0.16);
+  --shadows-float: 0 30px 60px -20px rgba(19, 32, 58, 0.35);
+
+  /* --- spacing / sizes --- */
+  --spacing-gutter: clamp(20px, 4vw, 40px);
+  --spacing-section: clamp(88px, 11vw, 140px);
+  --sizes-container: 1200px;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--colors-bg); color: var(--colors-fg);
+  font-family: var(--fonts-body); font-size: 0.9375rem; line-height: 1.8;
+  -webkit-font-smoothing: antialiased; font-feature-settings: "palt";
+}
+h1, h2, h3, p { word-break: auto-phrase; }
+img { max-width: 100%; display: block; }
+a { color: inherit; text-decoration: none; }
+code, pre { font-family: var(--fonts-mono); }
+.icon { width: 1em; height: 1em; flex: none; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.container { width: min(100% - var(--spacing-gutter) * 2, var(--sizes-container)); margin-inline: auto; }
+.mono { font-family: var(--fonts-mono); }
+
+/* blueprint grid（→ Panda の pattern / utility にする） */
+.grid-bg {
+  background-color: var(--colors-bg);
+  background-image:
+    linear-gradient(var(--colors-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--colors-grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+/* ============================================================
+   Buttons（→ cva: button { variant: solid | outline | ghost }）
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 48px; padding: 0 22px; border-radius: var(--radii-full);
+  font-family: var(--fonts-body); font-weight: 700; font-size: 0.9375rem; white-space: nowrap;
+  border: 1.5px solid transparent; transition: background .2s, color .2s, border-color .2s, transform .2s, box-shadow .2s;
+}
+.btn .icon { font-size: 17px; }
+.btn:hover { transform: translateY(-1px); }
+.btn--solid { background: var(--colors-navy-900); color: var(--colors-fg-inverted); box-shadow: 0 8px 20px -8px rgba(19, 32, 58, 0.6); }
+.btn--solid:hover { background: var(--colors-navy-950); }
+.btn--accent { background: var(--colors-accent); color: var(--colors-accent-fg); box-shadow: 0 8px 20px -8px rgba(71, 128, 224, 0.7); }
+.btn--accent:hover { background: var(--colors-accent-hover); }
+.btn--outline { background: var(--colors-bg-surface); border-color: var(--colors-border-strong); color: var(--colors-fg); }
+.btn--outline:hover { border-color: var(--colors-accent); color: var(--colors-accent); }
+.btn--sm { height: 38px; padding: 0 16px; font-size: 0.8125rem; }
+.btn--light { background: var(--colors-white); color: var(--colors-navy-900); }
+.btn--ghost-light { border-color: rgba(255, 255, 255, 0.3); color: var(--colors-fg-inverted); }
+.btn--ghost-light:hover { border-color: rgba(255, 255, 255, 0.7); }
+.text-link { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--colors-accent); }
+.text-link .icon { transition: transform .2s; }
+.text-link:hover .icon { transform: translateX(3px); }
+
+/* ============================================================
+   Header
+   ============================================================ */
+.header { position: sticky; top: 0; z-index: 60; background: rgba(240, 247, 255, 0.8); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-bottom: 1px solid var(--colors-border); }
+.header__inner { height: 66px; display: flex; align-items: center; gap: 28px; }
+.brand { display: flex; align-items: center; gap: 10px; font-family: var(--fonts-display); font-weight: 700; font-size: 1.2rem; letter-spacing: -0.01em; }
+.brand img { width: 28px; height: auto; }
+.nav { display: flex; gap: 2px; }
+.nav a { padding: 6px 12px; border-radius: var(--radii-full); font-size: 0.875rem; font-weight: 500; color: var(--colors-fg-muted); }
+.nav a:hover { color: var(--colors-fg); background: rgba(255, 255, 255, 0.8); }
+.nav a.is-current { color: var(--colors-accent); background: var(--colors-accent-subtle); }
+.header__actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.icon-btn { width: 38px; height: 38px; display: grid; place-items: center; border-radius: var(--radii-full); color: var(--colors-fg-muted); background: none; border: 0; cursor: pointer; }
+.icon-btn:hover { background: rgba(255, 255, 255, 0.85); color: var(--colors-fg); }
+.icon-btn .icon { font-size: 18px; }
+.menu-btn { display: none; }
+.mobile-nav { display: none; }
+
+/* ============================================================
+   Hero
+   ============================================================ */
+.hero { position: relative; overflow: hidden; border-bottom: 1px solid var(--colors-border); }
+.hero::before {
+  /* グリッドを中央から外へフェード */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(70% 80% at 70% 45%, transparent 30%, var(--colors-bg) 85%);
+}
+.hero__inner { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 24px; align-items: center; min-height: min(820px, calc(100vh - 66px)); padding-block: 48px 64px; }
+.hero__copy { position: relative; z-index: 2; }
+.hero__logo { width: 112px; aspect-ratio: 667 / 761; margin-bottom: 20px; margin-left: -6px; }
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; max-width: 100%;
+  padding: 6px 14px 6px 6px; border-radius: var(--radii-full);
+  background: var(--colors-bg-surface); border: 1px solid var(--colors-border); box-shadow: var(--shadows-node);
+  font-size: 0.8125rem; font-weight: 500;
+}
+.pill__dot { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--colors-accent); color: #fff; }
+.pill__dot .icon { font-size: 14px; }
+.pill__text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pill .icon--arrow { color: var(--colors-fg-subtle); }
+.hero h1 { margin: 24px 0 0; font-family: var(--fonts-display); font-size: var(--font-sizes-display); font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; }
+.hero h1 em { font-style: normal; background: linear-gradient(100deg, var(--colors-blue-500), #8a7cf0 60%, #b48cf2); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.hero__lead { margin: 20px 0 0; max-width: 560px; font-size: var(--font-sizes-lead); color: var(--colors-fg-muted); line-height: 1.95; }
+.hero__cta { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.hero__sub { margin-top: 18px; }
+
+/* ---------- Atlas（星図） ---------- */
+.atlas { position: relative; height: 600px; }
+.atlas__svgwrap { position: absolute; inset: 0; overflow: visible; }
+#atlas { width: 100%; height: 100%; overflow: visible; }
+.edge-base { fill: none; stroke: var(--colors-link-line); stroke-width: 1.5; }
+.edge-flow { fill: none; stroke: var(--colors-accent); stroke-width: 2; stroke-dasharray: 2 12; stroke-linecap: round; opacity: .55; animation: flow 1.6s linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -28; } }
+.node__ring { fill: var(--colors-white); stroke-width: 3; filter: drop-shadow(0 6px 12px rgba(27, 42, 68, 0.14)); }
+.node__halo { fill: none; stroke-width: 1.5; opacity: .5; }
+.node__pulse { fill: none; stroke-width: 2; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.node.is-arrived .node__pulse { animation: pulse .9s ease-out; }
+@keyframes pulse { from { opacity: .9; transform: scale(1); } to { opacity: 0; transform: scale(1.9); } }
+.node__label rect { fill: var(--colors-white); stroke: var(--colors-border); }
+.node__label text { font-family: var(--fonts-mono); font-size: 12px; font-weight: 500; fill: var(--colors-navy-700); }
+.node__tag { font-family: var(--fonts-body); font-size: 10.5px; font-weight: 700; fill: var(--colors-fg-muted); }
+.node__count circle { fill: var(--colors-navy-900); }
+.node__count text { font-family: var(--fonts-display); font-size: 11px; font-weight: 700; fill: #fff; }
+.node--you .node__ring { stroke-dasharray: 5 5; }
+.traveler text { font-family: var(--fonts-body); font-size: 11px; font-weight: 700; fill: var(--colors-navy-900); }
+
+.room {
+  position: absolute; left: -3%; bottom: -2%; z-index: 3; width: 340px;
+  border-radius: var(--radii-lg); background: var(--colors-bg-surface); box-shadow: var(--shadows-float);
+  border: 1px solid var(--colors-border); overflow: hidden; transform: rotate(-2deg);
+}
+.room__head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--colors-border); font-size: 0.75rem; }
+.room__live { width: 8px; height: 8px; border-radius: 50%; background: #40c057; box-shadow: 0 0 0 4px rgba(64, 192, 87, .18); flex: none; }
+.room__addr { font-family: var(--fonts-mono); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.room__addr b { color: var(--colors-accent); font-weight: 500; }
+.room__people { margin-left: auto; color: var(--colors-fg-muted); flex: none; }
+.room__world { height: 210px; }
+.room__world .uw__hudbtn { white-space: nowrap; }
+.room__world .uw__people { display: none; } /* 人数はカードの見出しに出す */
+.room__world .uw__badge { white-space: nowrap; font-size: 9px; }
+
+.atlas__legend { position: absolute; right: 0; top: 4px; z-index: 3; display: flex; gap: 14px; font-size: 0.75rem; color: var(--colors-fg-muted); background: rgba(255,255,255,.75); padding: 6px 12px; border-radius: var(--radii-full); border: 1px solid var(--colors-border); }
+.atlas__legend span { display: inline-flex; align-items: center; gap: 6px; }
+.atlas__legend i { display: block; width: 18px; border-top: 2px dotted var(--colors-accent); }
+.atlas__legend s { display: block; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--colors-logo-peri); background: #fff; }
+
+/* ============================================================
+   Sections
+   ============================================================ */
+.section { padding-block: var(--spacing-section); position: relative; }
+.section--white { background: var(--colors-bg-surface); }
+.kicker { display: inline-flex; align-items: center; gap: 8px; font-family: var(--fonts-mono); font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; color: var(--colors-accent); }
+.kicker::before { content: ""; width: 8px; height: 8px; border-radius: 50%; border: 2px solid currentColor; }
+.section h2 { margin: 14px 0 0; font-family: var(--fonts-display); font-size: var(--font-sizes-h2); font-weight: 800; line-height: 1.3; letter-spacing: -0.015em; }
+.section__desc { margin: 16px 0 0; max-width: 640px; color: var(--colors-fg-muted); font-size: 1rem; line-height: 1.95; }
+.section__head--center { text-align: center; }
+.section__head--center .section__desc { margin-inline: auto; }
+.section__head--row { display: flex; justify-content: space-between; align-items: end; gap: 24px; flex-wrap: wrap; }
+
+/* ---------- Pillars（線でつながった 4 ノード） ---------- */
+.pillars { position: relative; margin-top: 64px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.pillars::before { content: ""; position: absolute; left: 12%; right: 12%; top: 28px; border-top: 2px dashed var(--colors-link-line); }
+.pillar { position: relative; text-align: center; }
+.pillar__node { position: relative; z-index: 1; width: 56px; height: 56px; margin: 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--colors-bg-surface); border: 3px solid var(--c, var(--colors-logo-peri)); box-shadow: var(--shadows-node); color: var(--colors-navy-700); }
+.pillar__node .icon { font-size: 22px; }
+.pillar__card { margin-top: 18px; padding: 24px 22px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); box-shadow: var(--shadows-card); height: calc(100% - 74px); }
+.pillar h3 { margin: 0; font-size: 1.0625rem; line-height: 1.5; }
+.pillar p { margin: 10px 0 0; font-size: 0.875rem; color: var(--colors-fg-muted); line-height: 1.85; text-align: left; }
+
+/* ---------- How it works ---------- */
+.how { margin-top: 56px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: clamp(32px, 5vw, 72px); align-items: start; }
+.address-card { padding: 28px; border-radius: var(--radii-xl); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); box-shadow: var(--shadows-card); }
+.address-card__label { font-size: 0.75rem; font-weight: 700; color: var(--colors-fg-subtle); letter-spacing: .08em; }
+.address { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 4px 2px; font-family: var(--fonts-mono); font-size: clamp(1.15rem, 2.4vw, 1.75rem); font-weight: 500; }
+.address__part { display: inline-flex; flex-direction: column; gap: 6px; }
+.address__part b { font-weight: 500; padding: 2px 8px; border-radius: 8px; }
+.address__part small { font-family: var(--fonts-body); font-size: 0.6875rem; font-weight: 700; color: var(--colors-fg-muted); padding-left: 8px; }
+.address__room b { background: rgba(206, 176, 250, .28); }
+.address__at { color: var(--colors-fg-subtle); padding-bottom: 26px; }
+.address__domain b { background: rgba(154, 178, 248, .3); color: var(--colors-blue-600); }
+.principles { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 14px; }
+.principles li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; }
+.principles .icon-wrap { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--colors-accent-subtle); color: var(--colors-accent); }
+.principles b { display: block; font-size: 0.9375rem; }
+.principles span { font-size: 0.8125rem; color: var(--colors-fg-muted); line-height: 1.75; }
+
+/* sequence diagram */
+.seq { padding: 24px; border-radius: var(--radii-xl); background: var(--colors-navy-900); color: var(--colors-fg-inverted); box-shadow: var(--shadows-float); }
+.seq__title { font-size: 0.8125rem; color: rgba(238, 243, 252, .7); margin: 0 0 16px; }
+.seq__title b { color: #fff; }
+.seq__lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+.seq__lane { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--radii-md); background: rgba(255, 255, 255, .06); border: 1px solid rgba(255, 255, 255, .1); min-width: 0; }
+.seq__lane img { width: 22px; flex: none; }
+.seq__lane div { min-width: 0; }
+.seq__lane b { display: block; font-family: var(--fonts-mono); font-size: 0.8125rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seq__lane span { font-size: 0.6875rem; color: rgba(238, 243, 252, .6); }
+.seq__body { position: relative; padding: 6px 0; }
+.seq__body::before, .seq__body::after { content: ""; position: absolute; top: 0; bottom: 0; border-left: 1.5px dashed rgba(255, 255, 255, .18); }
+.seq__body::before { left: 25%; }
+.seq__body::after { left: 75%; }
+.seq__msg { position: relative; margin: 18px 25%; padding-top: 2px; }
+.seq__msg-label { display: flex; align-items: center; gap: 8px; justify-content: center; font-size: 0.875rem; font-weight: 700; text-align: center; }
+.seq__msg-label .chip { font-family: var(--fonts-mono); font-size: 0.625rem; font-weight: 600; padding: 1px 7px; border-radius: var(--radii-full); background: rgba(154, 178, 248, .2); color: var(--colors-logo-peri); white-space: nowrap; }
+.seq__msg-label .chip--rpc { background: rgba(206, 176, 250, .2); color: var(--colors-logo-lav); }
+.seq__msg-label .chip--ws { background: rgba(138, 210, 155, .2); color: var(--colors-node-mint); }
+.seq__arrow { position: relative; height: 12px; margin: 6px 0 4px; }
+.seq__arrow::before { content: ""; position: absolute; left: 0; right: 0; top: 5px; border-top: 2px solid var(--colors-logo-peri); }
+.seq__arrow::after { content: ""; position: absolute; top: 0; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; }
+.seq__msg--r .seq__arrow::after { right: -2px; border-left: 10px solid var(--colors-logo-peri); }
+.seq__msg--l .seq__arrow::after { left: -2px; border-right: 10px solid var(--colors-logo-peri); }
+.seq__msg--rpc .seq__arrow::before { border-color: var(--colors-logo-lav); }
+.seq__msg--rpc.seq__msg--r .seq__arrow::after { border-left-color: var(--colors-logo-lav); }
+.seq__msg--rpc.seq__msg--l .seq__arrow::after { border-right-color: var(--colors-logo-lav); }
+.seq__msg--ws .seq__arrow::before { border-top: 2px dashed var(--colors-node-mint); }
+.seq__msg--ws .seq__arrow::after { right: -2px; border-left: 10px solid var(--colors-node-mint); }
+.seq__msg-sub { font-size: 0.6875rem; color: rgba(238, 243, 252, .62); text-align: center; line-height: 1.6; }
+.seq__msg-sub code { font-size: 0.625rem; color: rgba(238, 243, 252, .85); }
+
+/* ---------- Scopes ---------- */
+.scopes { margin-top: 48px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.scope { padding: 22px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); }
+.scope__head { display: flex; align-items: center; gap: 10px; }
+.scope__icon { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--bgc); color: var(--colors-navy-700); }
+.scope__icon .icon { font-size: 17px; }
+.scope h3 { margin: 0; font-size: 1rem; }
+.scope dl { margin: 16px 0 0; display: grid; gap: 8px; }
+.scope dt { font-size: 0.6875rem; font-weight: 700; color: var(--colors-fg-subtle); letter-spacing: .06em; }
+.scope dd { margin: 0; font-size: 0.8125rem; color: var(--colors-fg); }
+
+/* ---------- Servers ---------- */
+.filters { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip-btn { height: 34px; padding: 0 14px; border-radius: var(--radii-full); border: 1px solid var(--colors-border-strong); background: var(--colors-bg-surface); font-family: var(--fonts-body); font-size: 0.8125rem; font-weight: 700; color: var(--colors-fg-muted); cursor: pointer; transition: all .2s; }
+.chip-btn:hover { color: var(--colors-fg); border-color: var(--colors-fg-subtle); }
+.chip-btn.is-active { background: var(--colors-navy-900); border-color: var(--colors-navy-900); color: #fff; }
+.servers { margin-top: 32px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+.server { position: relative; display: flex; flex-direction: column; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); overflow: hidden; transition: transform .25s, box-shadow .25s; }
+.server:hover { transform: translateY(-3px); box-shadow: var(--shadows-card); }
+.server[hidden] { display: none; }
+.server__banner { position: relative; height: 92px; background: var(--banner); }
+.server__banner::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.55) 1px, transparent 1.4px); background-size: 14px 14px; opacity: .6; }
+.server__icon { position: absolute; left: 18px; top: 66px; z-index: 1; width: 52px; height: 52px; border-radius: 16px; background: var(--colors-bg-surface); border: 3px solid var(--colors-bg-surface); box-shadow: var(--shadows-node); display: grid; place-items: center; }
+.server__icon img { width: 30px; }
+.server__body { padding: 30px 18px 18px; display: flex; flex-direction: column; flex: 1; }
+.server h3 { margin: 0; font-size: 1.0625rem; }
+.server__domain { font-family: var(--fonts-mono); font-size: 0.75rem; color: var(--colors-accent); }
+.server p { margin: 10px 0 0; font-size: 0.8125rem; color: var(--colors-fg-muted); line-height: 1.8; flex: 1; }
+.server__meta { margin-top: 14px; display: flex; gap: 14px; font-size: 0.75rem; color: var(--colors-fg-muted); }
+.server__meta span { display: inline-flex; align-items: center; gap: 5px; }
+.server__meta .icon { font-size: 14px; }
+.server__tags { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 0.6875rem; font-weight: 700; padding: 2px 9px; border-radius: var(--radii-full); background: var(--colors-sky-100); color: var(--colors-navy-700); }
+.tag--open { background: rgba(138, 210, 155, .25); color: #1e7e46; }
+.tag--invite { background: rgba(241, 200, 108, .3); color: #8a5a00; }
+.tag--official { background: rgba(154, 178, 248, .3); color: var(--colors-blue-600); }
+.servers__note { margin-top: 18px; font-size: 0.75rem; color: var(--colors-fg-subtle); text-align: center; }
+
+/* ---------- Start ---------- */
+.start { margin-top: 48px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; counter-reset: s; }
+.start__item { position: relative; padding: 22px 20px 20px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); display: flex; flex-direction: column; gap: 10px; transition: border-color .2s, transform .2s; }
+.start__item:hover { border-color: var(--colors-accent); transform: translateY(-2px); }
+.start__item::before { counter-increment: s; content: "0" counter(s); font-family: var(--fonts-mono); font-size: 0.6875rem; color: var(--colors-fg-subtle); }
+.start__item .icon-lg { font-size: 26px; color: var(--colors-accent); }
+.start__item h3 { margin: 4px 0 0; font-size: 1rem; }
+.start__item p { margin: 0; font-size: 0.8125rem; color: var(--colors-fg-muted); line-height: 1.75; flex: 1; }
+.start__item code { font-size: 0.75rem; background: var(--colors-sky-100); padding: 1px 5px; border-radius: 5px; }
+.start__item .text-link { font-size: 0.8125rem; }
+
+/* ---------- Uses ---------- */
+.uses { margin-top: 48px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; align-items: stretch; }
+.uses__shot { position: relative; margin: 0; border-radius: var(--radii-xl); overflow: hidden; border: 1px solid var(--colors-border); background: var(--colors-bg-surface); box-shadow: var(--shadows-card); min-height: 320px; }
+.uses__shot img { width: 100%; height: 100%; object-fit: cover; object-position: left top; position: absolute; inset: 0; }
+.uses__shot figcaption { position: absolute; left: 14px; bottom: 14px; padding: 6px 12px; border-radius: var(--radii-full); background: rgba(19, 32, 58, .82); color: #fff; font-size: 0.75rem; backdrop-filter: blur(6px); }
+.uses__list { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.use { padding: 20px; border-radius: var(--radii-lg); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); }
+.use .icon { font-size: 22px; color: var(--colors-accent); }
+.use h3 { margin: 12px 0 0; font-size: 0.9375rem; }
+.use p { margin: 6px 0 0; font-size: 0.8125rem; color: var(--colors-fg-muted); line-height: 1.7; }
+.features { margin-top: 28px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.feature { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radii-full); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); font-size: 0.8125rem; font-weight: 500; }
+.feature i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); display: block; }
+
+/* ---------- Developers ---------- */
+.dev { margin-top: 48px; display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(28px, 4vw, 56px); align-items: start; }
+.dev__points { display: grid; gap: 14px; }
+.dev__point { padding: 20px; border-radius: var(--radii-lg); border: 1px solid var(--colors-border); background: var(--colors-bg-surface); }
+.dev__point h3 { margin: 0; display: flex; align-items: center; gap: 10px; font-size: 1rem; }
+.dev__point h3 .icon { color: var(--colors-accent); font-size: 18px; }
+.dev__point p { margin: 8px 0 0; font-size: 0.8125rem; color: var(--colors-fg-muted); line-height: 1.8; }
+.dev__point code { font-size: 0.75rem; background: var(--colors-sky-100); padding: 1px 5px; border-radius: 5px; color: var(--colors-fg); }
+.tiers { margin-top: 12px; display: flex; gap: 6px; flex-wrap: wrap; }
+.tier { display: inline-flex; align-items: center; gap: 6px; font-family: var(--fonts-mono); font-size: 0.6875rem; padding: 3px 10px; border-radius: var(--radii-full); border: 1px solid var(--colors-border); }
+.tier i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); display: block; }
+.term { border-radius: var(--radii-xl); background: var(--colors-navy-950); color: #dbe4f5; overflow: hidden; box-shadow: var(--shadows-float); min-width: 0; }
+.term__tabs { display: flex; gap: 2px; padding: 10px 10px 0; background: rgba(255, 255, 255, .03); border-bottom: 1px solid rgba(255, 255, 255, .08); overflow-x: auto; }
+.term__tab { flex: none; padding: 8px 14px; border: 0; border-radius: 10px 10px 0 0; background: transparent; color: rgba(219, 228, 245, .6); font-family: var(--fonts-mono); font-size: 0.75rem; cursor: pointer; }
+.term__tab[aria-selected="true"] { background: var(--colors-navy-950); color: #fff; box-shadow: inset 0 2px 0 var(--colors-accent); }
+.term pre { margin: 0; padding: 22px 24px 26px; font-size: 0.8125rem; line-height: 1.85; overflow-x: auto; min-height: 340px; }
+.term pre[hidden] { display: none; }
+.t-k { color: #9ab2f8; }
+.t-s { color: #8ad29b; }
+.t-c { color: rgba(219, 228, 245, .45); }
+.t-n { color: #f4a7c1; }
+.t-p { color: #ceb0fa; }
+
+/* ---------- Self-host band ---------- */
+.band { position: relative; overflow: hidden; border-radius: var(--radii-xl); background: var(--colors-navy-900); color: var(--colors-fg-inverted); padding: clamp(36px, 5vw, 64px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.band::before { content: ""; position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; }
+.band > * { position: relative; }
+.band h2 { color: #fff; }
+.band .kicker { color: var(--colors-logo-peri); }
+.band .section__desc { color: rgba(238, 243, 252, .72); }
+.band__steps { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.band__steps li { display: grid; grid-template-columns: 30px 1fr; gap: 12px; font-size: 0.875rem; }
+.band__steps li span { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 1.5px solid var(--colors-logo-peri); color: var(--colors-logo-peri); font-family: var(--fonts-display); font-weight: 700; font-size: 0.8125rem; }
+.band__steps small { display: block; color: rgba(238, 243, 252, .6); font-size: 0.75rem; }
+.band__steps code { font-size: 0.75rem; color: #fff; }
+.band__cta { margin-top: 28px; display: flex; gap: 12px; flex-wrap: wrap; }
+.band__code { border-radius: var(--radii-lg); background: #0b1324; border: 1px solid rgba(255, 255, 255, .1); overflow: hidden; min-width: 0; }
+.band__code-head { display: flex; gap: 6px; padding: 12px 14px; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+.band__code-head i { width: 10px; height: 10px; border-radius: 50%; background: rgba(255, 255, 255, .2); display: block; }
+.band__code pre { margin: 0; padding: 20px; font-size: 0.8125rem; line-height: 1.85; color: #dbe4f5; overflow-x: auto; }
+.band__mini { position: absolute; right: -36px; bottom: -60px; width: 240px; opacity: .14; pointer-events: none; }
+
+/* ---------- OSS ---------- */
+.oss { display: grid; grid-template-columns: auto 1fr auto; gap: 32px; align-items: center; padding: 36px; border-radius: var(--radii-xl); background: var(--colors-bg-surface); border: 1px solid var(--colors-border); }
+.oss__logo { width: 72px; }
+.oss h2 { margin: 0; font-size: clamp(1.4rem, 2.6vw, 1.9rem); }
+.oss p { margin: 8px 0 0; color: var(--colors-fg-muted); font-size: 0.9375rem; }
+.oss__cta { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ---------- Footer ---------- */
+.footer { border-top: 1px solid var(--colors-border); background: var(--colors-bg-surface); padding: 56px 0 36px; }
+.footer__grid { display: grid; grid-template-columns: 1.5fr repeat(3, 1fr); gap: 36px; }
+.footer__about p { margin: 14px 0 0; max-width: 300px; font-size: 0.875rem; color: var(--colors-fg-muted); }
+.footer h4 { margin: 0; font-family: var(--fonts-mono); font-size: 0.75rem; font-weight: 600; color: var(--colors-fg-subtle); letter-spacing: 0.06em; }
+.footer ul { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+.footer li a { font-size: 0.875rem; color: var(--colors-fg-muted); }
+.footer li a:hover { color: var(--colors-accent); }
+.footer__bottom { margin-top: 48px; padding-top: 22px; border-top: 1px solid var(--colors-border); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; font-size: 0.8125rem; color: var(--colors-fg-subtle); }
+.footer__bottom .mono { font-size: 0.75rem; }
+
+/* ---------- 案ラベル ---------- */
+.variant-label { position: fixed; right: 16px; bottom: 16px; z-index: 100; display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; border-radius: var(--radii-full); background: var(--colors-navy-900); color: #fff; font-size: 0.75rem; font-weight: 700; box-shadow: var(--shadows-float); }
+.variant-label a { padding: 4px 10px; border-radius: var(--radii-full); background: rgba(255, 255, 255, .15); }
+.variant-label a:hover { background: rgba(255, 255, 255, .26); }
+
+@media (prefers-reduced-motion: reduce) {
+  .edge-flow { animation: none; }
+  .btn:hover, .server:hover, .start__item:hover { transform: none; }
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 1100px) {
+  .nav { display: none; }
+  .menu-btn { display: grid; }
+  .header__actions .btn--app { display: none; }
+  .mobile-nav.is-open { display: grid; padding: 6px var(--spacing-gutter) 14px; border-top: 1px solid var(--colors-border); }
+  .mobile-nav a { padding: 11px 2px; border-bottom: 1px solid var(--colors-border); font-weight: 500; }
+  .hero__inner { grid-template-columns: minmax(0, 1fr); min-height: 0; padding-block: 40px 40px; }
+  .atlas { height: 560px; max-width: 720px; width: 100%; margin-inline: auto; }
+  .start { grid-template-columns: repeat(3, 1fr); }
+  .servers { grid-template-columns: repeat(2, 1fr); }
+  .scopes { grid-template-columns: repeat(2, 1fr); }
+  .uses { grid-template-columns: 1fr; }
+  .how, .dev, .band { grid-template-columns: minmax(0, 1fr); }
+  .footer__grid { grid-template-columns: repeat(3, 1fr); }
+  .footer__about { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .pillars { grid-template-columns: 1fr 1fr; gap: 28px 14px; }
+  .pillars::before { display: none; }
+  .oss { grid-template-columns: 1fr; text-align: left; }
+}
+@media (max-width: 600px) {
+  .hero__logo { width: 88px; }
+  .hero__cta .btn { flex: 1 1 100%; }
+  .atlas { height: auto; }
+  .atlas__svgwrap { position: relative; inset: auto; height: 384px; overflow: hidden; margin-inline: calc(var(--spacing-gutter) * -1); }
+  #atlas { width: 410px; height: 384px; position: absolute; left: 50%; top: 0; transform: translateX(-50%); }
+  .atlas__legend { display: none; }
+  .room { position: relative; left: auto; bottom: auto; width: 100%; transform: none; margin-top: 8px; }
+  .room__world { height: 240px; }
+  .room__world .uw__hud { transform: translateX(-50%) scale(.8); transform-origin: 50% 100%; }
+  .pillars { grid-template-columns: 1fr; }
+  .pillar { text-align: left; display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start; }
+  .pillar__node { margin: 0; }
+  .pillar__card { margin-top: 0; height: auto; }
+  .start { grid-template-columns: 1fr; }
+  .servers, .scopes, .uses__list { grid-template-columns: 1fr; }
+  .seq { padding: 18px 14px; }
+  .seq__msg { margin-inline: 12%; }
+  .seq__body::before { left: 12%; }
+  .seq__body::after { left: 88%; }
+  .footer__grid { grid-template-columns: 1fr 1fr; }
+  .variant-label { right: 10px; bottom: 10px; }
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></symbol>
+  <symbol id="i-languages" viewBox="0 0 24 24"><path d="m5 8 6 6"/><path d="m4 14 6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="m22 22-5-10-5 10"/><path d="M14 18h6"/></symbol>
+  <symbol id="i-pointer" viewBox="0 0 24 24"><path d="M4.037 4.688a.495.495 0 0 1 .651-.651l16 6.5a.5.5 0 0 1-.063.947l-6.124 1.58a2 2 0 0 0-1.438 1.435l-1.579 6.126a.5.5 0 0 1-.947.063z"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/></symbol>
+  <symbol id="i-orbit" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><path d="M10.4 21.9a10 10 0 0 0 9.941-15.416"/><path d="M13.5 2.1a10 10 0 0 0-9.841 15.416"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect width="20" height="8" x="2" y="2" rx="2"/><rect width="20" height="8" x="2" y="14" rx="2"/><path d="M6 6h.01"/><path d="M6 18h.01"/></symbol>
+  <symbol id="i-window" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 4v4"/><path d="M2 8h20"/><path d="M6 4v4"/></symbol>
+  <symbol id="i-braces" viewBox="0 0 24 24"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/></symbol>
+  <symbol id="i-pr" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M6 9v12"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-door" viewBox="0 0 24 24"><path d="M13 4h3a2 2 0 0 1 2 2v14"/><path d="M2 20h3"/><path d="M13 20h9"/><path d="M10 12v.01"/><path d="M13 4.562v16.157a1 1 0 0 1-1.242.97L5 20V5.562a2 2 0 0 1 1.515-1.94l4-1A2 2 0 0 1 13 4.561Z"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></symbol>
+  <symbol id="i-heart-handshake" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></symbol>
+  <symbol id="i-tv" viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2"/><path d="m17 2-5 5-5-5"/></symbol>
+  <symbol id="i-pen" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/></symbol>
+  <symbol id="i-presentation" viewBox="0 0 24 24"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h16"/></symbol>
+  <symbol id="i-megaphone" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+</svg>
+
+<header class="header" id="top">
+  <div class="container header__inner">
+    <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="" width="28" height="32" />Ubichill</a>
+    <nav class="nav" aria-label="メイン">
+      <a href="#start">ドキュメント</a>
+      <a href="#uses">ワールド</a>
+      <a href="#developers">mod</a>
+      <a class="is-current" href="#servers">サーバー</a>
+      <a href="#news">ニュース</a>
+    </nav>
+    <div class="header__actions">
+      <a class="icon-btn" href="#" aria-label="言語を切り替える"><svg class="icon"><use href="#i-languages"/></svg></a>
+      <a class="icon-btn" href="https://github.com/ubichill/ubichill" aria-label="GitHub"><svg class="icon"><use href="#i-github"/></svg></a>
+      <a class="btn btn--solid btn--sm btn--app" href="https://ubichill.com/">アプリを開く</a>
+      <button class="icon-btn menu-btn" type="button" aria-label="メニュー" aria-expanded="false" aria-controls="mobile-nav"><svg class="icon"><use href="#i-menu"/></svg></button>
+    </div>
+  </div>
+  <nav class="mobile-nav" id="mobile-nav" aria-label="メイン（モバイル）">
+    <a href="#start">ドキュメント</a>
+    <a href="#uses">ワールド</a>
+    <a href="#developers">mod</a>
+    <a href="#servers">サーバー</a>
+    <a href="#news">ニュース</a>
+    <a href="https://ubichill.com/">アプリを開く</a>
+  </nav>
+</header>
+
+<main>
+  <!-- ========== Hero ========== -->
+  <section class="hero grid-bg">
+    <div class="container hero__inner">
+      <div class="hero__copy">
+        <div class="hero__logo" data-logo3d data-depth="26" data-thickness="11" data-tilt="20" aria-label="Ubichill の 3D ロゴ"></div>
+        <a class="pill" href="#how" id="news">
+          <span class="pill__dot"><svg class="icon"><use href="#i-megaphone"/></svg></span>
+          <span class="pill__text">サーバー間の連合（federation v1）に対応しました</span>
+          <svg class="icon icon--arrow"><use href="#i-arrow"/></svg>
+        </a>
+        <h1>どのサーバーの人とも、<br /><em>同じ部屋に。</em></h1>
+        <p class="hero__lead">
+          Ubichill は、みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。
+          中央のサーバーはありません。URL を開くだけで、どこのサーバーの部屋にも入れます。
+        </p>
+        <div class="hero__cta">
+          <a class="btn btn--solid" href="https://ubichill.com/">アプリを開く<svg class="icon"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn--outline" href="#selfhost"><svg class="icon"><use href="#i-server"/></svg>自分のサーバーを建てる</a>
+        </div>
+        <div class="hero__sub"><a class="text-link" href="#about">詳しく知る<svg class="icon"><use href="#i-arrow"/></svg></a></div>
+      </div>
+
+      <div class="atlas" aria-label="Ubichill のサーバー同士がつながり、カーソルがサーバー間を行き来している図">
+        <div class="atlas__legend" aria-hidden="true"><span><s></s>サーバー</span><span><i></i>連合</span></div>
+        <div class="atlas__svgwrap">
+          <svg id="atlas" viewBox="0 0 640 600" role="img" aria-hidden="true"></svg>
+        </div>
+        <div class="room">
+          <div class="room__head">
+            <span class="room__live" aria-hidden="true"></span>
+            <span class="room__addr">chill-room<b>@yokan.example</b></span>
+            <span class="room__people">6 人</span>
+          </div>
+          <div class="room__world" data-world data-theme="light" data-cursors="4" data-tray="0" data-notes="0" data-hud="0"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Pillars ========== -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section__head--center">
+        <span class="kicker">WHY UBICHILL</span>
+        <h2>軽くて、ゆるくて、どこにも縛られない。</h2>
+        <p class="section__desc">顔も声も出さず、カーソルだけで「そこにいる」。それを特定の会社のサーバーではなく、Web の上に。</p>
+      </div>
+      <div class="pillars">
+        <article class="pillar" style="--c: var(--colors-logo-blue)">
+          <div class="pillar__node"><svg class="icon"><use href="#i-pointer"/></svg></div>
+          <div class="pillar__card"><h3>カーソルだけのゆるい繋がり</h3><p>顔出しも声出しもなし。お互いの動線だけが伝わる、ちょうどいい存在感。</p></div>
+        </article>
+        <article class="pillar" style="--c: var(--colors-logo-peri)">
+          <div class="pillar__node"><svg class="icon"><use href="#i-link"/></svg></div>
+          <div class="pillar__card"><h3>URL をひらくだけ</h3><p>インストール不要。低スペックな PC やスマホからでも、ブラウザ 1 つで 1 秒で。</p></div>
+        </article>
+        <article class="pillar" style="--c: var(--colors-logo-lav)">
+          <div class="pillar__node"><svg class="icon"><use href="#i-puzzle"/></svg></div>
+          <div class="pillar__card"><h3>mod でなんでも足せる</h3><p>ペン・動画・付箋。機能は URL から読み込む mod。ゼロトラストの Worker サンドボックスで安全に動く。</p></div>
+        </article>
+        <article class="pillar" style="--c: var(--colors-blue-500)">
+          <div class="pillar__node"><svg class="icon"><use href="#i-orbit"/></svg></div>
+          <div class="pillar__card"><h3>中央を持たない</h3><p>サーバー同士が連合。どのサーバーの人ともフレンドになり、相手の部屋に入れる。</p></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== How federation works ========== -->
+  <section class="section section--white" id="how">
+    <div class="container">
+      <span class="kicker">FEDERATION</span>
+      <h2>部屋のことは部屋のサーバー、<br />人のことはその人のサーバー。</h2>
+      <p class="section__desc">権威を分けるから、中央がいらない。形は ActivityPub（AS2）に合わせ、やりとりはすべて署名つき。</p>
+      <div class="how">
+        <div>
+          <div class="address-card">
+            <div class="address-card__label">部屋の住所</div>
+            <div class="address" aria-label="chill-room@yokan.example">
+              <span class="address__part address__room"><b>chill-room</b><small>部屋 ID</small></span>
+              <span class="address__at">@</span>
+              <span class="address__part address__domain"><b>yokan.example</b><small>部屋のサーバー</small></span>
+            </div>
+            <ul class="principles">
+              <li><span class="icon-wrap"><svg class="icon"><use href="#i-user"/></svg></span><div><b>人のことは、ホームのサーバー</b><span>フレンド申請・招待・プロフィールは、相手の inbox へ知らせる（非同期・送り直しあり）。</span></div></li>
+              <li><span class="icon-wrap"><svg class="icon"><use href="#i-door"/></svg></span><div><b>部屋のことは、部屋のサーバー</b><span>在室・公開範囲・入れるかどうかは、部屋のサーバーだけが知っていて、その場で答える。</span></div></li>
+              <li><span class="icon-wrap"><svg class="icon"><use href="#i-key"/></svg></span><div><b>署名で確かめる</b><span>Ed25519 + RFC 9421。署名は宛先に縛られ、別のサーバーへは転用できない。</span></div></li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="seq" aria-label="別のサーバーの部屋に入るまでの流れ">
+          <p class="seq__title"><b>ありす</b> が別のサーバーの部屋に入るまで</p>
+          <div class="seq__lanes">
+            <div class="seq__lane"><img src="./assets/logo-transparent-sm.png" alt="" width="22" height="25" /><div><b>ubichill.com</b><span>ありすのホーム</span></div></div>
+            <div class="seq__lane"><img src="./assets/logo-transparent-sm.png" alt="" width="22" height="25" /><div><b>yokan.example</b><span>部屋のサーバー</span></div></div>
+          </div>
+          <div class="seq__body">
+            <div class="seq__msg seq__msg--l">
+              <div class="seq__msg-label"><span class="chip">AP</span>招待が届く</div>
+              <div class="seq__arrow"></div>
+              <div class="seq__msg-sub">inbox へ <code>Invite</code>。届かなければ送り直す</div>
+            </div>
+            <div class="seq__msg seq__msg--r seq__msg--rpc">
+              <div class="seq__msg-label"><span class="chip chip--rpc">RPC</span>入っていい？</div>
+              <div class="seq__arrow"></div>
+              <div class="seq__msg-sub">署名つき <code>POST /federation/v1/…</code>・nonce 必須</div>
+            </div>
+            <div class="seq__msg seq__msg--l seq__msg--rpc">
+              <div class="seq__msg-label"><span class="chip chip--rpc">RPC</span>どうぞ</div>
+              <div class="seq__arrow"></div>
+              <div class="seq__msg-sub">公開範囲と招待を部屋のサーバーが判定して、入室の権利を返す</div>
+            </div>
+            <div class="seq__msg seq__msg--r seq__msg--ws">
+              <div class="seq__msg-label"><span class="chip chip--ws">WS</span>部屋へ</div>
+              <div class="seq__arrow"></div>
+              <div class="seq__msg-sub">WebSocket でつながり、カーソルが同期される</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="scopes">
+        <article class="scope">
+          <div class="scope__head"><span class="scope__icon" style="--bgc: rgba(138,210,155,.3)"><svg class="icon"><use href="#i-globe"/></svg></span><h3>パブリック</h3></div>
+          <dl><dt>見える人</dt><dd>誰でも（ログインなしでも）</dd><dt>入れる人</dt><dd>ログインしている人</dd></dl>
+        </article>
+        <article class="scope">
+          <div class="scope__head"><span class="scope__icon" style="--bgc: rgba(154,178,248,.3)"><svg class="icon"><use href="#i-users"/></svg></span><h3>フレンド+</h3></div>
+          <dl><dt>見える人</dt><dd>中にいる人のフレンド</dd><dt>入れる人</dt><dd>見える人</dd></dl>
+        </article>
+        <article class="scope">
+          <div class="scope__head"><span class="scope__icon" style="--bgc: rgba(206,176,250,.32)"><svg class="icon"><use href="#i-heart-handshake"/></svg></span><h3>フレンドのみ</h3></div>
+          <dl><dt>見える人</dt><dd>作成者のフレンド</dd><dt>入れる人</dt><dd>見える人</dd></dl>
+        </article>
+        <article class="scope">
+          <div class="scope__head"><span class="scope__icon" style="--bgc: rgba(241,200,108,.32)"><svg class="icon"><use href="#i-mail"/></svg></span><h3>招待のみ</h3></div>
+          <dl><dt>見える人</dt><dd>中にいる人のフレンド</dd><dt>入れる人</dt><dd>招待された人（最長 24 時間）</dd></dl>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Servers ========== -->
+  <section class="section grid-bg" id="servers">
+    <div class="container">
+      <div class="section__head--row">
+        <div>
+          <span class="kicker">SERVERS</span>
+          <h2>サーバーを見つける</h2>
+          <p class="section__desc">どこでアカウントを作っても、ほかのサーバーの人とフレンドになれます。雰囲気の合うところを選んでください。</p>
+        </div>
+        <div class="filters" role="group" aria-label="サーバーの絞り込み">
+          <button class="chip-btn is-active" type="button" data-filter="all">すべて</button>
+          <button class="chip-btn" type="button" data-filter="open">公開登録</button>
+          <button class="chip-btn" type="button" data-filter="invite">招待制</button>
+          <button class="chip-btn" type="button" data-filter="dev">開発者向け</button>
+        </div>
+      </div>
+      <div class="servers" id="server-list">
+        <article class="server" data-tags="open official">
+          <div class="server__banner" style="--banner: linear-gradient(120deg, #bde1fb, #9ab2f8 55%, #ceb0fa)"></div>
+          <div class="server__icon"><img src="./assets/logo-transparent-sm.png" alt="" width="30" height="34" /></div>
+          <div class="server__body">
+            <h3>Ubichill 公式</h3><span class="server__domain">ubichill.com</span>
+            <p>Ubichill プロジェクトが運営する公式サーバー。迷ったらここから。</p>
+            <div class="server__meta"><span><svg class="icon"><use href="#i-users"/></svg>1,240 人</span><span><svg class="icon"><use href="#i-door"/></svg>86 部屋</span></div>
+            <div class="server__tags"><span class="tag tag--official">公式</span><span class="tag tag--open">公開登録</span><span class="tag">日本語</span></div>
+          </div>
+        </article>
+        <article class="server" data-tags="invite">
+          <div class="server__banner" style="--banner: linear-gradient(120deg, #1b2a44, #4b5b9a 60%, #ceb0fa)"></div>
+          <div class="server__icon"><img src="./assets/logo-transparent-sm.png" alt="" width="30" height="34" /></div>
+          <div class="server__body">
+            <h3>ようかんの作業部屋</h3><span class="server__domain">yokan.example</span>
+            <p>夜のもくもく作業と週末の映画会。インフラ好きが集まる小さなサーバー。</p>
+            <div class="server__meta"><span><svg class="icon"><use href="#i-users"/></svg>48 人</span><span><svg class="icon"><use href="#i-door"/></svg>6 部屋</span></div>
+            <div class="server__tags"><span class="tag tag--invite">招待制</span><span class="tag">日本語</span></div>
+          </div>
+        </article>
+        <article class="server" data-tags="open dev">
+          <div class="server__banner" style="--banner: linear-gradient(120deg, #8ad29b, #7cc7e8)"></div>
+          <div class="server__icon"><img src="./assets/logo-transparent-sm.png" alt="" width="30" height="34" /></div>
+          <div class="server__body">
+            <h3>Haku Lab</h3><span class="server__domain">haku.dev</span>
+            <p>mod 開発者向け。新しい mod をいち早く試せる実験場。</p>
+            <div class="server__meta"><span><svg class="icon"><use href="#i-users"/></svg>210 人</span><span><svg class="icon"><use href="#i-door"/></svg>19 部屋</span></div>
+            <div class="server__tags"><span class="tag tag--open">公開登録</span><span class="tag">開発者向け</span></div>
+          </div>
+        </article>
+        <article class="server" data-tags="invite">
+          <div class="server__banner" style="--banner: linear-gradient(120deg, #9ab2f8, #4780e0)"></div>
+          <div class="server__icon"><img src="./assets/logo-transparent-sm.png" alt="" width="30" height="34" /></div>
+          <div class="server__body">
+            <h3>情報工学科サーバー</h3><span class="server__domain">school.example.ac.jp</span>
+            <p>学内の勉強会・ゼミ用。学外の人とは連合でいっしょに。</p>
+            <div class="server__meta"><span><svg class="icon"><use href="#i-users"/></svg>380 人</span><span><svg class="icon"><use href="#i-door"/></svg>24 部屋</span></div>
+            <div class="server__tags"><span class="tag tag--invite">学内限定</span><span class="tag">日本語</span></div>
+          </div>
+        </article>
+        <article class="server" data-tags="open">
+          <div class="server__banner" style="--banner: linear-gradient(120deg, #f4a7c1, #f1c86c)"></div>
+          <div class="server__icon"><img src="./assets/logo-transparent-sm.png" alt="" width="30" height="34" /></div>
+          <div class="server__body">
+            <h3>まったりカフェ</h3><span class="server__domain">cafe.example</span>
+            <p>雑談とお絵描き。弾幕でゆるく盛り上がる、夜型の人が多め。</p>
+            <div class="server__meta"><span><svg class="icon"><use href="#i-users"/></svg>95 人</span><span><svg class="icon"><use href="#i-door"/></svg>8 部屋</span></div>
+            <div class="server__tags"><span class="tag tag--open">公開登録</span><span class="tag">日本語</span></div>
+          </div>
+        </article>
+        <article class="server" data-tags="open">
+          <div class="server__banner" style="--banner: linear-gradient(120deg, #ceb0fa, #f4a7c1)"></div>
+          <div class="server__icon"><img src="./assets/logo-transparent-sm.png" alt="" width="30" height="34" /></div>
+          <div class="server__body">
+            <h3>Pixel Gallery</h3><span class="server__domain">art.example</span>
+            <p>展示とライブペイントの会場として。作品の前にカーソルが集まる。</p>
+            <div class="server__meta"><span><svg class="icon"><use href="#i-users"/></svg>160 人</span><span><svg class="icon"><use href="#i-door"/></svg>12 部屋</span></div>
+            <div class="server__tags"><span class="tag tag--open">公開登録</span><span class="tag">English</span></div>
+          </div>
+        </article>
+      </div>
+      <p class="servers__note">掲載しているサーバーは表示例です。本番ではサーバーの自己申告と連合の情報から一覧を作る想定。</p>
+    </div>
+  </section>
+
+  <!-- ========== Start ========== -->
+  <section class="section section--white" id="start">
+    <div class="container">
+      <div class="section__head--center">
+        <span class="kicker">GET STARTED</span>
+        <h2>はじめる</h2>
+        <p class="section__desc">使う、建てる、つくる。どこから入っても、同じ網につながっています。</p>
+      </div>
+      <div class="start">
+        <a class="start__item" href="https://ubichill.com/">
+          <svg class="icon icon-lg"><use href="#i-window"/></svg>
+          <h3>アプリを開く</h3>
+          <p>ubichill.com でアカウントを作って、すぐにホームワールドへ。</p>
+          <span class="text-link">開く<svg class="icon"><use href="#i-arrow"/></svg></span>
+        </a>
+        <a class="start__item" href="#selfhost">
+          <svg class="icon icon-lg"><use href="#i-server"/></svg>
+          <h3>自分のサーバーを建てる</h3>
+          <p>Helm チャート 1 つで k8s に。連合は追加設定なし。</p>
+          <span class="text-link">ガイド<svg class="icon"><use href="#i-arrow"/></svg></span>
+        </a>
+        <a class="start__item" href="#developers">
+          <svg class="icon icon-lg"><use href="#i-braces"/></svg>
+          <h3>mod をつくる</h3>
+          <p><code>@ubichill/sdk</code> と <code>ubi mod create</code> で雛形から。</p>
+          <span class="text-link">SDK<svg class="icon"><use href="#i-arrow"/></svg></span>
+        </a>
+        <a class="start__item" href="#developers">
+          <svg class="icon icon-lg"><use href="#i-file"/></svg>
+          <h3>ワールドを書く</h3>
+          <p>World as Code。YAML 1 枚で、ワールド＝URL。</p>
+          <span class="text-link">書き方<svg class="icon"><use href="#i-arrow"/></svg></span>
+        </a>
+        <a class="start__item" href="https://github.com/ubichill/ubichill">
+          <svg class="icon icon-lg"><use href="#i-pr"/></svg>
+          <h3>開発に参加する</h3>
+          <p>Issue / PR 歓迎。PR は日本語でどうぞ。</p>
+          <span class="text-link">GitHub<svg class="icon"><use href="#i-arrow"/></svg></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Uses ========== -->
+  <section class="section" id="uses">
+    <div class="container">
+      <span class="kicker">WORLDS</span>
+      <h2>こんな使い方</h2>
+      <p class="section__desc">ワールドは mod の組み合わせ。エディタでドラッグして置くだけで、作業部屋にも映画館にもなる。</p>
+      <div class="uses">
+        <figure class="uses__shot">
+          <img src="./assets/app-editor.png" alt="Ubichill のワールドエディタで動画プレイヤーとペンを配置している画面" width="2513" height="1295" loading="lazy" />
+          <figcaption>実際のワールドエディタ</figcaption>
+        </figure>
+        <div class="uses__list">
+          <article class="use"><svg class="icon"><use href="#i-headphones"/></svg><h3>もくもく作業会</h3><p>声もカメラもオフで、気配だけ共有。</p></article>
+          <article class="use"><svg class="icon"><use href="#i-tv"/></svg><h3>動画・映画の同時視聴</h3><p>再生位置をみんなで同期。弾幕も。</p></article>
+          <article class="use"><svg class="icon"><use href="#i-pen"/></svg><h3>お絵描き・ホワイトボード</h3><p>ペンを持ってそのまま描く。付箋も。</p></article>
+          <article class="use"><svg class="icon"><use href="#i-presentation"/></svg><h3>イベント・展示・勉強会</h3><p>URL を配るだけで会場に。</p></article>
+        </div>
+      </div>
+      <div class="features" aria-label="ワールドでできること">
+        <span class="feature" style="--c: var(--colors-logo-peri)"><i></i>カーソルアバター（.cur）</span>
+        <span class="feature" style="--c: var(--colors-logo-blue)"><i></i>ペン・消しゴム</span>
+        <span class="feature" style="--c: var(--colors-logo-lav)"><i></i>動画・ライブの同時視聴</span>
+        <span class="feature" style="--c: var(--colors-node-sun)"><i></i>付箋</span>
+        <span class="feature" style="--c: var(--colors-node-pink)"><i></i>弾幕</span>
+        <span class="feature" style="--c: var(--colors-node-mint)"><i></i>スマホコントローラー</span>
+        <span class="feature" style="--c: var(--colors-blue-500)"><i></i>ホームワールドとランチパッド</span>
+        <span class="feature" style="--c: var(--colors-logo-peri)"><i></i>フレンド・招待・リクエストインバイト</span>
+        <span class="feature" style="--c: var(--colors-logo-lav)"><i></i>公開範囲 4 種</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Developers ========== -->
+  <section class="section section--white" id="developers">
+    <div class="container">
+      <span class="kicker">FOR DEVELOPERS</span>
+      <h2>mod も、ワールドも、URL で配れる。</h2>
+      <p class="section__desc">完全 CSR（Vite）と Go の WebSocket インスタンスサーバー。拡張は Worker の中で動く mod として、どのサーバーからでも読み込める。</p>
+      <div class="dev">
+        <div class="dev__points">
+          <div class="dev__point"><h3><svg class="icon"><use href="#i-braces"/></svg>mod</h3><p><code>@ubichill/sdk</code> だけに依存する Web Worker。状態は <code>Ubi.state.sync</code> で宣言するだけで同期。</p></div>
+          <div class="dev__point"><h3><svg class="icon"><use href="#i-file"/></svg>World as Code</h3><p>Kubernetes の CRD と同じ形の YAML。GitHub に置いても、ほかのサーバーに置いても開ける。</p></div>
+          <div class="dev__point"><h3><svg class="icon"><use href="#i-shield"/></svg>ゼロトラストな権限</h3><p>権限はビルド時の静的解析で自動導出。初回使用時にブラウザのカメラ許可のように確認する。</p>
+            <div class="tiers"><span class="tier" style="--c:#3fb37f"><i></i>safe</span><span class="tier" style="--c:#e0a63b"><i></i>sensitive</span><span class="tier" style="--c:#d9534f"><i></i>dangerous</span></div>
+          </div>
+        </div>
+        <div class="term">
+          <div class="term__tabs" role="tablist" aria-label="コード例">
+            <button class="term__tab" role="tab" aria-selected="true" aria-controls="code-world" id="tab-world" type="button">chill-room.yaml</button>
+            <button class="term__tab" role="tab" aria-selected="false" aria-controls="code-mod" id="tab-mod" type="button">button.worker.tsx</button>
+            <button class="term__tab" role="tab" aria-selected="false" aria-controls="code-helm" id="tab-helm" type="button">install.sh</button>
+          </div>
+<pre id="code-world" role="tabpanel" aria-labelledby="tab-world"><code><span class="t-c"># worlds/chill-room.yaml</span>
+<span class="t-k">apiVersion</span>: ubichill.com/v1alpha1
+<span class="t-k">kind</span>: World
+<span class="t-k">metadata</span>:
+  <span class="t-k">name</span>: chill-room
+  <span class="t-k">version</span>: <span class="t-s">"1.0.0"</span>
+<span class="t-k">spec</span>:
+  <span class="t-k">displayName</span>: チルな作業部屋
+  <span class="t-k">capacity</span>: { <span class="t-k">max</span>: <span class="t-n">20</span>, <span class="t-k">default</span>: <span class="t-n">10</span> }
+  <span class="t-k">dependencies</span>:
+    - <span class="t-k">name</span>: pen
+    - <span class="t-k">name</span>: video-player
+  <span class="t-k">initialEntities</span>:
+    - <span class="t-k">id</span>: pentray
+      <span class="t-k">components</span>:
+        - <span class="t-k">type</span>: pen:tray</code></pre>
+<pre id="code-mod" role="tabpanel" aria-labelledby="tab-mod" hidden><code><span class="t-c">// mods/like/src/button.worker.tsx（イメージ）</span>
+<span class="t-p">const</span> likes = Ubi.state.<span class="t-k">sync</span>(<span class="t-n">0</span>);
+
+Ubi.ui.<span class="t-k">render</span>(() =&gt; (
+  &lt;<span class="t-p">button</span> onClick={() =&gt; likes.<span class="t-k">set</span>(likes.<span class="t-k">get</span>() + <span class="t-n">1</span>)}&gt;
+    いいね {likes.<span class="t-k">get</span>()}
+  &lt;/<span class="t-p">button</span>&gt;
+));</code></pre>
+<pre id="code-helm" role="tabpanel" aria-labelledby="tab-helm" hidden><code><span class="t-c"># 自分のサーバーを建てる</span>
+helm repo add ubichill https://ubichill.github.io/ubichill
+helm install ubichill ubichill/ubichill \
+  -n ubichill --create-namespace \
+  --set global.domain=<span class="t-s">&lt;your-domain&gt;</span>
+
+<span class="t-c"># → https://&lt;your-domain&gt;/ap/actor が公開され、</span>
+<span class="t-c">#   ほかのサーバーと連合できるようになる</span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== Self-host band ========== -->
+  <section class="section" id="selfhost">
+    <div class="container">
+      <div class="band">
+        <img class="band__mini" src="./assets/logo-transparent-sm.png" alt="" width="260" height="297" />
+        <div>
+          <span class="kicker">SELF-HOST</span>
+          <h2>あなたのサーバーも、<br />網のひとつに。</h2>
+          <p class="section__desc">Helm チャート 1 つで建てて、ドメインを決めるだけ。ほかのサーバーとは最初からつながります。</p>
+          <ol class="band__steps">
+            <li><span>1</span><div>Helm でインストール<small>PostgreSQL 同梱、パスワードは自動生成</small></div></li>
+            <li><span>2</span><div>ドメインを決める<small>Ingress / CORS / 認証 URL は <code>global.domain</code> から導出</small></div></li>
+            <li><span>3</span><div>連合に参加<small>追加の設定なし。鍵は種から導出し、秘密鍵は保存しない</small></div></li>
+          </ol>
+          <div class="band__cta">
+            <a class="btn btn--light" href="#start">セットアップガイド<svg class="icon"><use href="#i-arrow"/></svg></a>
+            <a class="btn btn--ghost-light" href="https://github.com/ubichill/ubichill"><svg class="icon"><use href="#i-github"/></svg>Helm Chart</a>
+          </div>
+        </div>
+        <div class="band__code">
+          <div class="band__code-head" aria-hidden="true"><i></i><i></i><i></i></div>
+<pre><code><span class="t-c">$</span> helm repo add ubichill \
+    https://ubichill.github.io/ubichill
+<span class="t-c">$</span> helm install ubichill ubichill/ubichill \
+    -n ubichill --create-namespace \
+    --set global.domain=<span class="t-s">yokan.example</span>
+
+<span class="t-s">✓</span> backend   ready
+<span class="t-s">✓</span> instance  ready
+<span class="t-s">✓</span> federation actor  https://yokan.example/ap/actor</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== OSS ========== -->
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="oss">
+        <img class="oss__logo" src="./assets/logo-transparent-sm.png" alt="" width="72" height="82" />
+        <div>
+          <h2>ずっと無料で、オープン。</h2>
+          <p>AGPL-3.0 のオープンソース。独立した mod には追加的許可があり、自由なライセンスで配れます。公式 mod だけ作る、も歓迎。</p>
+        </div>
+        <div class="oss__cta">
+          <a class="btn btn--solid" href="https://github.com/ubichill/ubichill"><svg class="icon"><use href="#i-github"/></svg>GitHub</a>
+          <a class="btn btn--outline" href="#start"><svg class="icon"><use href="#i-book"/></svg>ドキュメント</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer__grid">
+      <div class="footer__about">
+        <a class="brand" href="#top"><img src="./assets/logo-transparent-sm.png" alt="" width="28" height="32" />Ubichill</a>
+        <p>みんなのカーソルが集まって、描いたり、観たり、いっしょに過ごす Web スペース。</p>
+      </div>
+      <div><h4>PRODUCT</h4><ul><li><a href="https://ubichill.com/">アプリを開く</a></li><li><a href="#servers">サーバー一覧</a></li><li><a href="#uses">ワールド</a></li><li><a href="#developers">mod</a></li></ul></div>
+      <div><h4>DOCS</h4><ul><li><a href="#start">はじめる</a></li><li><a href="#developers">API</a></li><li><a href="#how">Federation</a></li><li><a href="#developers">Architecture</a></li><li><a href="#news">Roadmap</a></li></ul></div>
+      <div><h4>COMMUNITY</h4><ul><li><a href="https://github.com/ubichill/ubichill">GitHub</a></li><li><a href="#news">ニュース</a></li><li><a href="#">ライセンス</a></li><li><a href="#">行動規範</a></li></ul></div>
+    </div>
+    <div class="footer__bottom"><span>© Ubichill Project</span><span class="mono">AGPL-3.0-only · ubichill.com/v1alpha1</span></div>
+  </div>
+</footer>
+
+<div class="variant-label">案J · Federation<a href="./index.html">一覧へ</a></div>
+
+<script type="module" src="./assets/logo3d.js"></script>
+<script type="module" src="./assets/world.js"></script>
+<script>
+(() => {
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const NS = 'http://www.w3.org/2000/svg';
+  const svg = document.getElementById('atlas');
+  const logo = './assets/logo-transparent-sm.png';
+
+  // ---- サーバー（ノード）と連合（エッジ）。中心を作らない網の目にする ----
+  const nodes = [
+    { id: 'official', x: 330, y: 64,  domain: 'ubichill.com',   tag: '公式',       color: '#9ab2f8', count: 0 },
+    { id: 'yokan',    x: 105, y: 140, domain: 'yokan.example',  tag: '作業部屋',   color: '#ceb0fa', count: 0 },
+    { id: 'haku',     x: 548, y: 130, domain: 'haku.dev',       tag: 'mod 実験場', color: '#7cc7e8', count: 0 },
+    { id: 'you',      x: 330, y: 245, domain: 'your.server',    tag: 'あなたのサーバー', color: '#4780e0', count: 0, you: true },
+    { id: 'school',   x: 96,  y: 262, domain: 'school.ac.jp',   tag: 'ゼミ',       color: '#8ad29b', count: 0 },
+    { id: 'art',      x: 550, y: 330, domain: 'art.example',    tag: 'ギャラリー', color: '#f1c86c', count: 0 },
+    { id: 'cafe',     x: 480, y: 500, domain: 'cafe.example',   tag: 'カフェ',     color: '#f4a7c1', count: 0 },
+  ];
+  const edges = [
+    ['official', 'yokan'], ['official', 'haku'], ['official', 'you'], ['yokan', 'you'],
+    ['haku', 'you'], ['haku', 'art'], ['you', 'cafe'], ['you', 'school'],
+    ['yokan', 'school'], ['cafe', 'art'], ['you', 'art'],
+  ];
+  const byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const el = (tag, attrs = {}, parent) => {
+    const e = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v);
+    if (parent) parent.appendChild(e);
+    return e;
+  };
+
+  const gEdges = el('g', {}, svg);
+  const gNodes = el('g', {}, svg);
+  const gTravel = el('g', {}, svg);
+
+  // エッジ（ゆるく曲げる）
+  const paths = edges.map(([a, b], i) => {
+    const A = byId[a], B = byId[b];
+    const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2;
+    const dx = B.x - A.x, dy = B.y - A.y;
+    const len = Math.hypot(dx, dy);
+    const k = (i % 2 ? 1 : -1) * len * 0.12;
+    const cx = mx - (dy / len) * k, cy = my + (dx / len) * k;
+    const d = `M ${A.x} ${A.y} Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${B.x} ${B.y}`;
+    el('path', { d, class: 'edge-base' }, gEdges);
+    const flow = el('path', { d, class: 'edge-flow' }, gEdges);
+    flow.style.animationDelay = `${(-i * 0.37).toFixed(2)}s`;
+    if (i % 3 === 0) flow.style.animationDirection = 'reverse';
+    return { a, b, path: flow, length: 0 };
+  });
+
+  // ノード
+  for (const n of nodes) {
+    const g = el('g', { class: `node${n.you ? ' node--you' : ''}`, transform: `translate(${n.x} ${n.y})` }, gNodes);
+    el('circle', { r: 46, class: 'node__halo', stroke: n.color }, g);
+    n.pulse = el('circle', { r: 34, class: 'node__pulse', stroke: n.color }, g);
+    el('circle', { r: 34, class: 'node__ring', stroke: n.color }, g);
+    el('image', { href: logo, x: -15, y: -17, width: 30, height: 34 }, g);
+    // ラベル
+    const lg = el('g', { class: 'node__label', transform: 'translate(0 58)' }, g);
+    const w = n.domain.length * 7.3 + 22;
+    el('rect', { x: -w / 2, y: -12, width: w, height: 24, rx: 12 }, lg);
+    const t = el('text', { 'text-anchor': 'middle', y: 4.5 }, lg);
+    t.textContent = n.domain;
+    const tag = el('text', { class: 'node__tag', 'text-anchor': 'middle', y: 86 }, g);
+    tag.textContent = n.tag;
+    // 人数
+    const cg = el('g', { class: 'node__count', transform: 'translate(26 -26)' }, g);
+    el('circle', { r: 12 }, cg);
+    n.countText = el('text', { 'text-anchor': 'middle', y: 4 }, cg);
+    n.g = g;
+  }
+  const setCount = (n) => { n.countText.textContent = String(n.count); };
+
+  // 旅するカーソル（サーバーをまたいで部屋に行く人たち）
+  const people = [
+    { name: 'ありす', color: '#9ab2f8', at: 'official' },
+    { name: 'ようかん', color: '#ceb0fa', at: 'yokan' },
+    { name: 'haku', color: '#7cc7e8', at: 'haku' },
+    { name: 'mio', color: '#f4a7c1', at: 'cafe' },
+    { name: 'ねこ', color: '#8ad29b', at: 'school' },
+    { name: 'taro', color: '#f1c86c', at: 'art' },
+  ];
+  // 背景の在室数（旅人以外）
+  const base = { official: 12, yokan: 3, haku: 5, you: 1, school: 4, cafe: 2, art: 3 };
+  for (const n of nodes) { n.count = base[n.id]; }
+
+  const travelers = people.map((p, i) => {
+    const g = el('g', { class: 'traveler' }, gTravel);
+    el('path', { d: 'M0 0 L13 7 L7.5 8.6 L4.8 14.6 Z', fill: p.color, stroke: '#1b2a44', 'stroke-width': 1.4, 'stroke-linejoin': 'round' }, g);
+    const w = p.name.length * 11 + 14;
+    el('rect', { x: 10, y: 13, width: w, height: 18, rx: 9, fill: p.color }, g);
+    const t = el('text', { x: 10 + w / 2, y: 26, 'text-anchor': 'middle' }, g);
+    t.textContent = p.name;
+    const n = byId[p.at];
+    n.count += 1;
+    const ang = (i / people.length) * Math.PI * 2;
+    return { ...p, g, node: p.at, edge: null, t: 0, dur: 0, from: null, idleUntil: performance.now() + 600 + i * 450, ox: Math.cos(ang) * 40, oy: Math.sin(ang) * 40 };
+  });
+  nodes.forEach(setCount);
+
+  const place = (tr, x, y) => tr.g.setAttribute('transform', `translate(${x.toFixed(1)} ${y.toFixed(1)})`);
+  for (const tr of travelers) { const n = byId[tr.node]; place(tr, n.x + tr.ox, n.y + tr.oy); }
+
+  if (reduce) return;
+  for (const e of paths) e.length = e.path.getTotalLength();
+
+  const pulse = (n) => {
+    n.g.classList.remove('is-arrived');
+    void n.g.getBBox();
+    n.g.classList.add('is-arrived');
+  };
+
+  let visible = true;
+  new IntersectionObserver(([en]) => { visible = en.isIntersecting; }).observe(svg);
+
+  const tick = (now) => {
+    if (visible) {
+      for (const tr of travelers) {
+        if (!tr.edge) {
+          const n = byId[tr.node];
+          // ノードのまわりをゆっくり回る（部屋で過ごしている）
+          const a = now / 2400 + tr.ox;
+          place(tr, n.x + Math.cos(a) * 40, n.y + Math.sin(a) * 40);
+          if (now > tr.idleUntil) {
+            const options = paths.filter((e) => e.a === tr.node || e.b === tr.node);
+            const e = options[Math.floor(Math.random() * options.length)];
+            tr.edge = e; tr.forward = e.a === tr.node; tr.t = 0; tr.dur = 2600 + Math.random() * 1600; tr.start = now;
+            n.count -= 1; setCount(n);
+          }
+        } else {
+          const p = Math.min(1, (now - tr.start) / tr.dur);
+          const ease = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+          const L = tr.edge.length;
+          const pt = tr.edge.path.getPointAtLength((tr.forward ? ease : 1 - ease) * L);
+          place(tr, pt.x, pt.y);
+          if (p >= 1) {
+            tr.node = tr.forward ? tr.edge.b : tr.edge.a;
+            tr.edge = null;
+            const n = byId[tr.node];
+            n.count += 1; setCount(n); pulse(n);
+            tr.idleUntil = now + 1400 + Math.random() * 2600;
+          }
+        }
+      }
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+})();
+
+// コードタブ
+(() => {
+  const tabs = [...document.querySelectorAll('.term__tab')];
+  tabs.forEach((tab) => tab.addEventListener('click', () => {
+    tabs.forEach((t) => {
+      const on = t === tab;
+      t.setAttribute('aria-selected', String(on));
+      document.getElementById(t.getAttribute('aria-controls')).hidden = !on;
+    });
+  }));
+})();
+
+// サーバーの絞り込み
+(() => {
+  const chips = [...document.querySelectorAll('.chip-btn')];
+  const servers = [...document.querySelectorAll('#server-list .server')];
+  chips.forEach((chip) => chip.addEventListener('click', () => {
+    chips.forEach((c) => c.classList.toggle('is-active', c === chip));
+    const f = chip.dataset.filter;
+    servers.forEach((s) => { s.hidden = f !== 'all' && !s.dataset.tags.split(' ').includes(f); });
+  }));
+})();
+
+// モバイルメニュー
+(() => {
+  const btn = document.querySelector('.menu-btn');
+  const nav = document.getElementById('mobile-nav');
+  btn.addEventListener('click', () => { const open = nav.classList.toggle('is-open'); btn.setAttribute('aria-expanded', String(open)); });
+  nav.addEventListener('click', (e) => { if (e.target.closest('a')) { nav.classList.remove('is-open'); btn.setAttribute('aria-expanded', 'false'); } });
+})();
+</script>
+</body>
+</html>

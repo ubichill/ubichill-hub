@@ -1,0 +1,74 @@
+---
+import { css } from 'styled-system/css';
+import Icon, { type IconName } from '../Icon.astro';
+
+const pillars: { icon: IconName; title: string; text: string; tint: string }[] = [
+  { icon: 'key', title: '自分で持てる', text: '置き場所は自分で決める。', tint: 'tint.sky' },
+  { icon: 'layout', title: 'ブラウザで作れる', text: 'エディタで置くだけ。', tint: 'tint.periwinkle' },
+  { icon: 'code', title: 'コードで書ける', text: 'YAML と TypeScript。AI にも頼める。', tint: 'tint.lavender' },
+  { icon: 'network', title: '中央を持たない', text: 'サーバー同士がつながる。', tint: 'tint.green' },
+];
+
+const grid = css({
+  position: 'relative',
+  zIndex: 3,
+  width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
+  marginInline: 'auto',
+  marginTop: 'calc(clamp(150px, 14vw, 190px) * -1 + 40px)',
+  display: 'grid',
+  gridTemplateColumns: 'repeat(4, 1fr)',
+  gap: '18px',
+  lgDown: { gridTemplateColumns: 'repeat(2, 1fr)' },
+  smDown: { gridTemplateColumns: '1fr' },
+});
+const pillar = css({
+  position: 'relative',
+  padding: '34px 26px 28px',
+  textAlign: 'center',
+  borderRadius: 'lg',
+  bg: 'bg.glass',
+  backdropFilter: 'blur(18px)',
+  boxShadow: '{shadows.card}, inset 0 0 0 1px {colors.border}',
+  _before: {
+    content: '""',
+    position: 'absolute',
+    left: '20px',
+    top: '20px',
+    width: '10px',
+    height: '10px',
+    borderRadius: '50%',
+    bg: 'border.strong',
+  },
+  '& h3': { textStyle: 'h3', fontSize: '18px' },
+  '& p': { marginTop: '10px', textStyle: 'small', color: 'fg.muted' },
+});
+const iconBox = css({
+  width: '60px',
+  height: '60px',
+  margin: '0 auto 14px',
+  borderRadius: '20px',
+  display: 'grid',
+  placeItems: 'center',
+  color: 'fg',
+});
+const tints: Record<string, string> = {
+  'tint.sky': css({ bg: 'tint.sky' }),
+  'tint.periwinkle': css({ bg: 'tint.periwinkle' }),
+  'tint.lavender': css({ bg: 'tint.lavender' }),
+  'tint.green': css({ bg: 'tint.green' }),
+};
+---
+
+<div class={grid} id="about">
+  {
+    pillars.map((p) => (
+      <article class={pillar}>
+        <div class:list={[iconBox, tints[p.tint]]}>
+          <Icon name={p.icon} size={26} />
+        </div>
+        <h3>{p.title}</h3>
+        <p>{p.text}</p>
+      </article>
+    ))
+  }
+</div>

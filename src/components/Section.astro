@@ -1,0 +1,41 @@
+---
+/** セクションの外枠。eyebrow（英語の小見出し）・見出し・一言を同じ組み方でそろえる */
+import { css, cx } from 'styled-system/css';
+
+interface Props {
+  id?: string;
+  eyebrow: string;
+  title: string;
+  lead?: string;
+  center?: boolean;
+  class?: string;
+}
+
+const { id, eyebrow, title, lead, center = false, class: className } = Astro.props;
+const headingId = `${id ?? eyebrow.toLowerCase()}-title`;
+
+const section = css({ paddingTop: 'clamp(80px, 10vw, 140px)' });
+const inner = css({ width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))', marginInline: 'auto' });
+const head = css({ '&[data-center]': { textAlign: 'center', '& p': { marginInline: 'auto' } } });
+const eyebrowCls = css({
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '8px',
+  textStyle: 'eyebrow',
+  color: 'highlight',
+  _before: { content: '""', width: '18px', height: '2px', borderRadius: '2px', bg: 'currentColor' },
+});
+const h2 = css({ marginTop: '12px', textStyle: 'h2' });
+const leadCls = css({ marginTop: '16px', maxWidth: '40em', color: 'fg.muted' });
+---
+
+<section class={cx(section, className)} id={id} aria-labelledby={headingId}>
+  <div class={inner}>
+    <div class={head} data-center={center || undefined}>
+      <span class={eyebrowCls}>{eyebrow}</span>
+      <h2 class={h2} id={headingId}>{title}</h2>
+      {lead && <p class={leadCls}>{lead}</p>}
+    </div>
+    <slot />
+  </div>
+</section>

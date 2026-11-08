@@ -1,0 +1,192 @@
+---
+/**
+ * 3D ロゴ。ロゴを色ごとの 3 枚（public/logo/logo-layer-*.png）に分け、
+ * 薄い板を重ねて押し出し、ポインタに合わせて傾ける。依存なし。
+ * 本番でロゴの SVG と glTF ができたら、この中身だけ Three.js に差し替える。
+ */
+import { css } from 'styled-system/css';
+
+interface Props {
+  class?: string;
+  /** レイヤー間の奥行き(px、幅 360px のとき) */
+  depth?: number;
+  /** 押し出しの厚み(px) */
+  thickness?: number;
+  /** ポインタ追従の最大角度(deg) */
+  tilt?: number;
+  shadow?: boolean;
+  label?: string;
+}
+
+const {
+  class: className,
+  depth = 28,
+  thickness = 12,
+  tilt = 18,
+  shadow = true,
+  label = 'Ubichill のロゴ',
+} = Astro.props;
+
+const root = css({
+  position: 'relative',
+  aspectRatio: '667 / 761',
+  perspective: '1400px',
+  userSelect: 'none',
+  '& .stage': { position: 'absolute', inset: 0, transformStyle: 'preserve-3d', willChange: 'transform' },
+  '& .bob': { position: 'absolute', inset: 0, transformStyle: 'preserve-3d' },
+  '& .layer': { position: 'absolute', inset: 0, transformStyle: 'preserve-3d' },
+  '& .slice': {
+    position: 'absolute',
+    inset: 0,
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain',
+    pointerEvents: 'none',
+  },
+  '& .gloss': {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    maskSize: 'contain',
+    maskRepeat: 'no-repeat',
+    maskPosition: 'center',
+    mixBlendMode: 'screen',
+    backfaceVisibility: 'hidden',
+    background:
+      'radial-gradient(120% 60% at 30% 12%, rgba(255,255,255,.75), rgba(255,255,255,0) 55%), linear-gradient(160deg, rgba(255,255,255,.35), rgba(255,255,255,0) 40%)',
+  },
+  '& .backing': {
+    position: 'absolute',
+    inset: 0,
+    pointerEvents: 'none',
+    maskSize: 'contain',
+    maskRepeat: 'no-repeat',
+    maskPosition: 'center',
+    maskImage: 'url(/logo/logo-silhouette.png)',
+    bg: 'bg.hero',
+  },
+  '& .shadow': {
+    position: 'absolute',
+    left: '18%',
+    right: '18%',
+    bottom: '-7%',
+    height: '9%',
+    borderRadius: '50%',
+    background: 'radial-gradient(closest-side, rgba(27,42,68,.26), transparent)',
+    filter: 'blur(5px)',
+    pointerEvents: 'none',
+  },
+  _motionSafe: {
+    '& .bob': { animation: 'float 6s ease-in-out infinite' },
+  },
+});
+---
+
+<div
+  class:list={[root, className]}
+  data-logo3d
+  data-depth={depth}
+  data-thickness={thickness}
+  data-tilt={tilt}
+  data-shadow={shadow ? '1' : '0'}
+  role="img"
+  aria-label={label}
+>
+</div>
+
+<script>
+  const LAYERS = ['blue', 'peri', 'lav'];
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const slice = (src: string, z: number, shade: number, dark: number) => {
+    const img = document.createElement('img');
+    img.className = 'slice';
+    img.src = src;
+    img.alt = '';
+    img.decoding = 'async';
+    img.style.transform = `translateZ(${z}px)`;
+    if (shade > 0) img.style.filter = `brightness(${1 - shade * dark}) saturate(${1 + shade * 0.25})`;
+    return img;
+  };
+
+  const build = (el: HTMLElement) => {
+    const scale = (el.clientWidth || 360) / 360;
+    const depth = Number(el.dataset.depth) * scale;
+    const thickness = Number(el.dataset.thickness) * scale;
+    const tilt = Number(el.dataset.tilt);
+    const steps = Math.max(4, Math.round(thickness / 1.2));
+    const dark = document.documentElement.dataset.theme === 'dark' ? 0.22 : 0.38;
+    const center = ((LAYERS.length - 1) * depth) / 2;
+
+    const stage = document.createElement('div');
+    stage.className = 'stage';
+    const bob = document.createElement('div');
+    bob.className = 'bob';
+    stage.appendChild(bob);
+
+    const backing = document.createElement('div');
+    backing.className = 'backing';
+    backing.style.transform = `translateZ(${-thickness - 0.5}px)`;
+    bob.appendChild(backing);
+
+    LAYERS.forEach((key, i) => {
+      const src = `/logo/logo-layer-${key}.png`;
+      const layer = document.createElement('div');
+      layer.className = 'layer';
+      const front = i * depth - center;
+      for (let s = steps; s >= 0; s -= 1) layer.appendChild(slice(src, front - (s / steps) * thickness, s / steps, dark));
+      const gloss = document.createElement('div');
+      gloss.className = 'gloss';
+      gloss.style.transform = `translateZ(${front + 0.5}px)`;
+      gloss.style.maskImage = `url(${src})`;
+      layer.appendChild(gloss);
+      bob.appendChild(layer);
+    });
+    el.appendChild(stage);
+    if (el.dataset.shadow === '1') {
+      const sh = document.createElement('div');
+      sh.className = 'shadow';
+      el.appendChild(sh);
+    }
+
+    const base = { x: -8, y: 16 };
+    const state = { tx: base.x, ty: base.y, x: base.x, y: base.y };
+    const apply = () => {
+      stage.style.transform = `rotateX(${state.x}deg) rotateY(${state.y}deg)`;
+    };
+    apply();
+    if (reduceMotion) return;
+
+    const host = el.closest<HTMLElement>('[data-logo3d-host]') ?? window;
+    host.addEventListener(
+      'pointermove',
+      (e) => {
+        const ev = e as PointerEvent;
+        const r = el.getBoundingClientRect();
+        const nx = Math.max(-1, Math.min(1, (ev.clientX - (r.left + r.width / 2)) / (window.innerWidth / 2)));
+        const ny = Math.max(-1, Math.min(1, (ev.clientY - (r.top + r.height / 2)) / (window.innerHeight / 2)));
+        state.ty = base.y + nx * tilt;
+        state.tx = base.x - ny * tilt * 0.7;
+      },
+      { passive: true },
+    );
+    host.addEventListener('pointerleave', () => {
+      state.tx = base.x;
+      state.ty = base.y;
+    });
+    const tick = (t: number) => {
+      state.x += (state.tx - state.x) * 0.08;
+      state.y += (state.ty - state.y) * 0.08;
+      stage.style.transform = `rotateX(${state.x}deg) rotateY(${state.y + Math.sin(t / 2600) * 6}deg)`;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  };
+
+  for (const el of document.querySelectorAll<HTMLElement>('[data-logo3d]')) {
+    if (!el.dataset.ready) {
+      el.dataset.ready = '1';
+      build(el);
+    }
+  }
+</script>
