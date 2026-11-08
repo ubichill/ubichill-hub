@@ -1,14 +1,48 @@
 ---
+/**
+ * 分散のセクション。人・部屋・作品の 3 層、夜空の上のサーバーの図、実在するサーバーの一覧、Helm。
+ * サーバーはいま公式（ubichill.com）だけ。ワールド数はビルド時に API から数える。
+ */
 import { css } from 'styled-system/css';
-import { exampleLinks, exampleServers } from '../../data/site';
+import { servers, site } from '../../data/site';
+import { getWorlds } from '../../data/worlds';
+import Button from '../Button.astro';
 import Icon, { type IconName } from '../Icon.astro';
 import Section from '../Section.astro';
 
+const { worlds } = await getWorlds();
+
 const layers: { icon: IconName; title: string; addr: [string, string]; tint: string }[] = [
   { icon: 'users', title: '人は、ホームサーバーに', addr: ['@yokan', '@yokan.example'], tint: 'sky' },
-  { icon: 'home', title: '部屋は、部屋のサーバーに', addr: ['chill-room', '@yokan.example'], tint: 'periwinkle' },
+  { icon: 'home', title: '部屋は、部屋のサーバーに', addr: ['chill-room', '@ubichill.com'], tint: 'periwinkle' },
   { icon: 'box', title: '作品は、作者の URL に', addr: ['mio.dev', '/mods/like/'], tint: 'lavender' },
 ];
+
+// 夜空の図。公式と「あなた」以外は名前のない灯り。x/y は % で、線はそこを結ぶ
+const nodes = [
+  { x: 24, y: 46, label: 'ubichill.com', sub: '公式', kind: 'official' },
+  { x: 76, y: 58, label: 'あなたのサーバー', sub: 'helm install', kind: 'you' },
+  { x: 50, y: 22, kind: 'other' },
+  { x: 60, y: 82, kind: 'other' },
+  { x: 90, y: 20, kind: 'other' },
+  { x: 38, y: 84, kind: 'other' },
+] as const;
+const wires: [number, number][] = [
+  [0, 1],
+  [0, 2],
+  [2, 4],
+  [1, 4],
+  [0, 3],
+  [3, 1],
+  [0, 5],
+  [5, 3],
+];
+// 線の SVG は viewBox 0 0 100 40 を面いっぱいに伸ばす（y は % の 0.4 倍）
+const wire = (a: (typeof nodes)[number], b: (typeof nodes)[number]) => {
+  const mx = (a.x + b.x) / 2;
+  const my = ((a.y + b.y) / 2 - 14) * 0.4;
+  return `M${a.x} ${a.y * 0.4} Q ${mx} ${my} ${b.x} ${b.y * 0.4}`;
+};
 
 const layerGrid = css({
   marginTop: '48px',
@@ -32,7 +66,7 @@ const layerIcon = css({
   gridRow: 'span 2',
   width: '52px',
   height: '52px',
-  borderRadius: '17px',
+  borderRadius: '18px',
   display: 'grid',
   placeItems: 'center',
 });
@@ -51,129 +85,145 @@ const addr = css({
   overflowWrap: 'anywhere',
   '& b': { color: 'highlight', fontWeight: '500' },
 });
-const map = css({
+const sky = css({
   position: 'relative',
   marginTop: '18px',
-  height: '400px',
   borderRadius: 'lg',
   overflow: 'hidden',
+  isolation: 'isolate',
+  bg: 'bg.inverse',
+  backgroundImage: '{gradients.lamp}',
   boxShadow: 'card',
-  bg: 'bg.surface',
-  backgroundImage:
-    'linear-gradient({colors.border} 1px, transparent 1px), linear-gradient(90deg, {colors.border} 1px, transparent 1px)',
-  backgroundSize: '34px 34px',
-  smDown: { height: '440px' },
-  '& .links': { position: 'absolute', inset: 0, width: '100%', height: '100%' },
-  '& .links line': {
-    stroke: 'border.strong',
-    strokeWidth: '1.6',
-    strokeDasharray: '5 7',
+  color: 'fg.inverse',
+  aspectRatio: '5 / 2',
+  smDown: { aspectRatio: '4 / 3' },
+  '& .wires': { position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block' },
+  '& .stars': {
+    position: 'absolute',
+    inset: 0,
+    zIndex: -1,
+    backgroundImage:
+      'radial-gradient(rgba(255,255,255,.75) 0.8px, transparent 1.2px), radial-gradient(rgba(255,255,255,.4) 0.6px, transparent 1px)',
+    backgroundSize: '173px 131px, 97px 89px',
+    backgroundPosition: '10px 20px, 50px 5px',
+    maskImage: 'linear-gradient(180deg, #000, transparent 80%)',
+    _motionSafe: { animation: 'breathe 8s ease-in-out infinite' },
+  },
+  '& .wire': {
+    fill: 'none',
+    stroke: 'rgba(255,255,255,.26)',
+    strokeWidth: '1.4',
+    strokeDasharray: '4 7',
+    strokeLinecap: 'round',
     vectorEffect: 'non-scaling-stroke',
-    animation: 'dash 1.8s linear infinite',
+    _motionSafe: { animation: 'dash 2.4s linear infinite' },
   },
 });
 const node = css({
   position: 'absolute',
-  transform: 'translate(-50%, -26px)',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
+  transform: 'translate(-50%, -28px)',
+  display: 'grid',
+  justifyItems: 'center',
   gap: '8px',
+  textAlign: 'center',
+  smDown: { transform: 'translate(-50%, -22px)' },
   '& .disc': {
-    width: '52px',
-    height: '52px',
+    width: '56px',
+    height: '56px',
     borderRadius: '50%',
     display: 'grid',
     placeItems: 'center',
-    bg: 'bg.surface',
-    boxShadow: '0 0 0 5px rgba(154,178,248,.25), {shadows.card}',
-    color: 'fg',
+    bg: 'rgba(255,255,255,.07)',
+    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18), 0 0 0 12px rgba(154,178,248,.10)',
+    color: 'brand.periwinkle',
     smDown: { width: '44px', height: '44px' },
   },
-  '&[data-you] .disc': { outline: '2px dashed {colors.brand.lavender}', outlineOffset: '6px' },
-  '& b': {
-    fontFamily: 'mono',
-    fontSize: '11.5px',
-    fontWeight: '500',
-    padding: '2px 9px',
-    borderRadius: 'full',
-    bg: 'bg.surface',
-    boxShadow: 'card',
-    whiteSpace: 'nowrap',
-    smDown: { fontSize: '10px' },
+  '& .disc i': { width: '14px', height: '14px', borderRadius: '50%', bg: 'currentColor', display: 'block' },
+  '&[data-kind="official"] .disc': {
+    color: 'brand.peach',
+    boxShadow:
+      'inset 0 0 0 1px rgba(255,255,255,.18), 0 0 0 14px rgba(244,184,154,.14), 0 0 70px rgba(244,184,154,.28)',
   },
+  '&[data-kind="you"] .disc': {
+    color: 'brand.lavender',
+    outline: '2px dashed rgba(206,176,250,.8)',
+    outlineOffset: '5px',
+  },
+  '&[data-kind="other"]': { transform: 'translate(-50%, -50%)' },
+  '&[data-kind="other"] .disc': { width: '14px', height: '14px', bg: 'rgba(255,255,255,.16)', boxShadow: 'none' },
+  '&[data-kind="other"] .disc i': { display: 'none' },
+  '& b': { fontSize: '13.5px', fontWeight: '700', whiteSpace: 'nowrap', smDown: { fontSize: '12px' } },
+  '& small': { fontFamily: 'mono', fontSize: '11px', color: 'fg.inverseMuted', marginTop: '-4px' },
 });
-const servers = css({
+const serverList = css({
   marginTop: '18px',
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '12px',
-  lgDown: { gridTemplateColumns: 'repeat(2, 1fr)' },
-  smDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
+  gridTemplateColumns: '1fr 1fr',
+  gap: '18px',
+  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
 });
-const server = css({
+const serverCard = css({
   display: 'grid',
-  gridTemplateColumns: '40px minmax(0, 1fr) auto',
-  gap: '12px',
+  gridTemplateColumns: '52px minmax(0, 1fr)',
+  gap: '6px 18px',
   alignItems: 'center',
-  padding: '14px 16px',
-  borderRadius: 'md',
-  bg: 'bg.surface',
-  boxShadow: 'card',
-  '& .icon': {
-    width: '40px',
-    height: '40px',
-    borderRadius: '13px',
-    display: 'grid',
-    placeItems: 'center',
-    bg: 'bg.subtle',
-  },
-  '& b': {
-    fontFamily: 'mono',
-    fontSize: '13px',
-    fontWeight: '500',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-  },
-  '& .n': {
-    fontSize: '12px',
-    fontWeight: '800',
-    color: 'fg.muted',
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '5px',
-    whiteSpace: 'nowrap',
-  },
-  '& .n i': { width: '7px', height: '7px', borderRadius: '50%', bg: 'green.400', display: 'block' },
-});
-const selfhost = css({
-  marginTop: '18px',
-  display: 'grid',
-  gridTemplateColumns: 'auto minmax(0, 1fr)',
-  gap: '28px',
-  alignItems: 'center',
-  padding: '24px 28px',
+  padding: '24px 26px',
   borderRadius: 'lg',
   bg: 'bg.surface',
   boxShadow: 'card',
-  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '14px' },
   smDown: { padding: '20px' },
-  '& h3': { fontSize: '19px', fontWeight: '800', whiteSpace: 'nowrap' },
+  '& .icon': {
+    gridRow: 'span 2',
+    width: '52px',
+    height: '52px',
+    borderRadius: '18px',
+    display: 'grid',
+    placeItems: 'center',
+    bg: 'tint.peach',
+  },
+  '& h3': { fontSize: '19px', fontWeight: '800', fontFamily: 'mono', letterSpacing: '-0.01em' },
+  '& .meta': {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '8px 14px',
+    color: 'fg.muted',
+    fontSize: '13px',
+  },
+  '& .meta i': {
+    width: '7px',
+    height: '7px',
+    borderRadius: '50%',
+    bg: 'green.400',
+    display: 'inline-block',
+    marginRight: '6px',
+  },
+  '& .cta': { gridColumn: '1 / -1', marginTop: '14px' },
+});
+const selfhost = css({
+  display: 'grid',
+  gap: '12px',
+  alignContent: 'center',
+  padding: '24px 26px',
+  borderRadius: 'lg',
+  bg: 'bg.surface',
+  boxShadow: 'card',
+  smDown: { padding: '20px' },
+  '& h3': { fontSize: '19px', fontWeight: '800' },
   '& pre': {
     margin: 0,
-    padding: '16px 18px 20px',
+    padding: '16px 18px 18px',
     borderRadius: 'md',
     bg: 'bg.code',
     color: '#dfe6f5',
     textStyle: 'mono',
     overflowX: 'auto',
   },
-  '& .n': { color: 'status.warn' },
+  '& .n': { color: 'brand.peach' },
 });
 ---
 
-<Section id="federation" eyebrow="Decentralized" title="中央がない。" lead="人も、部屋も、作品も、それぞれの場所に。" center>
+<Section id="federation" eyebrow="分散" title="中央がない。" lead="人も、部屋も、作品も、それぞれの場所に。" center>
   <div class={layerGrid}>
     {
       layers.map((l) => (
@@ -191,46 +241,55 @@ const selfhost = css({
     }
   </div>
 
-  <div class={map} aria-label="サーバー同士が中心なくつながっている図" role="img">
-    <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-      {
-        exampleLinks.map(([a, b]) => (
-          <line x1={exampleServers[a].x} y1={exampleServers[a].y} x2={exampleServers[b].x} y2={exampleServers[b].y} />
-        ))
-      }
+  <div class={sky} role="img" aria-label="公式サーバーとあなたのサーバー、ほかのサーバーが中心なくつながっている図">
+    <div class="stars" aria-hidden="true"></div>
+    <svg class="wires" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
+      {wires.map(([a, b]) => <path class="wire" d={wire(nodes[a], nodes[b])} />)}
     </svg>
     {
-      exampleServers.map((s) => (
-        <div class={node} style={`left:${s.x}%;top:${s.y}%`} data-you={'you' in s && s.you ? '' : undefined}>
+      nodes.map((n) => (
+        <div class={node} data-kind={n.kind} style={`left:${n.x}%;top:${n.y}%`}>
           <span class="disc">
-            <Icon name={s.icon} size={22} />
+            <i />
           </span>
-          <b>{s.host}</b>
+          {'label' in n && (
+            <>
+              <b>{n.label}</b>
+              <small>{n.sub}</small>
+            </>
+          )}
         </div>
       ))
     }
   </div>
 
-  <ul class={servers} aria-label="サーバーの例">
+  <div class={serverList}>
     {
-      exampleServers.map((s) => (
-        <li class={server}>
+      servers.map((s) => (
+        <article class={serverCard}>
           <span class="icon">
-            <Icon name={s.icon} />
+            <Icon name="globe" size={24} />
           </span>
-          <b>{s.host}</b>
-          <span class="n">
-            <i />
-            {s.users}
-          </span>
-        </li>
+          <h3>{s.host}</h3>
+          <p class="meta">
+            <span>
+              <i />
+              {s.note}
+            </span>
+            <span>{worlds.length} ワールド</span>
+          </p>
+          <div class="cta">
+            <Button href={site.app} size="sm" icon="arrow-ur">
+              アプリを開く
+            </Button>
+          </div>
+        </article>
       ))
     }
-  </ul>
-
-  <div class={selfhost}>
-    <h3>自分のサーバーを建てる</h3>
-    <pre><code>helm install ubichill ubichill/ubichill -n ubichill \
+    <article class={selfhost}>
+      <h3>自分のサーバーを建てる</h3>
+      <pre><code>helm install ubichill ubichill/ubichill -n ubichill \
   --create-namespace --set global.domain=<span class="n">your.server</span></code></pre>
+    </article>
   </div>
 </Section>

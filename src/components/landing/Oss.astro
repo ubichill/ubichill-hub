@@ -1,4 +1,5 @@
 ---
+/** 締め。夕暮れの面に、オープンソースの案内と 3D ロゴ */
 import { css } from 'styled-system/css';
 import { site } from '../../data/site';
 import Button from '../Button.astro';
@@ -8,34 +9,49 @@ import Logo3D from '../Logo3D.astro';
 const box = css({
   position: 'relative',
   overflow: 'hidden',
+  isolation: 'isolate',
   width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
   marginInline: 'auto',
-  marginTop: 'clamp(80px, 10vw, 140px)',
+  marginTop: 'clamp(88px, 11vw, 150px)',
   borderRadius: 'xl',
   padding: 'clamp(48px, 7vw, 88px)',
-  backgroundImage: '{gradients.brandSoft}',
-  color: 'navy.900',
+  backgroundImage: '{gradients.dusk}',
+  color: 'fg',
   display: 'grid',
   gridTemplateColumns: '1.3fr 1fr',
   gap: '40px',
   alignItems: 'center',
   mdDown: { gridTemplateColumns: '1fr' },
-  smDown: { borderRadius: '28px', padding: '36px 24px' },
+  smDown: { borderRadius: '32px', padding: '36px 24px' },
   _before: {
     content: '""',
     position: 'absolute',
-    inset: 0,
-    backgroundImage: 'radial-gradient(rgba(255,255,255,.5) 1.3px, transparent 1.4px)',
-    backgroundSize: '24px 24px',
-    maskImage: 'linear-gradient(90deg, transparent, #000)',
+    zIndex: -1,
+    width: '420px',
+    height: '420px',
+    right: '-80px',
+    bottom: '-220px',
+    borderRadius: '50%',
+    filter: 'blur(40px)',
+    background: 'radial-gradient(circle, rgba(244,184,154,.8), rgba(244,184,154,0) 70%)',
+    _dark: { opacity: 0.4 },
   },
-  '& > *': { position: 'relative' },
+  _after: {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    zIndex: -1,
+    pointerEvents: 'none',
+    backgroundImage: 'var(--noise)',
+    opacity: 0.055,
+    mixBlendMode: 'multiply',
+    _dark: { opacity: 0.09, mixBlendMode: 'screen' },
+  },
   '& h2': { textStyle: 'h2' },
-  '& p': { marginTop: '16px', maxWidth: '34em' },
+  '& p': { marginTop: '14px', maxWidth: '34em', color: 'fg.muted', textStyle: 'lead' },
   '& .cta': { marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '12px' },
 });
-const logo = css({ justifySelf: 'center', width: 'min(260px, 70%)' });
-const inverseBtn = css({ bg: 'navy.900', color: 'navy.50', _hover: { bg: 'navy.700' } });
+const logo = css({ justifySelf: 'center', width: 'min(240px, 64%)' });
 ---
 
 <section class={box} aria-labelledby="oss-title">
@@ -43,9 +59,9 @@ const inverseBtn = css({ bg: 'navy.900', color: 'navy.50', _hover: { bg: 'navy.7
     <h2 id="oss-title">オープンソース。</h2>
     <p>AGPL-3.0。PR は日本語でも歓迎。</p>
     <div class="cta">
-      <Button href={site.repo} class={inverseBtn}><Icon name="github" size={16} />GitHub</Button>
-      <Button href="/docs/internals/contributing/" variant="inverse">コントリビュート</Button>
+      <Button href={site.repo}><Icon name="github" size={16} />GitHub</Button>
+      <Button href="/docs/internals/contributing/" variant="secondary">コントリビュート</Button>
     </div>
   </div>
-  <Logo3D class={logo} depth={22} thickness={10} tilt={14} shadow={false} />
+  <div class={logo}><Logo3D depth={22} thickness={10} tilt={14} shadow={false} /></div>
 </section>

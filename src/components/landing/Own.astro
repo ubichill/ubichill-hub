@@ -1,4 +1,5 @@
 ---
+/** 「作ったものは、自分の場所に」。署名済みワールドの例を、夕暮れ色の面の上に置く */
 import { css } from 'styled-system/css';
 import Icon, { type IconName } from '../Icon.astro';
 
@@ -6,10 +7,10 @@ const points: { icon: IconName; title: string; text: string; tint: string }[] = 
   { icon: 'link', title: 'ワールド＝URL', text: '開けば、だれでも入れる。', tint: 'sky' },
   { icon: 'key', title: '鍵は手元に', text: 'サーバーは秘密鍵を預からない。', tint: 'periwinkle' },
   { icon: 'badge-check', title: '作者署名', text: '改ざんとなりすましを見分ける。', tint: 'lavender' },
-  { icon: 'git', title: 'ただのファイル', text: 'Git で管理して、持ち出せる。', tint: 'green' },
+  { icon: 'git', title: 'ただのファイル', text: 'Git で管理して、持ち出せる。', tint: 'peach' },
 ];
 
-const section = css({ paddingTop: 'clamp(80px, 10vw, 140px)' });
+const section = css({ paddingTop: 'clamp(88px, 11vw, 150px)' });
 const inner = css({
   width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
   marginInline: 'auto',
@@ -17,46 +18,45 @@ const inner = css({
   gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.05fr)',
   gap: '56px',
   alignItems: 'center',
-  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
+  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '40px' },
 });
 const eyebrow = css({
   display: 'inline-flex',
   alignItems: 'center',
   gap: '8px',
   textStyle: 'eyebrow',
-  color: 'highlight',
-  _before: { content: '""', width: '18px', height: '2px', borderRadius: '2px', bg: 'currentColor' },
+  color: 'fg.muted',
+  _before: { content: '""', width: '9px', height: '9px', borderRadius: '50%', bg: 'brand.peach' },
 });
-const h2 = css({ marginTop: '12px', textStyle: 'h2' });
-const lead = css({ marginTop: '16px', color: 'fg.muted' });
-const list = css({ marginTop: '32px', display: 'grid', gap: '16px' });
+const h2 = css({ marginTop: '14px', textStyle: 'h2' });
+const lead = css({ marginTop: '14px', color: 'fg.muted', textStyle: 'lead' });
+const list = css({ marginTop: '32px', display: 'grid', gap: '18px' });
 const point = css({
   display: 'grid',
-  gridTemplateColumns: '44px 1fr',
-  gap: '14px',
+  gridTemplateColumns: '46px 1fr',
+  gap: '16px',
   alignItems: 'center',
   '& h3': { fontSize: '16px', fontWeight: '800', lineHeight: '1.4' },
   '& p': { textStyle: 'small', color: 'fg.muted' },
 });
-const iconBox = css({ width: '44px', height: '44px', borderRadius: '14px', display: 'grid', placeItems: 'center' });
+const iconBox = css({ width: '46px', height: '46px', borderRadius: '16px', display: 'grid', placeItems: 'center' });
 const tints: Record<string, string> = {
   sky: css({ bg: 'tint.sky' }),
   periwinkle: css({ bg: 'tint.periwinkle' }),
   lavender: css({ bg: 'tint.lavender' }),
-  green: css({ bg: 'tint.green' }),
+  peach: css({ bg: 'tint.peach' }),
 };
 const art = css({
   position: 'relative',
-  padding: '28px 0 28px 28px',
-  mdDown: { paddingLeft: 0 },
+  padding: '32px 0 32px 32px',
+  mdDown: { padding: '24px 0' },
   _before: {
     content: '""',
     position: 'absolute',
     inset: '0 -40px 0 0',
-    borderRadius: 'xl',
-    backgroundImage: '{gradients.brandSoft}',
-    opacity: 0.55,
-    _dark: { opacity: 0.25 },
+    borderRadius: 'blob',
+    backgroundImage: '{gradients.dusk}',
+    _dark: { opacity: 0.8 },
     mdDown: { inset: '0 -20px' },
   },
 });
@@ -70,14 +70,14 @@ const card = css({
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    padding: '16px 20px',
+    padding: '18px 22px',
     borderBottom: '1px solid {colors.border}',
     fontFamily: 'mono',
     fontSize: '13.5px',
   },
   '& dl': {
     margin: 0,
-    padding: '6px 20px 4px',
+    padding: '6px 22px 4px',
     display: 'grid',
     gridTemplateColumns: 'auto minmax(0, 1fr)',
     columnGap: '18px',
@@ -97,7 +97,7 @@ const card = css({
   },
   '& dl > :nth-last-child(-n+2)': { borderBottom: 0 },
   '& .ok': { color: 'status.ok', display: 'inline-flex' },
-  '& .hosts': { padding: '16px 20px 18px', bg: 'bg.subtle', display: 'flex', flexWrap: 'wrap', gap: '8px' },
+  '& .hosts': { padding: '16px 22px 20px', bg: 'bg.subtle', display: 'flex', flexWrap: 'wrap', gap: '8px' },
 });
 const badge = css({
   marginLeft: 'auto',
@@ -119,7 +119,7 @@ const host = css({
   padding: '6px 12px',
   borderRadius: 'full',
   bg: 'bg.surface',
-  boxShadow: 'inset 0 0 0 1px {colors.border}',
+  boxShadow: 'inset 0 0 0 1px {colors.border.strong}',
   fontFamily: 'mono',
   fontSize: '12px',
   '&[data-on]': { bg: 'accent', color: 'accent.fg', boxShadow: 'none' },
@@ -129,7 +129,7 @@ const host = css({
 <section class={section} id="own" aria-labelledby="own-title">
   <div class={inner}>
     <div>
-      <span class={eyebrow}>Own</span>
+      <span class={eyebrow}>持つ</span>
       <h2 class={h2} id="own-title">作ったものは、<br />自分の場所に。</h2>
       <p class={lead}>ワールドも mod も URL。どこに置いても、署名で本物とわかる。</p>
       <ul class={list}>

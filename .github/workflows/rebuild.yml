@@ -1,0 +1,23 @@
+# トップの「ほかの人のワールド」はビルド時に ubichill.com の API から取るので、
+# 毎日 1 回 Cloudflare Pages をビルドし直して新しくする。
+# リポジトリの Secrets に CF_PAGES_DEPLOY_HOOK（Pages の Deploy Hook の URL）を入れると動く。
+name: rebuild
+
+on:
+  schedule:
+    - cron: "0 18 * * *" # 毎日 03:00 JST
+  workflow_dispatch:
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cloudflare Pages の Deploy Hook を叩く
+        env:
+          HOOK: ${{ secrets.CF_PAGES_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "CF_PAGES_DEPLOY_HOOK が未設定なので何もしません"
+            exit 0
+          fi
+          curl -fsS -X POST "$HOOK"

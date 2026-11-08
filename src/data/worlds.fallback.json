@@ -1,0 +1,208 @@
+{
+  "worlds": [
+    {
+      "url": "https://ubichill.com/api/v1/authors/ubichill/worlds/danmaku.yaml",
+      "source": {
+        "kind": "local",
+        "url": "https://ubichill.com/api/v1/authors/ubichill/worlds/danmaku.yaml",
+        "registryName": "this instance"
+      },
+      "id": "danmaku",
+      "displayName": "弾幕シューティング",
+      "description": "自機をクリックして搭乗。矢印キーで移動・自動射撃、Escapeで降りる弾幕シューティングのデモ",
+      "version": "1.0.0",
+      "capacity": {
+        "default": 10,
+        "max": 20
+      },
+      "authorId": "quTbCaG5bsYLXhcog8uoWSWf6CWWlSNu",
+      "authorName": "Ubichill",
+      "mods": [
+        {
+          "id": "danmaku",
+          "version": "latest"
+        },
+        {
+          "id": "mobile-controller",
+          "version": "latest"
+        }
+      ],
+      "identity": {
+        "status": "verified",
+        "worldId": "acct:ubichill@ubichill.com/danmaku",
+        "publicKey": "PUlU51o_Sch92myux0fHEFuRJSxUbKiN9GC54o1fKW0",
+        "contentHash": "sha256-MZNKm2on/+fgTQVyceiHVgXHe/b3cuifHG6rYMLLunU=",
+        "author": "ubichill@ubichill.com"
+      }
+    },
+    {
+      "url": "https://ubichill.com/api/v1/authors/ubichill/worlds/default.yaml",
+      "source": {
+        "kind": "local",
+        "url": "https://ubichill.com/api/v1/authors/ubichill/worlds/default.yaml",
+        "registryName": "this instance"
+      },
+      "id": "default",
+      "displayName": "Ubichill Home",
+      "description": "Ubichill公式のホームワールド",
+      "version": "1.0.0",
+      "capacity": {
+        "default": 10,
+        "max": 20
+      },
+      "authorId": "00000000-0000-0000-0000-000000000000",
+      "authorName": "Ubichill",
+      "mods": [
+        {
+          "id": "pen",
+          "version": "latest"
+        }
+      ],
+      "identity": {
+        "status": "verified",
+        "worldId": "acct:ubichill@ubichill.com/default",
+        "publicKey": "PUlU51o_Sch92myux0fHEFuRJSxUbKiN9GC54o1fKW0",
+        "contentHash": "sha256-ktZ2Ue3AvTuS72AJp5bl/2cjTo1hsfd7XEs4o1uTW+U=",
+        "author": "ubichill@ubichill.com"
+      },
+      "createdAt": "2026-03-23T08:33:39.545Z",
+      "updatedAt": "2026-05-27T13:15:53.863Z"
+    },
+    {
+      "url": "https://ubichill.com/api/v1/authors/ubichill/worlds/wasm-demo.yaml",
+      "source": {
+        "kind": "local",
+        "url": "https://ubichill.com/api/v1/authors/ubichill/worlds/wasm-demo.yaml",
+        "registryName": "this instance"
+      },
+      "id": "wasm-demo",
+      "displayName": "WASM デモ",
+      "description": "mod に同梱した WASM で、同梱アセットと外部から取得したバイト列のチェックサムを計算するサンプル",
+      "version": "1.0.0",
+      "capacity": {
+        "default": 10,
+        "max": 20
+      },
+      "authorId": "quTbCaG5bsYLXhcog8uoWSWf6CWWlSNu",
+      "authorName": "Ubichill",
+      "mods": [
+        {
+          "id": "wasm-demo",
+          "version": "latest"
+        }
+      ],
+      "identity": {
+        "status": "verified",
+        "worldId": "acct:ubichill@ubichill.com/wasm-demo",
+        "publicKey": "PUlU51o_Sch92myux0fHEFuRJSxUbKiN9GC54o1fKW0",
+        "contentHash": "sha256-tXW26Hy8IzNSbrp6HMzcGiHK6BV4wd6KBnU7YFm9eWA=",
+        "author": "ubichill@ubichill.com"
+      }
+    },
+    {
+      "url": "https://ubichill.com/api/v1/authors/youkan/worlds/test.yaml",
+      "source": {
+        "kind": "local",
+        "url": "https://ubichill.com/api/v1/authors/youkan/worlds/test.yaml",
+        "registryName": "this instance"
+      },
+      "id": "wrqy3ibj9ukwlvag7gg0y",
+      "displayName": "ようかんテスト",
+      "version": "1.0.0",
+      "capacity": {
+        "default": 10,
+        "max": 20
+      },
+      "authorId": "7sgK1w92YnAGUoeX98kWWfndGWCYLZvw",
+      "authorName": "devようかん",
+      "mods": [
+        {
+          "id": "pen",
+          "version": "latest"
+        },
+        {
+          "id": "video-player",
+          "version": "latest"
+        },
+        {
+          "id": "danmaku",
+          "version": "latest"
+        }
+      ],
+      "identity": {
+        "status": "verified",
+        "worldId": "acct:youkan@ubichill.com/test",
+        "publicKey": "GZzeNS7e4ycCkRvDyJAEUfMFqEveGB1NB1u3CC8vApI",
+        "contentHash": "sha256-iBYLuE3ZE9mmXXHsPATZFJqb8aIgNp3Wcn5WFJLx+pY=",
+        "author": "youkan@ubichill.com"
+      },
+      "createdAt": "2026-08-15T11:34:24.250Z",
+      "updatedAt": "2026-10-14T06:02:18.822Z"
+    },
+    {
+      "url": "https://ubichill.com/api/v1/authors/takuya/worlds/iu4pijnwfrt7bh5szj3kn.yaml",
+      "source": {
+        "kind": "local",
+        "url": "https://ubichill.com/api/v1/authors/takuya/worlds/iu4pijnwfrt7bh5szj3kn.yaml",
+        "registryName": "this instance"
+      },
+      "id": "iu4pijnwfrt7bh5szj3kn",
+      "displayName": "デモ用ワールド",
+      "description": "デモを動かすためのワールド",
+      "version": "1.0.0",
+      "capacity": {
+        "default": 10,
+        "max": 20
+      },
+      "authorId": "xw13th7ysDVHlmpbpi8nxIBRfGLxWq5h",
+      "authorName": "takuya",
+      "mods": [
+        {
+          "id": "pen",
+          "version": "latest"
+        }
+      ],
+      "identity": {
+        "status": "verified",
+        "worldId": "acct:takuya@ubichill.com/iu4pijnwfrt7bh5szj3kn",
+        "publicKey": "26jPhRFHnodllBaWRmC40u1SDqpHnaImc-cI92jjtIw",
+        "contentHash": "sha256-zRKII4bcOAFlxdBJjxiWskyXMaXcZMGHQuEivWHzz4g=",
+        "author": "takuya@ubichill.com"
+      },
+      "createdAt": "2026-05-15T03:43:22.780Z",
+      "updatedAt": "2026-10-24T07:28:18.048Z"
+    },
+    {
+      "url": "https://ubichill.com/api/v1/authors/takuya/worlds/pcgam7wbfncw.yaml",
+      "source": {
+        "kind": "local",
+        "url": "https://ubichill.com/api/v1/authors/takuya/worlds/pcgam7wbfncw.yaml",
+        "registryName": "this instance"
+      },
+      "id": "9ar5roccm5f4q8pdbkib4",
+      "displayName": "TUTAYAワールド",
+      "version": "1.0.0",
+      "capacity": {
+        "default": 10,
+        "max": 20
+      },
+      "authorId": "xw13th7ysDVHlmpbpi8nxIBRfGLxWq5h",
+      "authorName": "takuya",
+      "mods": [
+        {
+          "id": "video-player",
+          "version": "latest"
+        }
+      ],
+      "identity": {
+        "status": "verified",
+        "worldId": "acct:takuya@ubichill.com/pcgam7wbfncw",
+        "publicKey": "26jPhRFHnodllBaWRmC40u1SDqpHnaImc-cI92jjtIw",
+        "contentHash": "sha256-S7hd3HCLz/3bbxdspnd1SLIoJ3hSeb/XRcKgZPhygqg=",
+        "author": "takuya@ubichill.com"
+      },
+      "createdAt": "2026-10-04T01:44:47.664Z",
+      "updatedAt": "2026-10-24T07:28:19.848Z"
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 ---
+/** mod の帯。夜の作業部屋（本体のワールド背景と同じ色）に、ランプの光と星 */
 import { css } from 'styled-system/css';
 import Icon from '../Icon.astro';
 
@@ -18,24 +19,37 @@ const tiers = [
 const band = css({
   position: 'relative',
   overflow: 'hidden',
-  marginTop: 'clamp(80px, 10vw, 140px)',
+  isolation: 'isolate',
+  marginTop: 'clamp(88px, 11vw, 150px)',
   padding: 'clamp(80px, 10vw, 140px) 0',
   maxWidth: 'wide',
   marginInline: 'auto',
   borderRadius: 'xl',
   bg: 'bg.inverse',
+  backgroundImage: '{gradients.lamp}',
   color: 'fg.inverse',
-  smDown: { borderRadius: 0 },
-  _before: {
-    content: '""',
-    position: 'absolute',
-    width: '600px',
-    height: '600px',
-    right: '-200px',
-    top: '-300px',
-    borderRadius: '50%',
-    background: 'radial-gradient(circle, rgba(154,178,248,.35), transparent 70%)',
-  },
+  smDown: { borderRadius: '32px' },
+});
+const stars = css({
+  position: 'absolute',
+  inset: 0,
+  zIndex: -1,
+  // 大きさと間隔の違う 3 層を重ねて、格子に見えないようにする
+  backgroundImage:
+    'radial-gradient(rgba(255,255,255,.8) 0.9px, transparent 1.3px), radial-gradient(rgba(255,255,255,.55) 0.7px, transparent 1.1px), radial-gradient(rgba(255,255,255,.35) 0.6px, transparent 1px)',
+  backgroundSize: '233px 181px, 149px 127px, 97px 83px',
+  backgroundPosition: '20px 10px, 70px 50px, 35px 65px',
+  maskImage: 'linear-gradient(180deg, #000 0%, transparent 60%)',
+  _motionSafe: { animation: 'breathe 8s ease-in-out infinite' },
+});
+const grain = css({
+  position: 'absolute',
+  inset: 0,
+  zIndex: -1,
+  pointerEvents: 'none',
+  backgroundImage: 'var(--noise)',
+  opacity: 0.08,
+  mixBlendMode: 'screen',
 });
 const inner = css({
   position: 'relative',
@@ -47,11 +61,11 @@ const eyebrow = css({
   alignItems: 'center',
   gap: '8px',
   textStyle: 'eyebrow',
-  color: 'brand.periwinkle',
-  _before: { content: '""', width: '18px', height: '2px', borderRadius: '2px', bg: 'currentColor' },
+  color: 'fg.inverseMuted',
+  _before: { content: '""', width: '9px', height: '9px', borderRadius: '50%', bg: 'brand.peach' },
 });
-const h2 = css({ marginTop: '12px', textStyle: 'h2' });
-const lead = css({ marginTop: '16px', color: 'fg.inverseMuted' });
+const h2 = css({ marginTop: '14px', textStyle: 'h2' });
+const lead = css({ marginTop: '14px', color: 'fg.inverseMuted', textStyle: 'lead' });
 const grid = css({
   marginTop: '48px',
   display: 'grid',
@@ -62,8 +76,8 @@ const grid = css({
 });
 const card = css({
   borderRadius: 'lg',
-  bg: 'rgba(255,255,255,.05)',
-  boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.09)',
+  bg: 'rgba(255,255,255,.045)',
+  boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.08)',
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
@@ -71,7 +85,7 @@ const card = css({
   '& pre': {
     margin: '18px 0 0',
     padding: '18px 22px',
-    bg: 'rgba(0,0,0,.25)',
+    bg: 'rgba(0,0,0,.22)',
     textStyle: 'mono',
     overflowX: 'auto',
     flex: 1,
@@ -79,7 +93,7 @@ const card = css({
   },
   '& .k': { color: 'brand.lavender' },
   '& .p': { color: 'brand.periwinkle' },
-  '& .n': { color: 'status.warn' },
+  '& .n': { color: 'brand.peach' },
 });
 const cmds = css({
   margin: '18px 24px 24px',
@@ -91,7 +105,7 @@ const cmds = css({
     gap: '12px',
     padding: '10px 12px',
     borderRadius: '12px',
-    bg: 'rgba(255,255,255,.05)',
+    bg: 'rgba(255,255,255,.045)',
   },
   '& code': { fontFamily: 'mono', fontSize: '12.5px', color: 'brand.periwinkle', whiteSpace: 'nowrap' },
   '& span': { fontSize: '12.5px', color: 'fg.inverseMuted', whiteSpace: 'nowrap' },
@@ -107,7 +121,7 @@ const tierList = css({
     alignItems: 'center',
     padding: '14px',
     borderRadius: 'md',
-    bg: 'rgba(255,255,255,.05)',
+    bg: 'rgba(255,255,255,.045)',
   },
   '& b': { fontFamily: 'mono', fontSize: '11.5px', padding: '2px 9px', borderRadius: 'full', fontWeight: '500' },
   '& span': { fontSize: '13px', color: 'rgba(248,243,234,.78)' },
@@ -118,6 +132,8 @@ const tierList = css({
 ---
 
 <section class={band} id="mods" aria-labelledby="mods-title">
+  <div class={stars} aria-hidden="true"></div>
+  <div class={grain} aria-hidden="true"></div>
   <div class={inner}>
     <span class={eyebrow}>mod</span>
     <h2 class={h2} id="mods-title">mod はコードで書く。</h2>

@@ -1,74 +1,160 @@
 ---
+/**
+ * 特徴 4 つ。それぞれ暗い窓に実画面（または図）を入れ、見出しと一言だけ添える。
+ * 窓を暗くしているのは、本体アプリ（cream の UI）と見分けがつくようにするため。
+ */
+import { Image } from 'astro:assets';
 import { css } from 'styled-system/css';
-import Icon, { type IconName } from '../Icon.astro';
-
-const pillars: { icon: IconName; title: string; text: string; tint: string }[] = [
-  { icon: 'key', title: '自分で持てる', text: '置き場所は自分で決める。', tint: 'tint.sky' },
-  { icon: 'layout', title: 'ブラウザで作れる', text: 'エディタで置くだけ。', tint: 'tint.periwinkle' },
-  { icon: 'code', title: 'コードで書ける', text: 'YAML と TypeScript。AI にも頼める。', tint: 'tint.lavender' },
-  { icon: 'network', title: '中央を持たない', text: 'サーバー同士がつながる。', tint: 'tint.green' },
-];
+import editorShot from '../../assets/editor-canvas.png';
+import worldShot from '../../assets/world-together.png';
+import Window from '../Window.astro';
 
 const grid = css({
-  position: 'relative',
-  zIndex: 3,
   width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
   marginInline: 'auto',
-  marginTop: 'calc(clamp(150px, 14vw, 190px) * -1 + 40px)',
+  marginTop: 'clamp(56px, 7vw, 96px)',
   display: 'grid',
-  gridTemplateColumns: 'repeat(4, 1fr)',
-  gap: '18px',
-  lgDown: { gridTemplateColumns: 'repeat(2, 1fr)' },
-  smDown: { gridTemplateColumns: '1fr' },
+  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+  gap: 'clamp(18px, 2.5vw, 28px)',
+  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
 });
 const pillar = css({
-  position: 'relative',
-  padding: '34px 26px 28px',
-  textAlign: 'center',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '18px',
+  padding: 'clamp(14px, 1.6vw, 20px)',
   borderRadius: 'lg',
-  bg: 'bg.glass',
-  backdropFilter: 'blur(18px)',
-  boxShadow: '{shadows.card}, inset 0 0 0 1px {colors.border}',
-  _before: {
-    content: '""',
-    position: 'absolute',
-    left: '20px',
-    top: '20px',
-    width: '10px',
-    height: '10px',
-    borderRadius: '50%',
-    bg: 'border.strong',
+  bg: 'bg.surface',
+  boxShadow: 'card',
+  '& .text': { padding: '4px 8px 8px' },
+  '& h3': { textStyle: 'h3', fontSize: '19px' },
+  '& p': { marginTop: '4px', color: 'fg.muted', textStyle: 'body' },
+});
+// 窓の中に入れる絵（画像ではないもの）
+const panel = css({
+  aspectRatio: '16 / 9',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  padding: 'clamp(16px, 2vw, 24px)',
+  color: '#dfe6f5',
+  backgroundImage: 'radial-gradient(ellipse at 100% 0%, rgba(244,184,154,.16), transparent 55%)',
+});
+const code = css({
+  '& .msg': {
+    alignSelf: 'flex-end',
+    maxWidth: '90%',
+    padding: '8px 14px',
+    borderRadius: '16px 16px 4px 16px',
+    bg: 'brand.periwinkle',
+    color: 'navy.900',
+    fontSize: '13px',
+    fontWeight: '700',
   },
-  '& h3': { textStyle: 'h3', fontSize: '18px' },
-  '& p': { marginTop: '10px', textStyle: 'small', color: 'fg.muted' },
+  '& pre': {
+    marginTop: '12px',
+    padding: '12px 16px',
+    borderRadius: '12px',
+    bg: 'rgba(255,255,255,.05)',
+    textStyle: 'mono',
+    fontSize: 'clamp(10.5px, 1.05vw, 12.5px)',
+    overflowX: 'auto',
+  },
+  '& .k': { color: 'brand.lavender' },
+  '& .s': { color: '#a6e3b4' },
+  '& .c': { color: '#7d8aa6' },
 });
-const iconBox = css({
-  width: '60px',
-  height: '60px',
-  margin: '0 auto 14px',
-  borderRadius: '20px',
-  display: 'grid',
-  placeItems: 'center',
-  color: 'fg',
+const fed = css({
+  position: 'relative',
+  '& svg': { width: '100%', height: 'auto', display: 'block', overflow: 'visible' },
+  '& .wire': {
+    fill: 'none',
+    stroke: 'rgba(255,255,255,.28)',
+    strokeWidth: '1.5',
+    strokeDasharray: '4 7',
+    strokeLinecap: 'round',
+    vectorEffect: 'non-scaling-stroke',
+    _motionSafe: { animation: 'dash 2.6s linear infinite' },
+  },
+  '& .node': { fill: 'rgba(255,255,255,.06)', stroke: 'rgba(255,255,255,.18)', strokeWidth: '1' },
+  '& .dot': { fill: 'currentColor' },
+  '& text': {
+    fontFamily: 'body',
+    fontSize: '12px',
+    fontWeight: '700',
+    fill: '#dfe6f5',
+    textAnchor: 'middle',
+  },
+  '& .sub': { fontFamily: 'mono', fontSize: '9.5px', fontWeight: '400', fill: 'rgba(223,230,245,.6)' },
+  '& .star': { fill: 'rgba(255,255,255,.7)', _motionSafe: { animation: 'breathe 5s ease-in-out infinite' } },
 });
-const tints: Record<string, string> = {
-  'tint.sky': css({ bg: 'tint.sky' }),
-  'tint.periwinkle': css({ bg: 'tint.periwinkle' }),
-  'tint.lavender': css({ bg: 'tint.lavender' }),
-  'tint.green': css({ bg: 'tint.green' }),
-};
 ---
 
 <div class={grid} id="about">
-  {
-    pillars.map((p) => (
-      <article class={pillar}>
-        <div class:list={[iconBox, tints[p.tint]]}>
-          <Icon name={p.icon} size={26} />
-        </div>
-        <h3>{p.title}</h3>
-        <p>{p.text}</p>
-      </article>
-    ))
-  }
+  <article class={pillar}>
+    <Window url="yokan.github.io/worlds/chill-room.yaml" badge="署名済み">
+      <Image src={worldShot} alt="自分のサイトに置いたワールドに、友だちが集まっている" widths={[560, 1120]} sizes="(max-width: 768px) 100vw, 560px" />
+    </Window>
+    <div class="text">
+      <h3>自分で持てる</h3>
+      <p>ワールドも mod も URL。置き場所は自分で決める。</p>
+    </div>
+  </article>
+
+  <article class={pillar}>
+    <Window url="ubichill.com/editor">
+      <Image src={editorShot} alt="ブラウザのワールドエディタ。動画プレイヤーやペンを置いている" widths={[560, 1120]} sizes="(max-width: 768px) 100vw, 560px" />
+    </Window>
+    <div class="text">
+      <h3>ブラウザで作れる</h3>
+      <p>エディタで置くだけ。裏は同じ YAML。</p>
+    </div>
+  </article>
+
+  <article class={pillar}>
+    <Window url="worlds/chill-room.yaml">
+      <div class:list={[panel, code]}>
+        <div class="msg">ペンと動画がある作業部屋を作って</div>
+        <pre><code><span class="k">kind</span>: World
+<span class="k">metadata</span>: {'{'} <span class="k">name</span>: <span class="s">chill-room</span> {'}'}
+<span class="k">spec</span>:
+  <span class="k">dependencies</span>:
+    - <span class="k">name</span>: <span class="s">pen</span>
+    - <span class="k">name</span>: <span class="s">video-player</span></code></pre>
+      </div>
+    </Window>
+    <div class="text">
+      <h3>コードで書ける</h3>
+      <p>ワールドは YAML、mod は TypeScript。AI にも頼める。</p>
+    </div>
+  </article>
+
+  <article class={pillar}>
+    <Window url="どのサーバーからでも">
+      <div class:list={[panel, fed]}>
+        <svg viewBox="0 0 400 200" role="img" aria-label="人・部屋・作品がそれぞれ別の場所にあり、つながっている図">
+          <circle class="star" cx="40" cy="30" r="1.4" /><circle class="star" cx="330" cy="22" r="1.2" style="animation-delay:-2s" /><circle class="star" cx="372" cy="70" r="1" style="animation-delay:-3.5s" /><circle class="star" cx="120" cy="18" r="1" style="animation-delay:-1s" />
+          <path class="wire" d="M90 120 C 140 60, 200 60, 250 95" />
+          <path class="wire" d="M250 95 C 290 115, 310 150, 320 150" />
+          <path class="wire" d="M90 120 C 150 170, 240 175, 320 150" />
+          <g color="#bde1fb">
+            <circle class="node" cx="90" cy="120" r="34" /><circle class="dot" cx="90" cy="112" r="7" />
+            <text x="90" y="138">ホーム</text><text class="sub" x="90" y="170">yokan.example</text>
+          </g>
+          <g color="#9ab2f8">
+            <circle class="node" cx="250" cy="95" r="34" /><circle class="dot" cx="250" cy="87" r="7" />
+            <text x="250" y="113">部屋</text><text class="sub" x="250" y="48">ubichill.com</text>
+          </g>
+          <g color="#ceb0fa">
+            <circle class="node" cx="320" cy="150" r="30" /><circle class="dot" cx="320" cy="143" r="6" />
+            <text x="320" y="167">作品</text><text class="sub" x="320" y="195">mio.dev</text>
+          </g>
+        </svg>
+      </div>
+    </Window>
+    <div class="text">
+      <h3>中央を持たない</h3>
+      <p>人・部屋・作品が、それぞれの場所にあってつながる。</p>
+    </div>
+  </article>
 </div>

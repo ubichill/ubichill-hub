@@ -1,0 +1,69 @@
+---
+/**
+ * 画面を入れる暗い窓。実画面のスクリーンショットや動画はこの枠に入れる。
+ * 本体アプリ（cream の UI）と見分けがつくように、枠は夜の色にしてある。
+ */
+import { css, cx } from 'styled-system/css';
+
+interface Props {
+  /** アドレスバーに出す文字。省略すると出さない */
+  url?: string;
+  /** 右側に出す小さな札（「署名済み」など） */
+  badge?: string;
+  class?: string;
+}
+
+const { url, badge, class: className } = Astro.props;
+
+const frame = css({
+  position: 'relative',
+  borderRadius: 'md',
+  bg: 'bg.frame',
+  padding: '8px',
+  boxShadow: '{shadows.float}, {shadows.screen}',
+  color: 'fg.inverseMuted',
+});
+const bar = css({
+  height: '26px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '6px',
+  padding: '0 6px 4px',
+  '& i': { width: '8px', height: '8px', borderRadius: '50%', bg: 'rgba(255,255,255,.14)', display: 'block' },
+  '& .url': {
+    marginLeft: '8px',
+    fontFamily: 'mono',
+    fontSize: '10.5px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    minWidth: 0,
+  },
+  '& .badge': {
+    marginLeft: 'auto',
+    flex: 'none',
+    fontSize: '10px',
+    fontWeight: '700',
+    padding: '1px 8px',
+    borderRadius: 'full',
+    bg: 'rgba(138, 210, 155, 0.18)',
+    color: '#a6e3b4',
+  },
+});
+const screen = css({
+  position: 'relative',
+  borderRadius: 'calc({radii.md} - 6px)',
+  overflow: 'hidden',
+  bg: 'bg.inverse',
+  '& > img, & > video': { width: '100%', height: 'auto', display: 'block' },
+});
+---
+
+<figure class={cx(frame, className)}>
+  <div class={bar} aria-hidden="true">
+    <i></i><i></i><i></i>
+    {url && <span class="url">{url}</span>}
+    {badge && <span class="badge">{badge}</span>}
+  </div>
+  <div class={screen}><slot /></div>
+</figure>

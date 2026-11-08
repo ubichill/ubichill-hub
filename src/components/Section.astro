@@ -1,5 +1,5 @@
 ---
-/** セクションの外枠。eyebrow（英語の小見出し）・見出し・一言を同じ組み方でそろえる */
+/** セクションの外枠。小さな札（eyebrow）・見出し・一言を同じ組み方でそろえる */
 import { css, cx } from 'styled-system/css';
 
 interface Props {
@@ -14,7 +14,7 @@ interface Props {
 const { id, eyebrow, title, lead, center = false, class: className } = Astro.props;
 const headingId = `${id ?? eyebrow.toLowerCase()}-title`;
 
-const section = css({ paddingTop: 'clamp(80px, 10vw, 140px)' });
+const section = css({ paddingTop: 'clamp(88px, 11vw, 150px)' });
 const inner = css({ width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))', marginInline: 'auto' });
 const head = css({ '&[data-center]': { textAlign: 'center', '& p': { marginInline: 'auto' } } });
 const eyebrowCls = css({
@@ -22,11 +22,11 @@ const eyebrowCls = css({
   alignItems: 'center',
   gap: '8px',
   textStyle: 'eyebrow',
-  color: 'highlight',
-  _before: { content: '""', width: '18px', height: '2px', borderRadius: '2px', bg: 'currentColor' },
+  color: 'fg.muted',
+  _before: { content: '""', width: '9px', height: '9px', borderRadius: '50%', bg: 'brand.peach' },
 });
-const h2 = css({ marginTop: '12px', textStyle: 'h2' });
-const leadCls = css({ marginTop: '16px', maxWidth: '40em', color: 'fg.muted' });
+const h2 = css({ marginTop: '14px', textStyle: 'h2' });
+const leadCls = css({ marginTop: '14px', maxWidth: '40em', color: 'fg.muted', textStyle: 'lead' });
 ---
 
 <section class={cx(section, className)} id={id} aria-labelledby={headingId}>

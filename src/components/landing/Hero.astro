@@ -1,11 +1,17 @@
 ---
+/**
+ * ヒーロー。夕暮れの空の色の面に、見出し・一言・お知らせ・ボタンと、実画面を入れた暗い窓。
+ * 動きはゆっくり（空の色が流れる・窓が浮く）。prefers-reduced-motion では止まる。
+ * 画面は `site.heroVideo` を入れると <video> に切り替わる。
+ */
 import { Image } from 'astro:assets';
 import { css } from 'styled-system/css';
-import editorShot from '../../assets/app-editor.png';
+import worldShot from '../../assets/world-together.png';
 import { announcement, site } from '../../data/site';
 import Button from '../Button.astro';
 import Icon from '../Icon.astro';
 import Logo3D from '../Logo3D.astro';
+import Window from '../Window.astro';
 
 const wrap = css({ position: 'relative', padding: '12px clamp(10px, 3vw, 40px) 0' });
 const card = css({
@@ -14,62 +20,81 @@ const card = css({
   maxWidth: 'wide',
   marginInline: 'auto',
   borderRadius: 'xl',
-  bg: 'bg.hero',
-  padding: 'clamp(56px, 7vw, 96px) 0 clamp(150px, 14vw, 190px)',
+  backgroundImage: '{gradients.dusk}',
+  padding: 'clamp(64px, 8vw, 112px) 0 clamp(64px, 8vw, 104px)',
   isolation: 'isolate',
-  smDown: { borderRadius: '28px' },
+  smDown: { borderRadius: '32px' },
 });
-const blob = css({ position: 'absolute', borderRadius: '50%', zIndex: -1 });
-const blobPeri = css({
-  width: '760px',
-  height: '760px',
-  right: '-170px',
-  top: '-260px',
-  background: 'radial-gradient(circle at 35% 40%, #b9c9fb, {colors.brand.periwinkle} 70%)',
+// 空の光。ぼかした円をゆっくり流す
+const glow = css({
+  position: 'absolute',
+  zIndex: -1,
+  borderRadius: '50%',
+  filter: 'blur(40px)',
+  _motionSafe: { animation: 'drift 26s ease-in-out infinite' },
+});
+const sun = css({
+  width: '560px',
+  height: '560px',
+  right: '-120px',
+  bottom: '-260px',
+  background: 'radial-gradient(circle, rgba(244, 184, 154, 0.85), rgba(244, 184, 154, 0) 70%)',
   _dark: { opacity: 0.45 },
-  smDown: { width: '480px', height: '480px', right: '-220px', top: 'auto', bottom: '120px' },
+  smDown: { width: '360px', height: '360px', right: '-140px', bottom: '-160px' },
 });
-const blobLav = css({
-  width: '420px',
-  height: '420px',
-  right: '260px',
-  bottom: '-250px',
-  background: 'radial-gradient(circle at 50% 30%, #e2d0fd, {colors.brand.lavender} 75%)',
-  opacity: 0.9,
-  _dark: { opacity: 0.35 },
-  smDown: { right: '-120px' },
+const haze = css({
+  width: '720px',
+  height: '520px',
+  left: '-220px',
+  top: '-220px',
+  animationDelay: '-9s',
+  background: 'radial-gradient(circle, rgba(189, 225, 251, 0.9), rgba(189, 225, 251, 0) 70%)',
+  _dark: { opacity: 0.3 },
 });
-const blobSky = css({
+const violet = css({
   width: '520px',
   height: '520px',
-  left: '-200px',
-  bottom: '-330px',
-  background: 'radial-gradient(circle at 60% 30%, #def0fe, {colors.brand.sky} 70%)',
+  right: '18%',
+  top: '-300px',
+  animationDelay: '-17s',
+  background: 'radial-gradient(circle, rgba(206, 176, 250, 0.8), rgba(206, 176, 250, 0) 70%)',
   _dark: { opacity: 0.35 },
 });
-const dots = css({
+// 夜だけ星が出る
+const stars = css({
+  display: 'none',
   position: 'absolute',
   inset: 0,
   zIndex: -1,
-  opacity: 0.5,
-  backgroundImage: 'radial-gradient({colors.border.strong} 1px, transparent 1.2px)',
-  backgroundSize: '26px 26px',
-  maskImage: 'linear-gradient(100deg, #000 0%, transparent 55%)',
+  backgroundImage:
+    'radial-gradient(rgba(255,255,255,.9) 0.8px, transparent 1.2px), radial-gradient(rgba(255,255,255,.6) 0.7px, transparent 1.1px)',
+  backgroundSize: '140px 120px, 90px 80px',
+  backgroundPosition: '0 0, 40px 30px',
+  maskImage: 'linear-gradient(180deg, #000 0%, transparent 70%)',
+  _motionSafe: { animation: 'breathe 7s ease-in-out infinite' },
+  _dark: { display: 'block' },
+});
+const grain = css({
+  position: 'absolute',
+  inset: 0,
+  zIndex: -1,
+  pointerEvents: 'none',
+  backgroundImage: 'var(--noise)',
+  opacity: 0.055,
+  mixBlendMode: 'multiply',
+  _dark: { opacity: 0.09, mixBlendMode: 'screen' },
 });
 const inner = css({
   width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
   marginInline: 'auto',
   display: 'grid',
-  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-  gap: '40px',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.05fr)',
+  gap: '48px',
   alignItems: 'center',
-  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
+  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '36px' },
 });
-const h1 = css({
-  textStyle: 'display',
-  '& .grad': { backgroundImage: '{gradients.brand}', backgroundClip: 'text', color: 'transparent' },
-});
-const lead = css({ marginTop: '26px', maxWidth: '34em', textStyle: 'lead' });
+const h1 = css({ textStyle: 'display' });
+const lead = css({ marginTop: '22px', maxWidth: '30em', textStyle: 'lead', color: 'fg.muted' });
 const pill = css({
   marginTop: '26px',
   display: 'inline-flex',
@@ -78,10 +103,13 @@ const pill = css({
   maxWidth: '100%',
   padding: '5px 16px 5px 5px',
   borderRadius: 'full',
-  bg: 'bg.surface',
-  boxShadow: 'inset 0 0 0 2px {colors.brand.periwinkle}',
+  bg: 'bg.glass',
+  backdropFilter: 'blur(10px)',
+  boxShadow: 'card',
   fontSize: '14px',
   fontWeight: '500',
+  transition: 'transform {durations.normal} ease',
+  _hover: { transform: 'translateY(-1px)' },
   '& .icon': {
     width: '32px',
     height: '32px',
@@ -98,64 +126,40 @@ const pill = css({
 const cta = css({ marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '14px' });
 const visual = css({
   position: 'relative',
-  minHeight: '460px',
-  perspective: '1600px',
-  mdDown: { minHeight: 0, aspectRatio: '4 / 3', marginTop: '10px' },
-  smDown: { aspectRatio: '1 / 1' },
+  perspective: '1800px',
+  padding: '12px 0 72px 44px',
+  mdDown: { padding: '0 0 56px 28px' },
 });
 const shot = css({
-  position: 'absolute',
-  right: '-6%',
-  top: '6%',
-  width: '112%',
-  borderRadius: '14px',
-  overflow: 'hidden',
-  bg: 'bg.surface',
-  boxShadow: 'float',
-  transform: 'rotateY(-16deg) rotateX(6deg) rotateZ(1deg)',
+  transform: 'rotateY(-9deg) rotateX(3deg)',
   transformOrigin: 'left center',
-  mdDown: { right: 0, width: '96%' },
-  smDown: { top: '4%', width: '100%', transform: 'rotateY(-10deg) rotateX(4deg)' },
-  '& .bar': {
-    height: '30px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '0 12px',
-    bg: 'bg.subtle',
-    borderBottom: '1px solid {colors.border}',
-  },
-  '& .bar i': { width: '9px', height: '9px', borderRadius: '50%', bg: 'border.strong', display: 'block' },
-  '& .url': { marginLeft: '10px', fontSize: '10.5px', color: 'fg.muted', fontFamily: 'mono' },
-  '& img, & video': {
-    width: '100%',
-    height: 'auto',
-    aspectRatio: '16 / 9',
-    objectFit: 'cover',
-    objectPosition: 'left top',
-  },
+  _motionSafe: { animation: 'float 9s ease-in-out infinite' },
+  smDown: { transform: 'rotateY(-6deg) rotateX(2deg)' },
+  '& img, & video': { aspectRatio: '16 / 9', objectFit: 'cover' },
 });
+// 窓の左下の角にかかる程度。画面の中身は隠さない
 const logo = css({
   position: 'absolute',
-  left: '-4%',
-  bottom: '-4%',
-  width: 'clamp(200px, 21vw, 300px)',
+  left: '-12%',
+  bottom: 0,
+  width: 'clamp(140px, 15vw, 200px)',
   zIndex: 2,
-  smDown: { width: '46%', left: '-2%', bottom: '2%' },
+  smDown: { width: '34%', left: '-6%' },
 });
 ---
 
 <div class={wrap}>
   <div class={card}>
-    <div class:list={[blob, blobPeri]} aria-hidden="true"></div>
-    <div class:list={[blob, blobLav]} aria-hidden="true"></div>
-    <div class:list={[blob, blobSky]} aria-hidden="true"></div>
-    <div class={dots} aria-hidden="true"></div>
+    <div class:list={[glow, haze]} aria-hidden="true"></div>
+    <div class:list={[glow, violet]} aria-hidden="true"></div>
+    <div class:list={[glow, sun]} aria-hidden="true"></div>
+    <div class={stars} aria-hidden="true"></div>
+    <div class={grain} aria-hidden="true"></div>
 
     <div class={inner}>
       <div>
-        <h1 class={h1} id="hero-title">Build. Own.<br />Connect.<br />with <span class="grad">Ubichill</span>.</h1>
-        <p class={lead}>ワールドも mod も、自分で作って、自分で持てる。<br />中央のない 2D メタバース。</p>
+        <h1 class={h1} id="hero-title">ゆるく集まる、<br />じぶんの部屋。</h1>
+        <p class={lead}>描いたり、観たり、いっしょに過ごす 2D メタバース。ワールドも mod も、自分で作って、自分で持てる。</p>
         <a class={pill} href={announcement.href}>
           <span class="icon"><Icon name="megaphone" size={16} /></span>
           <span class="t"><b>{announcement.label}</b> {announcement.text}</span>
@@ -168,17 +172,16 @@ const logo = css({
       </div>
 
       <div class={visual} data-logo3d-host>
-        <figure class={shot}>
-          <div class="bar"><i></i><i></i><i></i><span class="url">ubichill.com</span></div>
+        <Window class={shot} url="ubichill.com/@yokan/chill-room">
           {
             site.heroVideo ? (
-              <video src={site.heroVideo} poster={editorShot.src} muted loop playsinline autoplay aria-label="Ubichill のワールドの様子" />
+              <video src={site.heroVideo} poster={worldShot.src} muted loop playsinline autoplay aria-label="Ubichill のワールドの様子" />
             ) : (
-              <Image src={editorShot} alt="Ubichill のワールドエディタ。動画プレイヤーやペンをワールドに配置している画面" widths={[640, 960, 1280]} sizes="(max-width: 768px) 100vw, 640px" loading="eager" fetchpriority="high" />
+              <Image src={worldShot} alt="Ubichill のワールド。夜の部屋で 4 人のカーソルが集まり、ペンで波やハートを描いている" widths={[640, 960, 1280]} sizes="(max-width: 768px) 100vw, 640px" loading="eager" fetchpriority="high" />
             )
           }
-        </figure>
-        <Logo3D class={logo} depth={30} />
+        </Window>
+        <div class={logo}><Logo3D depth={30} /></div>
       </div>
     </div>
   </div>
