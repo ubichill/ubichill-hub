@@ -1,0 +1,11 @@
+// Cloudflare Workers（静的アセットだけ）の設定。`pnpm build` で出た dist/ をそのまま配る。
+// name はダッシュボードの Worker 名と同じにする。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ubichill-hub",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page"
+  }
+}

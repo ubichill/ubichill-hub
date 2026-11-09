@@ -21,23 +21,24 @@ pnpm preview
 届かないときは `src/data/worlds.fallback.json` を使うので、オフラインでもビルドは通る。
 取得先を変えるには `UBICHILL_API=https://pr-123.ubichill.com pnpm build`。
 
-## デプロイ（Cloudflare Pages）
+## デプロイ（Cloudflare Workers の静的アセット）
 
-Cloudflare Pages に Git 連携で置く。ダッシュボードの設定はこれだけ。
+Cloudflare の Workers & Pages に Git 連携で置く。設定は `wrangler.jsonc`（`dist/` をそのまま配るだけで、Worker のコードは無い）。
 
 | 項目 | 値 |
 |---|---|
 | Build command | `pnpm build` |
-| Build output directory | `dist` |
-| Node のバージョン | `.node-version`（22.23.4）を読む。pnpm は `package.json` の `packageManager` から |
-| カスタムドメイン | `hub.ubichill.com` |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/`（空のまま） |
+| Worker 名 | `ubichill-hub`（`wrangler.jsonc` の `name` と同じにする） |
+| Node のバージョン | `.node-version`（22.23.4）。pnpm は `package.json` の `packageManager` から |
+| カスタムドメイン | Settings → Domains & Routes で `hub.ubichill.com` |
 
-`public/_headers` がそのまま `dist/_headers` に出て、キャッシュとセキュリティのヘッダーになる。
+`public/_headers` がそのまま `dist/_headers` に出て、キャッシュとセキュリティのヘッダーになる。404 は `dist/404.html`。
 
-ワールド一覧を新しくするには、Pages の **Deploy Hook** を作って URL をリポジトリの Secrets `CF_PAGES_DEPLOY_HOOK` に入れる。
-`.github/workflows/rebuild.yml` が毎日 03:00 JST に叩いてビルドし直す（Secret が無ければ何もしない）。
+ワールド一覧を新しくするにはビルドし直す。`.github/workflows/rebuild.yml` が毎日 03:00 JST に Secret `CF_PAGES_DEPLOY_HOOK` の URL を叩く（Secret が無ければ何もしない）。
 
-手元から出すなら `pnpm build && npx wrangler pages deploy dist --project-name ubichill-hub`。
+手元から出すなら `pnpm build && npx wrangler deploy`。
 
 ## ドキュメントの直し方
 
