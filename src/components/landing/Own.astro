@@ -20,15 +20,7 @@ const inner = css({
   alignItems: 'center',
   mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '40px' },
 });
-const eyebrow = css({
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: '8px',
-  textStyle: 'eyebrow',
-  color: 'fg.muted',
-  _before: { content: '""', width: '9px', height: '9px', borderRadius: '50%', bg: 'brand.peach' },
-});
-const h2 = css({ marginTop: '14px', textStyle: 'h2' });
+const h2 = css({ textStyle: 'h2' });
 const lead = css({ marginTop: '14px', color: 'fg.muted', textStyle: 'lead' });
 const list = css({ marginTop: '32px', display: 'grid', gap: '18px' });
 const point = css({
@@ -50,15 +42,6 @@ const art = css({
   position: 'relative',
   padding: '32px 0 32px 32px',
   mdDown: { padding: '24px 0' },
-  _before: {
-    content: '""',
-    position: 'absolute',
-    inset: '0 -40px 0 0',
-    borderRadius: 'blob',
-    backgroundImage: '{gradients.dusk}',
-    _dark: { opacity: 0.8 },
-    mdDown: { inset: '0 -20px' },
-  },
 });
 const card = css({
   position: 'relative',
@@ -129,7 +112,6 @@ const host = css({
 <section class={section} id="own" aria-labelledby="own-title">
   <div class={inner}>
     <div>
-      <span class={eyebrow}>持つ</span>
       <h2 class={h2} id="own-title">作ったものは、<br />自分の場所に。</h2>
       <p class={lead}>ワールドも mod も URL。どこに置いても、署名で本物とわかる。</p>
       <ul class={list}>

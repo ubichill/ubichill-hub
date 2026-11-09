@@ -1,16 +1,19 @@
 ---
 /**
- * 分散のセクション。人・部屋・作品の 3 層、夜空の上のサーバーの図、実在するサーバーの一覧、Helm。
- * サーバーはいま公式（ubichill.com）だけ。ワールド数はビルド時に API から数える。
+ * 分散のセクション。人・部屋・作品の 3 層、夜空の上のサーバーの図、実在するサーバーの一覧、Helm、
+ * フェディバース（Misskey・Mastodon）からのフォロー。
+ * サーバーはいま公式（ubichill.com）だけ。ワールド数とプロフィールはビルド時に API から取る。
  */
 import { css } from 'styled-system/css';
+import { getFediProfile } from '../../data/fediverse';
 import { servers, site } from '../../data/site';
-import { getWorlds } from '../../data/worlds';
+import { getWorlds, worldShareUrl } from '../../data/worlds';
 import Button from '../Button.astro';
 import Icon, { type IconName } from '../Icon.astro';
 import Section from '../Section.astro';
 
 const { worlds } = await getWorlds();
+const fedi = await getFediProfile();
 
 const layers: { icon: IconName; title: string; addr: [string, string]; tint: string }[] = [
   { icon: 'users', title: '人は、ホームサーバーに', addr: ['@yokan', '@yokan.example'], tint: 'sky' },
@@ -221,9 +224,91 @@ const selfhost = css({
   },
   '& .n': { color: 'brand.peach' },
 });
+const fediCard = css({
+  marginTop: '18px',
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.1fr)',
+  gap: '40px',
+  alignItems: 'center',
+  padding: 'clamp(24px, 4vw, 44px)',
+  borderRadius: 'lg',
+  bg: 'bg.surface',
+  boxShadow: 'card',
+  textAlign: 'left',
+  mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '28px' },
+  '& h3': { fontSize: 'clamp(20px, 2.2vw, 26px)', fontWeight: '800', lineHeight: '1.5' },
+  '& .lead': { marginTop: '12px', color: 'fg.muted', textStyle: 'body' },
+  '& .lead code': { fontFamily: 'mono', fontSize: '13px', color: 'fg' },
+  '& .soon': { marginTop: '16px', color: 'fg.subtle', textStyle: 'small' },
+});
+// フェディバースのクライアントで検索したときの見え方（特定のクライアントに似せない、素の形）
+const fediMock = css({
+  display: 'grid',
+  gap: '12px',
+  padding: '14px',
+  borderRadius: 'md',
+  bg: 'bg.subtle',
+  '& .search': {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    padding: '10px 14px',
+    borderRadius: 'sm',
+    bg: 'bg.surface',
+    fontFamily: 'mono',
+    fontSize: '13px',
+    color: 'fg.muted',
+    overflowWrap: 'anywhere',
+  },
+  '& .profile': {
+    display: 'grid',
+    gap: '12px',
+    padding: '18px',
+    borderRadius: 'sm',
+    bg: 'bg.surface',
+  },
+  // 狭いとフォローボタンが次の行に回る
+  '& .who': { display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px' },
+  '& .id': { flex: '1 1 160px', minWidth: 0, display: 'grid' },
+  '& .avatar': {
+    flex: 'none',
+    width: '48px',
+    height: '48px',
+    borderRadius: '14px',
+    objectFit: 'cover',
+    bg: 'bg.subtle',
+  },
+  '& .name': { fontWeight: '800', fontSize: '15px', lineHeight: '1.4' },
+  '& .handle': { fontFamily: 'mono', fontSize: '12px', color: 'fg.muted', overflowWrap: 'anywhere' },
+  '& .follow': {
+    marginLeft: 'auto',
+    padding: '7px 16px',
+    borderRadius: 'full',
+    bg: 'accent',
+    color: 'accent.fg',
+    fontSize: '13px',
+    fontWeight: '700',
+  },
+  '& .bio': { fontSize: '14px', whiteSpace: 'pre-line' },
+  '& .worlds': { display: 'grid', gap: '6px' },
+  '& .worlds small': { color: 'fg.subtle', fontSize: '12px', fontWeight: '700' },
+  '& .worlds a': {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: '10px',
+    padding: '9px 12px',
+    borderRadius: 'sm',
+    boxShadow: 'inset 0 0 0 1px {colors.border}',
+    fontSize: '14px',
+    fontWeight: '600',
+    transition: 'background {durations.fast}',
+    _hover: { bg: 'bg.subtle' },
+  },
+});
 ---
 
-<Section id="federation" eyebrow="分散" title="中央がない。" lead="人も、部屋も、作品も、それぞれの場所に。" center>
+<Section id="federation" title="中央がない。" lead="人も、部屋も、作品も、それぞれの場所に。" center>
   <div class={layerGrid}>
     {
       layers.map((l) => (
@@ -291,5 +376,50 @@ const selfhost = css({
       <pre><code>helm install ubichill ubichill/ubichill -n ubichill \
   --create-namespace --set global.domain=<span class="n">your.server</span></code></pre>
     </article>
+  </div>
+
+  <div class={fediCard}>
+    <div>
+      <h3>Misskey や Mastodon から、<br />フォローできる。</h3>
+      <p class="lead">
+        <code>@ID@ubichill.com</code> で検索すると、自己紹介と作ったワールドが出てくる。
+      </p>
+      <p class="soon">ubichill からフェディバースへの投稿も、これから。</p>
+    </div>
+    <div class={fediMock} aria-label={`フェディバースで @${fedi.handle} を検索したときの例`}>
+      <div class="search">
+        <Icon name="globe" size={16} />@{fedi.handle}
+      </div>
+      <div class="profile">
+        <div class="who">
+          {
+            fedi.icon ? (
+              <img class="avatar" src={fedi.icon} alt="" width="48" height="48" loading="lazy" referrerpolicy="no-referrer" />
+            ) : (
+              <span class="avatar" />
+            )
+          }
+          <div class="id">
+            <a class="name" href={fedi.url}>{fedi.name}</a>
+            <span class="handle">@{fedi.handle}</span>
+          </div>
+          <span class="follow" aria-hidden="true">フォロー</span>
+        </div>
+        {fedi.summary && <p class="bio">{fedi.summary}</p>}
+        {
+          fedi.worlds.length > 0 && (
+            <div class="worlds">
+              <small>作ったワールド</small>
+              {fedi.worlds.slice(0, 3).map((w) => (
+                <a href={worldShareUrl(w)}>
+                  {w.displayName}
+                  <Icon name="arrow-ur" size={14} />
+                </a>
+              ))}
+            </div>
+          )
+        }
+      </div>
+    </div>
   </div>
 </Section>

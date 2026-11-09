@@ -74,7 +74,8 @@ Starlight の書き方: フロントマターに `title` と `description`、本
 
 `src/design/tokens.ts` が唯一の置き場所。PandaCSS の tokens（生の値）→ semanticTokens（役割、明暗はここ）→ textStyles。
 コンポーネントからは `bg: 'bg.surface'`、`color: 'fg.muted'`、`textStyle: 'h2'` のように**役割の名前だけ**を使う。
-Starlight 側は `src/styles/starlight.css` で `--sl-*` に Panda の変数（`--colors-*`）を流しているので、トークンを変えれば両方に効く。
+ドキュメント（Starlight）の見た目はテーマ [starlight-theme-rapide](https://github.com/HiDeoo/starlight-theme-rapide) に任せている。
+`src/styles/starlight.css` で合わせているのはフォントと色相（`--sl-hue-base` / `--sl-hue-accent`）だけ。色を細かく直したくなったら、まずテーマの設定で済まないかを見る。
 
 雰囲気の決めごと（夕暮れの部屋）は `docs/DESIGN.md` の「5. デザイントークン」。
 

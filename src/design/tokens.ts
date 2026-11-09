@@ -76,8 +76,6 @@ export const tokens = defineTokens({
     lg: { value: '28px' },
     xl: { value: '44px' },
     full: { value: '999px' },
-    // 有機的な「もち」の形。装飾の面に使う
-    blob: { value: '58% 42% 55% 45% / 48% 58% 42% 52%' },
   },
   sizes: {
     container: { value: '1160px' },

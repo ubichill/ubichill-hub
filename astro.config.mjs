@@ -1,6 +1,8 @@
 // @ts-check
 import starlight from '@astrojs/starlight';
 import { defineConfig } from 'astro/config';
+import starlightImageZoom from 'starlight-image-zoom';
+import starlightThemeRapide from 'starlight-theme-rapide';
 
 const REPO = 'https://github.com/ubichill/ubichill';
 const HUB_REPO = 'https://github.com/ubichill/ubichill-hub';
@@ -19,6 +21,8 @@ export default defineConfig({
       locales: { root: { label: '日本語', lang: 'ja' } },
       logo: { src: './src/assets/logo.png', alt: 'Ubichill' },
       favicon: '/favicon.png',
+      // 見た目は既成のテーマに任せる。ubichill 側で足すのはフォントと色相だけ（src/styles/starlight.css）
+      plugins: [starlightThemeRapide(), starlightImageZoom()],
       customCss: ['./src/styles/panda.css', './src/styles/starlight.css'],
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       editLink: { baseUrl: `${HUB_REPO}/edit/main/` },

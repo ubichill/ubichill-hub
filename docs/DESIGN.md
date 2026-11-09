@@ -32,9 +32,9 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 |---|---|
 | 面の色 | cream の紙（`bg`）に、空の色の薄いグラデーション（`gradients.dusk`: sky → periwinkle → lavender → peach）。暗いテーマは本体のワールド背景（`#141d33`）と同じ夜の部屋に、ランプの光（`gradients.lamp`）と星 |
 | 画面の見せ方 | 実画面は必ず **暗い窓**（`Window.astro`）に入れる。本体アプリの cream の UI と混ざらないようにするため。favicon も同じ理由で暗い地 |
-| 形 | 角丸は大きく（`radii.lg` 28px、`xl` 44px）。装飾の面には `radii.blob`（有機的な形）。直線の区切りは使わない |
+| 形 | 角丸は大きく（`radii.lg` 28px、`xl` 44px）。直線の区切りは使わない。色のついた丸い飾り（もち形の面など）は置かない |
 | 影 | 輪郭を出さず、ぼんやり落とす（`shadows.card` `float`）。ガラス風の枠線は使わない |
-| 文字 | 見出しは M PLUS Rounded 1c の 800。英字の大文字・字間の広い eyebrow はやめ、小さな丸い札（桃色の点 ＋ 日本語）にした |
+| 文字 | 見出しは M PLUS Rounded 1c の 800。見出しの上の小さな札（eyebrow。「持つ」「分散」など）は置かない。見出しだけで足りる |
 | 動き | ゆっくり（空の色が 26 秒で流れる `drift`、星の `breathe`、窓の `float`）。`prefers-reduced-motion` では止まる。速い動き・カーソル演出は入れない |
 | 質感 | 面に紙のざらつき（`--noise`、SVG の feTurbulence）を 5〜9% で重ねる |
 | 画像 | 実画面を使う。ヒーローと「自分で持てる」は、本体を手元で動かして 4 人で入り、ペンで描いた夜の部屋（`src/assets/world-together.png`） |
@@ -74,7 +74,7 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 /llms.txt  /llms-full.txt  AI 向け（ドキュメントから自動生成）
 ```
 
-トップの流れ: ヒーロー（見出し・一言・お知らせ・ボタン・実画面の窓・3D ロゴ）→ 特徴 4 枚（それぞれ暗い窓に実画面か図）→ 持つ（署名済みワールドの例）→ mod（夜の帯。コード・CLI・権限）→ 分散（人・部屋・作品、夜空のサーバーの図、ubichill.com と Helm）→ ほかの人のワールド（API から）→ はじめる → オープンソース。
+トップの流れ: ヒーロー（見出し・一言・お知らせ・ボタン・実画面の窓・3D ロゴ）→ 特徴 4 枚（それぞれ暗い窓に実画面か図）→ 持つ（署名済みワールドの例）→ mod（夜の帯。コード・CLI・権限）→ 分散（人・部屋・作品、夜空のサーバーの図、ubichill.com と Helm、Misskey・Mastodon からのフォロー）→ ほかの人のワールド（API から）→ はじめる → オープンソース。
 
 「つくる」のセクションは、特徴 4 枚にエディタとコードの実画面を入れたので重複になり、外した（2026-11-08）。
 
@@ -86,6 +86,7 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 |---|---|---|
 | 公開ワールド一覧 | ビルド時に `GET {UBICHILL_API}/api/v1/worlds`（認証不要）。届かなければ `worlds.fallback.json` | `src/data/worlds.ts` |
 | サーバー一覧 | まだ API が無いので `servers` に ubichill.com だけ。ワールド数は上の件数 | `src/data/site.ts` |
+| フェディバースの例（`@youkan@ubichill.com`） | ビルド時に WebFinger → actor（Person）で名前・アイコン・自己紹介。ワールドは上の一覧から作者で絞る。届かなければ保存してある値 | `src/data/fediverse.ts` |
 
 ブラウザから直接 fetch しないのは、本番の CORS が `https://ubichill.com` しか許可していないため（Helm の `CORS_ORIGIN`。これは Better Auth の `trustedOrigins` にも使われるので、hub を足すのは慎重に）。
 その代わり Cloudflare Pages の Deploy Hook を毎日叩いてビルドし直す（`.github/workflows/rebuild.yml`）。
@@ -94,7 +95,8 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 - 一覧は署名検証済みのワールドだけ。人気順・新着順・ページングは無い。`createdAt` / `updatedAt` は DB にあるワールドだけ付く
 - `thumbnail` は作者が YAML に書いた絶対 URL で、生成はされない。公式ワールドには無いので、hub 側で mod から絵柄を決めて描いている（`worldArt`）
 - 開く URL は `identity.worldId`（`acct:handle@host/name`）から `https://host/@handle/name`
-- NodeInfo（`/nodeinfo/2.1`）はユーザー数を返さない。本番では連合が無効で、このルート自体が出ていない
+- NodeInfo（`/nodeinfo/2.1`）は出ているが、`usage.users` は空
+- 2026-11-09（#318）から Mastodon・Misskey からフォローできる。作ったワールドを固定ノート（`featured`）に出すのは `feat/fediverse-featured` ブランチ（2026-11-10 時点で main には未マージ）。フェディバースへの投稿は予定
 - 本体側で変えたくなったら: 公開 GET に `Access-Control-Allow-Origin: *` を付ける（`routes/authors.ts` と同じ形）、NodeInfo に `usage.users` を入れる
 
 ## 6. 技術
@@ -103,7 +105,7 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 |---|---|---|
 | フレームワーク | Astro 7（静的出力） | JS は 3D ロゴ・テーマ切替・メニュー・Mermaid だけ |
 | スタイル | PandaCSS 2（PostCSS 経由） | トークンは `src/design/tokens.ts`。**Panda 2 は `presets` を明示しないと条件もブレークポイントも入らない** |
-| ドキュメント | Starlight 0.42 | サイドバー・検索（Pagefind）・明暗・多言語が揃う。色とフォントは `src/styles/starlight.css` で Panda の変数を `--sl-*` に流す |
+| ドキュメント | Starlight 0.42 ＋ starlight-theme-rapide ＋ starlight-image-zoom | サイドバー・検索（Pagefind）・明暗・多言語が揃う。見た目はテーマに任せ、`src/styles/starlight.css` ではフォントと色相だけ合わせる |
 | ダークモード | `<html data-theme>` | Starlight と同じ属性・同じ `localStorage['starlight-theme']`。Panda の `_dark` を `[data-theme="dark"] &` にしてある |
 | フォント | fontsource（自前配信） | Nunito Variable / M PLUS Rounded 1c / JetBrains Mono Variable |
 | 画像 | `astro:assets` | 実画面の PNG は WebP に最適化。ワールドのサムネイル（外部 URL）は素の `<img loading="lazy">` |
@@ -119,7 +121,7 @@ src/
   design/tokens.ts         トークン（tokens / semanticTokens / textStyles / keyframes）
   styles/panda.css         @layer 宣言（PostCSS がここに生成 CSS を入れる）
   styles/global.css        トップ用リセットと --noise（@layer base に入れて utilities より弱く）
-  styles/starlight.css     Starlight への橋渡し（--sl-* ← --colors-*）
+  styles/starlight.css     Starlight のフォントと色相（見た目は rapide テーマ）
   components/              Header / Footer / Button / Icon / Logo3D / ThemeToggle / Section / Window
   components/landing/      トップの各セクション
   components/starlight/    Starlight の上書き（SocialIcons にアプリへのボタン、MarkdownContent に Mermaid）
@@ -145,7 +147,7 @@ public/_headers            Cloudflare Pages のヘッダー
 |---|---|---|
 | tokens | `navy.925`（ワールド背景）`cream.100` `periwinkle.300` `peach.300` `fonts.heading` `radii.lg` | 生の値。直接使わない |
 | semanticTokens | `bg` `bg.surface` `bg.inverse`（夜の部屋）`bg.frame`（窓の枠）`fg` `fg.muted` `accent` `accent.fg` `warm` `link` `border` `tint.*` `status.*` `gradients.dusk` `gradients.lamp` | 役割。`{ base, _dark }` で明暗 |
-| textStyles | `display` `h2` `h3` `lead` `small` `eyebrow` `mono` | 文字組み |
+| textStyles | `display` `h2` `h3` `lead` `small` `eyebrow`（フッターの列見出し） `mono` | 文字組み |
 
 ロゴの 3 色（sky `#bde1fb` / periwinkle `#9ab2f8` / lavender `#ceb0fa`）は白地でのコントラスト比が 1.4〜2.1 しかないので、**明るいテーマでは文字やボタンに使わず、面と装飾に回す**。暗いテーマではアクセント（ボタン・リンク）に periwinkle を使う（7〜10:1 取れる）。暖色の peach も同じく面と光だけ。
 

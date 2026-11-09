@@ -22,7 +22,9 @@
     "@pandacss/dev": "^2.5.0",
     "astro": "^7.4.7",
     "mermaid": "^12.3.0",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "starlight-image-zoom": "^0.16.2",
+    "starlight-theme-rapide": "^0.6.0"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.12",
