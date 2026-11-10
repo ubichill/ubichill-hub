@@ -30,7 +30,8 @@ const glow = css({
   position: 'absolute',
   zIndex: -1,
   borderRadius: '50%',
-  filter: 'blur(40px)',
+  // 円は radial-gradient で端が消えるので filter: blur は使わない（モバイルで重い）
+  willChange: 'transform',
   _motionSafe: { animation: 'drift 26s ease-in-out infinite' },
 });
 const sun = css({
@@ -81,8 +82,7 @@ const grain = css({
   pointerEvents: 'none',
   backgroundImage: 'var(--noise)',
   opacity: 0.055,
-  mixBlendMode: 'multiply',
-  _dark: { opacity: 0.09, mixBlendMode: 'screen' },
+  _dark: { opacity: 0.08 },
 });
 const inner = css({
   width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',

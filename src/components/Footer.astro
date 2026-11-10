@@ -78,13 +78,13 @@ const bottom = css({
   <div class={inner}>
     <div class={grid}>
       <div>
-        <a class={brand} href="/"><img src="/logo/logo-transparent-sm.png" alt="" width="26" height="30" />{site.name}</a>
+        <a class={brand} href="/"><img src="/logo/logo-mark.webp" alt="" width="26" height="30" />{site.name}</a>
         <p class={tagline}>{site.tagline}</p>
       </div>
       {
         columns.map((col) => (
           <div>
-            <h4 class={h4}>{col.title}</h4>
+            <h2 class={h4}>{col.title}</h2>
             <ul class={list}>
               {col.links.map((l) => (
                 <li>

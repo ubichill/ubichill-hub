@@ -1,0 +1,6 @@
+# hub.ubichill.com — 検索エンジンも AI も、どうぞ。
+# AI 向けの要約は /llms.txt と /llms-full.txt にある。
+User-agent: *
+Allow: /
+
+Sitemap: https://hub.ubichill.com/sitemap-index.xml

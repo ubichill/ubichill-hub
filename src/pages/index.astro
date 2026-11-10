@@ -7,10 +7,38 @@ import Oss from '../components/landing/Oss.astro';
 import Own from '../components/landing/Own.astro';
 import Pillars from '../components/landing/Pillars.astro';
 import Start from '../components/landing/Start.astro';
+import { site } from '../data/site';
 import Base from '../layouts/Base.astro';
+
+// 検索結果に出す構造化データ。サイト（WebSite）と、アプリ本体（SoftwareApplication）
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'WebSite',
+      '@id': 'https://hub.ubichill.com/#website',
+      url: 'https://hub.ubichill.com/',
+      name: site.name,
+      description: site.tagline,
+      inLanguage: 'ja',
+    },
+    {
+      '@type': 'SoftwareApplication',
+      name: site.name,
+      description: site.tagline,
+      url: site.app,
+      applicationCategory: 'SocialNetworkingApplication',
+      operatingSystem: 'Web',
+      offers: { '@type': 'Offer', price: '0', priceCurrency: 'JPY' },
+      license: 'https://www.gnu.org/licenses/agpl-3.0.html',
+      codeRepository: site.repo,
+      image: 'https://hub.ubichill.com/og.png',
+    },
+  ],
+};
 ---
 
-<Base>
+<Base jsonLd={jsonLd}>
   <Hero />
   <Pillars />
   <Own />

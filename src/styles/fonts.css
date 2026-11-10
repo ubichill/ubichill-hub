@@ -1,0 +1,6 @@
+/*
+ * ランディングの欧文フォント（Nunito・JetBrains Mono）。Base.astro から表示を止めない形で読む。
+ * 日本語の M PLUS Rounded 1c は、本番ではページで使う文字だけを抜いた 1 ファイル（scripts/subset-fonts.mjs）。
+ */
+@import "@fontsource-variable/nunito";
+@import "@fontsource-variable/jetbrains-mono";

@@ -3,14 +3,31 @@ import '../styles/global.css';
 import Footer from '../components/Footer.astro';
 import Header from '../components/Header.astro';
 import { site } from '../data/site';
+import fontsHref from '../styles/fonts.css?url';
+import fontsDevHref from '../styles/fonts-dev.css?url';
 
 interface Props {
   title?: string;
   description?: string;
+  /** 404 など、検索に出さないページ */
+  noindex?: boolean;
+  /** 構造化データ（JSON-LD）。トップだけで使う */
+  jsonLd?: object;
 }
 
-const { title = `${site.name} — ${site.tagline}`, description = site.tagline } = Astro.props;
+const { title = `${site.name} — ${site.tagline}`, description = site.tagline, noindex = false, jsonLd } = Astro.props;
 const canonical = new URL(Astro.url.pathname, Astro.site);
+const ogImage = new URL('/og.png', Astro.site);
+
+// 日本語フォントは、本番ではビルド後に scripts/subset-fonts.mjs がページの文字だけを抜いて
+// /fonts/mplus-rounded-<weight>.<hash>.woff2 に置き、下の URL を書き換える
+const MPLUS = [400, 700, 800] as const;
+const mplusUrl = (w: number) => `/fonts/mplus-rounded-${w}.woff2`;
+const mplusFaces = MPLUS.map(
+  (w) =>
+    `@font-face{font-family:"M PLUS Rounded 1c";font-style:normal;font-weight:${w};font-display:swap;src:url(${mplusUrl(w)}) format("woff2")}`,
+).join('');
+const dev = import.meta.env.DEV;
 ---
 
 <!doctype html>
@@ -20,16 +37,42 @@ const canonical = new URL(Astro.url.pathname, Astro.site);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href={canonical} />
+    {noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta name="theme-color" content="#faf6f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1729" media="(prefers-color-scheme: dark)" />
     <link rel="icon" href="/favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={new URL('/og.png', Astro.site)} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:locale" content="ja_JP" />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${site.name} — ゆるく集まる、じぶんの部屋。`} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    {jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
     <link rel="alternate" type="text/plain" href="/llms.txt" title="llms.txt" />
+    <!-- フォント。欧文の CSS は表示を止めずに読み、日本語はページの文字だけのサブセットを先読みする -->
+    <link rel="preload" href={fontsHref} as="style" onload="this.onload=null;this.rel='stylesheet'" />
+    <noscript><link rel="stylesheet" href={fontsHref} /></noscript>
+    {
+      dev ? (
+        <link rel="stylesheet" href={fontsDevHref} />
+      ) : (
+        <>
+          <link rel="preload" href={mplusUrl(800)} as="font" type="font/woff2" crossorigin />
+          <link rel="preload" href={mplusUrl(400)} as="font" type="font/woff2" crossorigin />
+          <style is:inline set:html={mplusFaces} />
+        </>
+      )
+    }
     <!-- 描画前にテーマを決める（Starlight の ThemeProvider と同じ規則） -->
     <script is:inline>
       (() => {

@@ -27,6 +27,8 @@ export default defineConfig({
       social: [{ icon: 'github', label: 'GitHub', href: REPO }],
       editLink: { baseUrl: `${HUB_REPO}/edit/main/` },
       lastUpdated: true,
+      // 404 はトップと同じ見た目のもの（src/pages/404.astro）を使う
+      disable404Route: true,
       components: {
         SocialIcons: './src/components/starlight/SocialIcons.astro',
         MarkdownContent: './src/components/starlight/MarkdownContent.astro',

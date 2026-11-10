@@ -39,6 +39,16 @@ Cloudflare Pages に Git 連携で置く。ダッシュボードの設定はこ�
 
 手元から出すなら `pnpm build && npx wrangler pages deploy dist --project-name ubichill-hub`。
 
+## SEO・速さ
+
+- `public/robots.txt`（すべて許可＋サイトマップ）。サイトマップは Starlight が `dist/sitemap-index.xml` に出す。Cloudflare の「管理された robots.txt」を有効にすると、先頭にその内容が足される
+- 404 は `src/pages/404.astro`（`noindex`）。Starlight の 404 は `disable404Route` で止めている
+- トップには JSON-LD（WebSite・SoftwareApplication）・OGP・Twitter カード（`src/layouts/Base.astro`）
+- **日本語フォント**: fontsource の M PLUS Rounded 1c は 100 前後に分かれていてモバイルの LCP が遅れるので、トップと 404 では
+  `pnpm build` の最後に `scripts/subset-fonts.mjs` がページの文字だけを抜いた woff2（1 ウェイト約 40KB）を作って差し替える。
+  元のフォントは `fonts/`（SIL OFL 1.1）。`pnpm dev` では fontsource をそのまま使う
+- 計測: `npx lighthouse https://hub.ubichill.com/ --view`（モバイル）、`--preset=desktop`
+
 ## ドキュメントの直し方
 
 ページは 2 種類ある。ページ冒頭に「ubichill 本体から同期」とあるかどうかで見分ける。

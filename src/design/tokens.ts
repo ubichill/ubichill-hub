@@ -107,7 +107,8 @@ export const semanticTokens = defineSemanticTokens({
     fg: {
       DEFAULT: { value: { base: '{colors.navy.900}', _dark: '{colors.navy.100}' } },
       muted: { value: { base: '{colors.navy.500}', _dark: '{colors.navy.200}' } },
-      subtle: { value: { base: '{colors.navy.300}', _dark: '{colors.navy.400}' } },
+      // 補足の文字。背景とのコントラスト 4.5 以上（Lighthouse）
+      subtle: { value: { base: '#5f6b85', _dark: '#8d98b0' } },
       // 暗い帯の上の文字（明暗どちらでも明るい）
       inverse: { value: '{colors.navy.50}' },
       inverseMuted: { value: 'rgba(248, 243, 234, 0.72)' },

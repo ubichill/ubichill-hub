@@ -1,0 +1,90 @@
+---
+/**
+ * 見つからないページ。Cloudflare Pages は dist/404.html を 404 のステータスで返す。
+ * ドキュメント（/docs/ 配下）も含めてこのページにする（astro.config.mjs の disable404Route）。
+ */
+import { css } from 'styled-system/css';
+import Button from '../components/Button.astro';
+import Window from '../components/Window.astro';
+import Base from '../layouts/Base.astro';
+
+const wrap = css({ paddingInline: 'clamp(12px, 2vw, 24px)', paddingTop: '8px' });
+const card = css({
+  position: 'relative',
+  overflow: 'hidden',
+  maxWidth: 'wide',
+  marginInline: 'auto',
+  borderRadius: 'xl',
+  backgroundImage: '{gradients.dusk}',
+  padding: 'clamp(56px, 8vw, 104px) clamp(20px, 5vw, 64px)',
+  smDown: { borderRadius: '32px' },
+});
+const inner = css({
+  maxWidth: '760px',
+  marginInline: 'auto',
+  display: 'grid',
+  gap: '40px',
+  justifyItems: 'center',
+  textAlign: 'center',
+});
+const code = css({ fontFamily: 'mono', fontSize: '14px', color: 'fg.muted', letterSpacing: '0.08em' });
+const h1 = css({ marginTop: '10px', textStyle: 'h2' });
+const lead = css({ marginTop: '14px', color: 'fg.muted', textStyle: 'lead' });
+const cta = css({ marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center' });
+const shot = css({ width: '100%' });
+// 誰もいない夜の部屋。ランプの光と星と、迷ったカーソルがひとつ
+const room = css({
+  display: 'block',
+  width: '100%',
+  height: 'auto',
+  '& .star': { fill: 'rgba(255,255,255,.75)', _motionSafe: { animation: 'breathe 6s ease-in-out infinite' } },
+  '& .cursor': { _motionSafe: { animation: 'float 7s ease-in-out infinite' } },
+});
+const stars = [
+  [60, 40],
+  [140, 90],
+  [230, 30],
+  [320, 70],
+  [470, 44],
+  [540, 96],
+  [600, 30],
+  [90, 140],
+  [380, 120],
+];
+---
+
+<Base title="ページが見つかりません — Ubichill" description="お探しのページは見つかりませんでした。" noindex>
+  <div class={wrap}>
+    <div class={card}>
+      <div class={inner}>
+        <div>
+          <p class={code}>404</p>
+          <h1 class={h1}>この部屋は、見つからなかった。</h1>
+          <p class={lead}>URL が変わったか、まだだれも作っていないみたい。</p>
+          <div class={cta}>
+            <Button href="/" icon="home">トップへ</Button>
+            <Button href="/docs/" variant="secondary" icon="book">ドキュメント</Button>
+          </div>
+        </div>
+        <Window class={shot} url="ubichill.com/@???/this-room">
+          <svg class={room} viewBox="0 0 640 260" role="img" aria-label="だれもいない夜の部屋">
+            <defs>
+              <radialGradient id="lamp" cx="78%" cy="0%" r="70%">
+                <stop offset="0" stop-color="#f4b89a" stop-opacity=".35"></stop>
+                <stop offset="1" stop-color="#f4b89a" stop-opacity="0"></stop>
+              </radialGradient>
+            </defs>
+            <rect width="640" height="260" fill="#141d33"></rect>
+            <rect width="640" height="260" fill="url(#lamp)"></rect>
+            {stars.map(([x, y], i) => <circle class="star" cx={x} cy={y} r={i % 3 === 0 ? 1.6 : 1.1} style={`animation-delay:-${i * 0.7}s`} />)}
+            <path d="M0 214 H640" stroke="rgba(255,255,255,.08)" stroke-width="2"></path>
+            <g class="cursor" transform="translate(300 120)">
+              <path d="M0 0 L0 30 L8 23 L14 36 L19 34 L13 21 L24 21 Z" fill="#ceb0fa" stroke="#141d33" stroke-width="2" stroke-linejoin="round"></path>
+              <text x="30" y="16" fill="rgba(223,230,245,.7)" font-size="18" font-family="ui-monospace, monospace">?</text>
+            </g>
+          </svg>
+        </Window>
+      </div>
+    </div>
+  </div>
+</Base>
