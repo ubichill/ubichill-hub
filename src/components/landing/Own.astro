@@ -1,13 +1,13 @@
 ---
-/** 「作ったものは、自分の場所に」。署名済みワールドの例を、夕暮れ色の面の上に置く */
+/** 「作ったものは、自分の場所に」。署名済みワールドの例 */
 import { css } from 'styled-system/css';
 import Icon, { type IconName } from '../Icon.astro';
 
-const points: { icon: IconName; title: string; text: string; tint: string }[] = [
-  { icon: 'link', title: 'ワールド＝URL', text: '開けば、だれでも入れる。', tint: 'sky' },
-  { icon: 'key', title: '鍵は手元に', text: 'サーバーは秘密鍵を預からない。', tint: 'periwinkle' },
-  { icon: 'badge-check', title: '作者署名', text: '改ざんとなりすましを見分ける。', tint: 'lavender' },
-  { icon: 'git', title: 'ただのファイル', text: 'Git で管理して、持ち出せる。', tint: 'peach' },
+const points: { icon: IconName; title: string; text: string }[] = [
+  { icon: 'link', title: 'ワールド＝URL', text: '開けば、だれでも入れる。' },
+  { icon: 'key', title: '鍵は手元に', text: 'サーバーは秘密鍵を預からない。' },
+  { icon: 'badge-check', title: '作者署名', text: '改ざんとなりすましを見分ける。' },
+  { icon: 'git', title: 'ただのファイル', text: 'Git で管理して、持ち出せる。' },
 ];
 
 const section = css({ paddingTop: 'clamp(88px, 11vw, 150px)' });
@@ -21,23 +21,26 @@ const inner = css({
   mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '40px' },
 });
 const h2 = css({ textStyle: 'h2' });
-const lead = css({ marginTop: '14px', color: 'fg.muted', textStyle: 'lead' });
-const list = css({ marginTop: '32px', display: 'grid', gap: '18px' });
+const lead = css({ marginTop: '16px', color: 'fg.muted', textStyle: 'lead' });
+const list = css({ marginTop: '32px', display: 'grid', gap: '20px' });
 const point = css({
   display: 'grid',
-  gridTemplateColumns: '46px 1fr',
+  gridTemplateColumns: '40px 1fr',
   gap: '16px',
   alignItems: 'center',
-  '& h3': { fontSize: '16px', fontWeight: '800', lineHeight: '1.4' },
+  '& h3': { fontSize: '16px', fontWeight: '700', lineHeight: '1.5' },
   '& p': { textStyle: 'small', color: 'fg.muted' },
 });
-const iconBox = css({ width: '46px', height: '46px', borderRadius: '16px', display: 'grid', placeItems: 'center' });
-const tints: Record<string, string> = {
-  sky: css({ bg: 'tint.sky' }),
-  periwinkle: css({ bg: 'tint.periwinkle' }),
-  lavender: css({ bg: 'tint.lavender' }),
-  peach: css({ bg: 'tint.peach' }),
-};
+// アイコンは文字と同じ色。色のついたタイルには入れない
+const iconBox = css({
+  width: '40px',
+  height: '40px',
+  borderRadius: '12px',
+  display: 'grid',
+  placeItems: 'center',
+  color: 'fg.muted',
+  boxShadow: 'inset 0 0 0 1px {colors.border.strong}',
+});
 const art = css({
   position: 'relative',
   padding: '32px 0 32px 32px',
@@ -53,20 +56,20 @@ const card = css({
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    padding: '18px 22px',
+    padding: '16px 24px',
     borderBottom: '1px solid {colors.border}',
     fontFamily: 'mono',
-    fontSize: '13.5px',
+    fontSize: '13px',
   },
   '& dl': {
     margin: 0,
-    padding: '6px 22px 4px',
+    padding: '4px 24px',
     display: 'grid',
     gridTemplateColumns: 'auto minmax(0, 1fr)',
-    columnGap: '18px',
+    columnGap: '20px',
   },
-  '& dt, & dd': { padding: '11px 0', borderBottom: '1px dashed {colors.border}' },
-  '& dt': { fontSize: '12.5px', color: 'fg.muted', whiteSpace: 'nowrap' },
+  '& dt, & dd': { padding: '12px 0', borderBottom: '1px dashed {colors.border}' },
+  '& dt': { fontSize: '13px', color: 'fg.muted', whiteSpace: 'nowrap' },
   '& dd': {
     margin: 0,
     display: 'flex',
@@ -75,21 +78,21 @@ const card = css({
     flexWrap: 'wrap',
     minWidth: 0,
     fontFamily: 'mono',
-    fontSize: '12.5px',
+    fontSize: '13px',
     overflowWrap: 'anywhere',
   },
   '& dl > :nth-last-child(-n+2)': { borderBottom: 0 },
   '& .ok': { color: 'status.ok', display: 'inline-flex' },
-  '& .hosts': { padding: '16px 22px 20px', bg: 'bg.subtle', display: 'flex', flexWrap: 'wrap', gap: '8px' },
+  '& .hosts': { padding: '16px 24px 20px', bg: 'bg.subtle', display: 'flex', flexWrap: 'wrap', gap: '8px' },
 });
 const badge = css({
   marginLeft: 'auto',
   display: 'inline-flex',
   alignItems: 'center',
-  gap: '5px',
-  fontSize: '11.5px',
-  fontWeight: '800',
-  padding: '3px 10px',
+  gap: '4px',
+  fontSize: '12px',
+  fontWeight: '700',
+  padding: '4px 10px',
   borderRadius: 'full',
   bg: 'status.okBg',
   color: 'status.ok',
@@ -112,13 +115,13 @@ const host = css({
 <section class={section} id="own" aria-labelledby="own-title">
   <div class={inner}>
     <div>
-      <h2 class={h2} id="own-title">作ったものは、<br />自分の場所に。</h2>
+      <h2 class={h2} id="own-title">作ったものは、<br />自分の場所に</h2>
       <p class={lead}>ワールドも mod も URL。どこに置いても、署名で本物とわかる。</p>
       <ul class={list}>
         {
           points.map((p) => (
             <li class={point}>
-              <span class:list={[iconBox, tints[p.tint]]}>
+              <span class={iconBox}>
                 <Icon name={p.icon} />
               </span>
               <div>

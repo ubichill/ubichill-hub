@@ -15,7 +15,7 @@ import { join, relative } from 'node:path';
 import subsetFont from 'subset-font';
 
 const DIST = 'dist';
-const WEIGHTS = { 400: 'Regular', 700: 'Bold', 800: 'ExtraBold' };
+const WEIGHTS = { 400: 'Regular', 700: 'Bold' };
 
 async function* htmlFiles(dir) {
   for (const e of await readdir(dir, { withFileTypes: true })) {

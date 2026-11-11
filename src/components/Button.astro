@@ -20,6 +20,7 @@ const button = cva({
     whiteSpace: 'nowrap',
     transition: 'transform 150ms ease, background 150ms ease, box-shadow 150ms ease',
     _hover: { transform: 'translateY(-1px)' },
+    _active: { transform: 'scale(0.98)' },
   },
   variants: {
     variant: {
@@ -28,8 +29,8 @@ const button = cva({
       inverse: { bg: 'white', color: 'navy.900' },
     },
     size: {
-      md: { height: '48px', paddingInline: '26px', fontSize: '15px' },
-      sm: { height: '38px', paddingInline: '16px', fontSize: '13.5px' },
+      md: { height: '48px', paddingInline: '24px', fontSize: '15px' },
+      sm: { height: '36px', paddingInline: '16px', fontSize: '13px' },
     },
   },
   defaultVariants: { variant: 'primary', size: 'md' },

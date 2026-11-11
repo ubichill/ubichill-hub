@@ -14,10 +14,7 @@ const card = css({
   overflow: 'hidden',
   maxWidth: 'wide',
   marginInline: 'auto',
-  borderRadius: 'xl',
-  backgroundImage: '{gradients.dusk}',
   padding: 'clamp(56px, 8vw, 104px) clamp(20px, 5vw, 64px)',
-  smDown: { borderRadius: '32px' },
 });
 const inner = css({
   maxWidth: '760px',
@@ -27,18 +24,17 @@ const inner = css({
   justifyItems: 'center',
   textAlign: 'center',
 });
-const code = css({ fontFamily: 'mono', fontSize: '14px', color: 'fg.muted', letterSpacing: '0.08em' });
-const h1 = css({ marginTop: '10px', textStyle: 'h2' });
-const lead = css({ marginTop: '14px', color: 'fg.muted', textStyle: 'lead' });
-const cta = css({ marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '14px', justifyContent: 'center' });
+const code = css({ fontFamily: 'mono', fontSize: '14px', color: 'fg.muted' });
+const h1 = css({ marginTop: '12px', textStyle: 'h2' });
+const lead = css({ marginTop: '16px', color: 'fg.muted', textStyle: 'lead' });
+const cta = css({ marginTop: '32px', display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center' });
 const shot = css({ width: '100%' });
 // 誰もいない夜の部屋。ランプの光と星と、迷ったカーソルがひとつ
 const room = css({
   display: 'block',
   width: '100%',
   height: 'auto',
-  '& .star': { fill: 'rgba(255,255,255,.75)', _motionSafe: { animation: 'breathe 6s ease-in-out infinite' } },
-  '& .cursor': { _motionSafe: { animation: 'float 7s ease-in-out infinite' } },
+  '& .star': { fill: 'rgba(255,255,255,.75)' },
 });
 const stars = [
   [60, 40],
@@ -59,7 +55,7 @@ const stars = [
       <div class={inner}>
         <div>
           <p class={code}>404</p>
-          <h1 class={h1}>この部屋は、見つからなかった。</h1>
+          <h1 class={h1}>この部屋は、見つからなかった</h1>
           <p class={lead}>URL が変わったか、まだだれも作っていないみたい。</p>
           <div class={cta}>
             <Button href="/" icon="home">トップへ</Button>
@@ -76,7 +72,7 @@ const stars = [
             </defs>
             <rect width="640" height="260" fill="#141d33"></rect>
             <rect width="640" height="260" fill="url(#lamp)"></rect>
-            {stars.map(([x, y], i) => <circle class="star" cx={x} cy={y} r={i % 3 === 0 ? 1.6 : 1.1} style={`animation-delay:-${i * 0.7}s`} />)}
+            {stars.map(([x, y], i) => <circle class="star" cx={x} cy={y} r={i % 3 === 0 ? 1.6 : 1.1} />)}
             <path d="M0 214 H640" stroke="rgba(255,255,255,.08)" stroke-width="2"></path>
             <g class="cursor" transform="translate(300 120)">
               <path d="M0 0 L0 30 L8 23 L14 36 L19 34 L13 21 L24 21 Z" fill="#ceb0fa" stroke="#141d33" stroke-width="2" stroke-linejoin="round"></path>

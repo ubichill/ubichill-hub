@@ -1,5 +1,5 @@
 ---
-/** 締め。夕暮れの面に、オープンソースの案内と 3D ロゴ */
+/** 締め。静かな面に、オープンソースの案内と 3D ロゴ */
 import { css } from 'styled-system/css';
 import { site } from '../../data/site';
 import Button from '../Button.astro';
@@ -7,48 +7,22 @@ import Icon from '../Icon.astro';
 import Logo3D from '../Logo3D.astro';
 
 const box = css({
-  position: 'relative',
-  overflow: 'hidden',
-  isolation: 'isolate',
   width: 'min({sizes.container}, 100% - clamp(40px, 8vw, 80px))',
   marginInline: 'auto',
   marginTop: 'clamp(88px, 11vw, 150px)',
   borderRadius: 'xl',
   padding: 'clamp(48px, 7vw, 88px)',
-  backgroundImage: '{gradients.dusk}',
+  bg: 'bg.surface',
+  boxShadow: 'inset 0 0 0 1px {colors.border}',
   color: 'fg',
   display: 'grid',
   gridTemplateColumns: '1.3fr 1fr',
   gap: '40px',
   alignItems: 'center',
   mdDown: { gridTemplateColumns: '1fr' },
-  smDown: { borderRadius: '32px', padding: '36px 24px' },
-  _before: {
-    content: '""',
-    position: 'absolute',
-    zIndex: -1,
-    width: '420px',
-    height: '420px',
-    right: '-80px',
-    bottom: '-220px',
-    borderRadius: '50%',
-    // 円は radial-gradient で端が消えるので filter: blur は使わない（モバイルで重い）
-    willChange: 'transform',
-    background: 'radial-gradient(circle, rgba(244,184,154,.8), rgba(244,184,154,0) 70%)',
-    _dark: { opacity: 0.4 },
-  },
-  _after: {
-    content: '""',
-    position: 'absolute',
-    inset: 0,
-    zIndex: -1,
-    pointerEvents: 'none',
-    backgroundImage: 'var(--noise)',
-    opacity: 0.055,
-    _dark: { opacity: 0.08 },
-  },
+  smDown: { borderRadius: 'lg', padding: '40px 24px' },
   '& h2': { textStyle: 'h2' },
-  '& p': { marginTop: '14px', maxWidth: '34em', color: 'fg.muted', textStyle: 'lead' },
+  '& p': { marginTop: '16px', maxWidth: '34em', color: 'fg.muted', textStyle: 'lead' },
   '& .cta': { marginTop: '28px', display: 'flex', flexWrap: 'wrap', gap: '12px' },
 });
 const logo = css({ justifySelf: 'center', width: 'min(240px, 64%)' });
@@ -56,7 +30,7 @@ const logo = css({ justifySelf: 'center', width: 'min(240px, 64%)' });
 
 <section class={box} aria-labelledby="oss-title">
   <div>
-    <h2 id="oss-title">オープンソース。</h2>
+    <h2 id="oss-title">オープンソース</h2>
     <p>AGPL-3.0。PR は日本語でも歓迎。</p>
     <div class="cta">
       <Button href={site.repo}><Icon name="github" size={16} />GitHub</Button>

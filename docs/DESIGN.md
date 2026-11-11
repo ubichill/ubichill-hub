@@ -30,13 +30,12 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 
 | 要素 | 決めたこと |
 |---|---|
-| 面の色 | cream の紙（`bg`）に、空の色の薄いグラデーション（`gradients.dusk`: sky → periwinkle → lavender → peach）。暗いテーマは本体のワールド背景（`#141d33`）と同じ夜の部屋に、ランプの光（`gradients.lamp`）と星 |
+| 面の色 | cream の紙（`bg`）と白い面（`bg.surface`）、暗いテーマは navy の階調だけ。アクセントは 1 色（明るい: navy、暗い: periwinkle）。**色（夕暮れから夜の部屋、ランプの暖色）は実画面の窓とワールドのサムネイルの中にだけ置く**。面の色相グラデーション・ぼかした色の円・紙のざらつきは使わない（2026-11-12） |
 | 画面の見せ方 | 実画面は必ず **暗い窓**（`Window.astro`）に入れる。本体アプリの cream の UI と混ざらないようにするため。favicon も同じ理由で暗い地 |
-| 形 | 角丸は大きく（`radii.lg` 28px、`xl` 44px）。直線の区切りは使わない。色のついた丸い飾り（もち形の面など）は置かない |
-| 影 | 輪郭を出さず、ぼんやり落とす（`shadows.card` `float`）。ガラス風の枠線は使わない |
-| 文字 | 見出しは M PLUS Rounded 1c の 800。見出しの上の小さな札（eyebrow。「持つ」「分散」など）は置かない。見出しだけで足りる |
-| 動き | ゆっくり（空の色が 26 秒で流れる `drift`、星の `breathe`、窓の `float`）。`prefers-reduced-motion` では止まる。速い動き・カーソル演出は入れない |
-| 質感 | 面に紙のざらつき（`--noise`、SVG の feTurbulence）を 5〜9% で重ねる |
+| 形 | 角丸は大きめ（`radii.lg` 28px）。カードは影より細い線（`inset 0 0 0 1px {colors.border}`）。同じ形のカードを並べるより、区切り線で分けた 1 枚のパネル（連合の 3 層、はじめる） |
+| アイコン | 文字と同じ色（`fg.muted`）。色のついたタイルに入れない |
+| 文字 | 見出しは M PLUS Rounded 1c の 700（800 は使わない）。見出し・一文のリードの末尾に「。」を付けない。見出しの上の札（eyebrow）は置かない |
+| 動き | 反応だけ（ホバーで色、押すと少し縮む）。ずっと動き続けるもの（ドリフト・明滅・浮遊・破線の流れ）は使わない。3D ロゴはポインタで傾くだけ |
 | 画像 | 実画面を使う。ヒーローと「自分で持てる」は、本体を手元で動かして 4 人で入り、ペンで描いた夜の部屋（`src/assets/world-together.png`） |
 
 ## 3. 誰に何を
@@ -74,7 +73,7 @@ ubichill の「ホーム＋ドキュメント」サイト。アプリ本体（ub
 /llms.txt  /llms-full.txt  AI 向け（ドキュメントから自動生成）
 ```
 
-トップの流れ: ヒーロー（見出し・一言・お知らせ・ボタン・実画面の窓・3D ロゴ）→ 特徴 4 枚（それぞれ暗い窓に実画面か図）→ 持つ（署名済みワールドの例）→ mod（夜の帯。コード・CLI・権限）→ 分散（人・部屋・作品、夜空のサーバーの図、ubichill.com と Helm、Misskey・Mastodon からのフォロー）→ ほかの人のワールド（API から）→ はじめる → オープンソース。
+トップの流れ: ヒーロー（お知らせの文字リンク・見出し・一言・ボタン・実画面の窓・3D ロゴ）→ 特徴 4 枚（それぞれ暗い窓に実画面か図）→ 持つ（署名済みワールドの例）→ mod（夜の帯。コード・CLI・権限）→ 分散（人・部屋・作品、夜空のサーバーの図、ubichill.com と Helm、Misskey・Mastodon からのフォロー）→ ほかの人のワールド（API から）→ はじめる → オープンソース。
 
 「つくる」のセクションは、特徴 4 枚にエディタとコードの実画面を入れたので重複になり、外した（2026-11-08）。
 
@@ -146,7 +145,7 @@ public/_headers            Cloudflare Pages のヘッダー
 | 層 | 例 | 役割 |
 |---|---|---|
 | tokens | `navy.925`（ワールド背景）`cream.100` `periwinkle.300` `peach.300` `fonts.heading` `radii.lg` | 生の値。直接使わない |
-| semanticTokens | `bg` `bg.surface` `bg.inverse`（夜の部屋）`bg.frame`（窓の枠）`fg` `fg.muted` `accent` `accent.fg` `warm` `link` `border` `tint.*` `status.*` `gradients.dusk` `gradients.lamp` | 役割。`{ base, _dark }` で明暗 |
+| semanticTokens | `bg` `bg.surface` `bg.inverse`（夜の部屋）`bg.frame`（窓の枠）`fg` `fg.muted` `accent` `accent.fg` `link` `border` `status.*` `gradients.lamp`（ワールドのサムネイルだけ） | 役割。`{ base, _dark }` で明暗 |
 | textStyles | `display` `h2` `h3` `lead` `small` `eyebrow`（フッターの列見出し） `mono` | 文字組み |
 
 ロゴの 3 色（sky `#bde1fb` / periwinkle `#9ab2f8` / lavender `#ceb0fa`）は白地でのコントラスト比が 1.4〜2.1 しかないので、**明るいテーマでは文字やボタンに使わず、面と装飾に回す**。暗いテーマではアクセント（ボタン・リンク）に periwinkle を使う（7〜10:1 取れる）。暖色の peach も同じく面と光だけ。

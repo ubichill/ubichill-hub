@@ -21,7 +21,7 @@ const ogImage = new URL('/og.png', Astro.site);
 
 // 日本語フォントは、本番ではビルド後に scripts/subset-fonts.mjs がページの文字だけを抜いて
 // /fonts/mplus-rounded-<weight>.<hash>.woff2 に置き、下の URL を書き換える
-const MPLUS = [400, 700, 800] as const;
+const MPLUS = [400, 700] as const;
 const mplusUrl = (w: number) => `/fonts/mplus-rounded-${w}.woff2`;
 const mplusFaces = MPLUS.map(
   (w) =>
@@ -67,7 +67,7 @@ const dev = import.meta.env.DEV;
         <link rel="stylesheet" href={fontsDevHref} />
       ) : (
         <>
-          <link rel="preload" href={mplusUrl(800)} as="font" type="font/woff2" crossorigin />
+          <link rel="preload" href={mplusUrl(700)} as="font" type="font/woff2" crossorigin />
           <link rel="preload" href={mplusUrl(400)} as="font" type="font/woff2" crossorigin />
           <style is:inline set:html={mplusFaces} />
         </>

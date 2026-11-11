@@ -15,10 +15,10 @@ import Section from '../Section.astro';
 const { worlds } = await getWorlds();
 const fedi = await getFediProfile();
 
-const layers: { icon: IconName; title: string; addr: [string, string]; tint: string }[] = [
-  { icon: 'users', title: '人は、ホームサーバーに', addr: ['@yokan', '@yokan.example'], tint: 'sky' },
-  { icon: 'home', title: '部屋は、部屋のサーバーに', addr: ['chill-room', '@ubichill.com'], tint: 'periwinkle' },
-  { icon: 'box', title: '作品は、作者の URL に', addr: ['mio.dev', '/mods/like/'], tint: 'lavender' },
+const layers: { icon: IconName; title: string; addr: [string, string] }[] = [
+  { icon: 'users', title: '人は、ホームサーバーに', addr: ['@yokan', '@yokan.example'] },
+  { icon: 'home', title: '部屋は、部屋のサーバーに', addr: ['chill-room', '@ubichill.com'] },
+  { icon: 'box', title: '作品は、作者の URL に', addr: ['mio.dev', '/mods/like/'] },
 ];
 
 // 夜空の図。公式と「あなた」以外は名前のない灯り。x/y は % で、線はそこを結ぶ
@@ -47,38 +47,32 @@ const wire = (a: (typeof nodes)[number], b: (typeof nodes)[number]) => {
   return `M${a.x} ${a.y * 0.4} Q ${mx} ${my} ${b.x} ${b.y * 0.4}`;
 };
 
+// 3 層は同じ形のカードを並べず、区切り線で分けた 1 枚のパネルにする
 const layerGrid = css({
   marginTop: '48px',
   display: 'grid',
-  gridTemplateColumns: 'repeat(3, 1fr)',
-  gap: '18px',
+  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+  borderRadius: 'lg',
+  bg: 'bg.surface',
+  boxShadow: 'inset 0 0 0 1px {colors.border}',
+  textAlign: 'left',
   mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
 });
 const layer = css({
   display: 'grid',
-  gridTemplateColumns: '52px 1fr',
-  gap: '6px 16px',
+  gridTemplateColumns: '20px minmax(0, 1fr)',
+  gap: '8px 12px',
   alignItems: 'center',
-  padding: '22px 24px',
-  borderRadius: 'lg',
-  bg: 'bg.surface',
-  boxShadow: 'card',
-  '& h3': { textStyle: 'h3', lineHeight: '1.4' },
+  padding: '24px',
+  '&:not(:first-child)': {
+    borderLeft: '1px solid {colors.border}',
+    mdDown: { borderLeft: 0, borderTop: '1px solid {colors.border}' },
+  },
+  '& h3': { fontSize: '16px', fontWeight: '700', lineHeight: '1.5' },
 });
-const layerIcon = css({
-  gridRow: 'span 2',
-  width: '52px',
-  height: '52px',
-  borderRadius: '18px',
-  display: 'grid',
-  placeItems: 'center',
-});
-const tints: Record<string, string> = {
-  sky: css({ bg: 'tint.sky' }),
-  periwinkle: css({ bg: 'tint.periwinkle' }),
-  lavender: css({ bg: 'tint.lavender' }),
-};
+const layerIcon = css({ color: 'fg.muted', display: 'inline-flex' });
 const addr = css({
+  gridColumn: '2',
   justifySelf: 'start',
   fontFamily: 'mono',
   fontSize: '12px',
@@ -90,13 +84,11 @@ const addr = css({
 });
 const sky = css({
   position: 'relative',
-  marginTop: '18px',
+  marginTop: '16px',
   borderRadius: 'lg',
   overflow: 'hidden',
   isolation: 'isolate',
   bg: 'bg.inverse',
-  backgroundImage: '{gradients.lamp}',
-  boxShadow: 'card',
   color: 'fg.inverse',
   aspectRatio: '5 / 2',
   smDown: { aspectRatio: '4 / 3' },
@@ -110,7 +102,6 @@ const sky = css({
     backgroundSize: '173px 131px, 97px 89px',
     backgroundPosition: '10px 20px, 50px 5px',
     maskImage: 'linear-gradient(180deg, #000, transparent 80%)',
-    _motionSafe: { animation: 'breathe 8s ease-in-out infinite' },
   },
   '& .wire': {
     fill: 'none',
@@ -119,7 +110,6 @@ const sky = css({
     strokeDasharray: '4 7',
     strokeLinecap: 'round',
     vectorEffect: 'non-scaling-stroke',
-    _motionSafe: { animation: 'dash 2.4s linear infinite' },
   },
 });
 const node = css({
@@ -137,15 +127,14 @@ const node = css({
     display: 'grid',
     placeItems: 'center',
     bg: 'rgba(255,255,255,.07)',
-    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18), 0 0 0 12px rgba(154,178,248,.10)',
+    boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.18)',
     color: 'brand.periwinkle',
     smDown: { width: '44px', height: '44px' },
   },
   '& .disc i': { width: '14px', height: '14px', borderRadius: '50%', bg: 'currentColor', display: 'block' },
   '&[data-kind="official"] .disc': {
     color: 'brand.peach',
-    boxShadow:
-      'inset 0 0 0 1px rgba(255,255,255,.18), 0 0 0 14px rgba(244,184,154,.14), 0 0 70px rgba(244,184,154,.28)',
+    boxShadow: 'inset 0 0 0 1px rgba(244,184,154,.5)',
   },
   '&[data-kind="you"] .disc': {
     color: 'brand.lavender',
@@ -155,67 +144,51 @@ const node = css({
   '&[data-kind="other"]': { transform: 'translate(-50%, -50%)' },
   '&[data-kind="other"] .disc': { width: '14px', height: '14px', bg: 'rgba(255,255,255,.16)', boxShadow: 'none' },
   '&[data-kind="other"] .disc i': { display: 'none' },
-  '& b': { fontSize: '13.5px', fontWeight: '700', whiteSpace: 'nowrap', smDown: { fontSize: '12px' } },
+  '& b': { fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap', smDown: { fontSize: '12px' } },
   '& small': { fontFamily: 'mono', fontSize: '11px', color: 'fg.inverseMuted', marginTop: '-4px' },
 });
 const serverList = css({
-  marginTop: '18px',
+  marginTop: '16px',
   display: 'grid',
   gridTemplateColumns: '1fr 1fr',
-  gap: '18px',
+  gap: '16px',
   mdDown: { gridTemplateColumns: 'minmax(0, 1fr)' },
 });
 const serverCard = css({
   display: 'grid',
-  gridTemplateColumns: '52px minmax(0, 1fr)',
-  gap: '6px 18px',
+  gridTemplateColumns: '20px minmax(0, 1fr)',
+  gap: '8px 12px',
   alignItems: 'center',
-  padding: '24px 26px',
+  padding: '24px',
   borderRadius: 'lg',
   bg: 'bg.surface',
-  boxShadow: 'card',
+  boxShadow: 'inset 0 0 0 1px {colors.border}',
   smDown: { padding: '20px' },
-  '& .icon': {
-    gridRow: 'span 2',
-    width: '52px',
-    height: '52px',
-    borderRadius: '18px',
-    display: 'grid',
-    placeItems: 'center',
-    bg: 'tint.peach',
-  },
-  '& h3': { fontSize: '19px', fontWeight: '800', fontFamily: 'mono', letterSpacing: '-0.01em' },
+  '& .icon': { color: 'fg.muted', display: 'inline-flex' },
+  '& h3': { fontSize: '18px', fontWeight: '500', fontFamily: 'mono' },
   '& .meta': {
     display: 'flex',
     flexWrap: 'wrap',
     alignItems: 'center',
-    gap: '8px 14px',
+    gridColumn: '2',
+    gap: '8px 16px',
     color: 'fg.muted',
     fontSize: '13px',
   },
-  '& .meta i': {
-    width: '7px',
-    height: '7px',
-    borderRadius: '50%',
-    bg: 'green.400',
-    display: 'inline-block',
-    marginRight: '6px',
-  },
-  '& .cta': { gridColumn: '1 / -1', marginTop: '14px' },
+  '& .cta': { gridColumn: '2', marginTop: '12px' },
 });
 const selfhost = css({
   display: 'grid',
   gap: '12px',
   alignContent: 'center',
-  padding: '24px 26px',
+  padding: '24px',
   borderRadius: 'lg',
   bg: 'bg.surface',
-  boxShadow: 'card',
-  smDown: { padding: '20px' },
-  '& h3': { fontSize: '19px', fontWeight: '800' },
+  boxShadow: 'inset 0 0 0 1px {colors.border}',
+  '& h3': { fontSize: '16px', fontWeight: '700' },
   '& pre': {
     margin: 0,
-    padding: '16px 18px 18px',
+    padding: '16px 20px 20px',
     borderRadius: 'md',
     bg: 'bg.code',
     color: '#dfe6f5',
@@ -225,7 +198,7 @@ const selfhost = css({
   '& .n': { color: 'brand.peach' },
 });
 const fediCard = css({
-  marginTop: '18px',
+  marginTop: '16px',
   display: 'grid',
   gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.1fr)',
   gap: '40px',
@@ -233,10 +206,10 @@ const fediCard = css({
   padding: 'clamp(24px, 4vw, 44px)',
   borderRadius: 'lg',
   bg: 'bg.surface',
-  boxShadow: 'card',
+  boxShadow: 'inset 0 0 0 1px {colors.border}',
   textAlign: 'left',
   mdDown: { gridTemplateColumns: 'minmax(0, 1fr)', gap: '28px' },
-  '& h3': { fontSize: 'clamp(20px, 2.2vw, 26px)', fontWeight: '800', lineHeight: '1.5' },
+  '& h3': { fontSize: 'clamp(20px, 2.2vw, 24px)', fontWeight: '700', lineHeight: '1.5' },
   '& .lead': { marginTop: '12px', color: 'fg.muted', textStyle: 'body' },
   '& .lead code': { fontFamily: 'mono', fontSize: '13px', color: 'fg' },
   '& .soon': { marginTop: '16px', color: 'fg.subtle', textStyle: 'small' },
@@ -245,14 +218,14 @@ const fediCard = css({
 const fediMock = css({
   display: 'grid',
   gap: '12px',
-  padding: '14px',
+  padding: '16px',
   borderRadius: 'md',
   bg: 'bg.subtle',
   '& .search': {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    padding: '10px 14px',
+    padding: '12px 16px',
     borderRadius: 'sm',
     bg: 'bg.surface',
     fontFamily: 'mono',
@@ -263,7 +236,7 @@ const fediMock = css({
   '& .profile': {
     display: 'grid',
     gap: '12px',
-    padding: '18px',
+    padding: '20px',
     borderRadius: 'sm',
     bg: 'bg.surface',
   },
@@ -278,7 +251,7 @@ const fediMock = css({
     objectFit: 'cover',
     bg: 'bg.subtle',
   },
-  '& .name': { fontWeight: '800', fontSize: '15px', lineHeight: '1.4' },
+  '& .name': { fontWeight: '700', fontSize: '15px', lineHeight: '1.4' },
   '& .handle': { fontFamily: 'mono', fontSize: '12px', color: 'fg.muted', overflowWrap: 'anywhere' },
   '& .follow': {
     marginLeft: 'auto',
@@ -297,7 +270,7 @@ const fediMock = css({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: '10px',
-    padding: '9px 12px',
+    padding: '8px 12px',
     borderRadius: 'sm',
     boxShadow: 'inset 0 0 0 1px {colors.border}',
     fontSize: '14px',
@@ -308,13 +281,13 @@ const fediMock = css({
 });
 ---
 
-<Section id="federation" title="中央がない。" lead="人も、部屋も、作品も、それぞれの場所に。" center>
+<Section id="federation" title="中央がない" lead="人も、部屋も、作品も、それぞれの場所に" center>
   <div class={layerGrid}>
     {
       layers.map((l) => (
         <article class={layer}>
-          <span class:list={[layerIcon, tints[l.tint]]}>
-            <Icon name={l.icon} size={26} />
+          <span class={layerIcon}>
+            <Icon name={l.icon} size={20} />
           </span>
           <h3>{l.title}</h3>
           <p class={addr}>
@@ -353,12 +326,11 @@ const fediMock = css({
       servers.map((s) => (
         <article class={serverCard}>
           <span class="icon">
-            <Icon name="globe" size={24} />
+            <Icon name="globe" size={20} />
           </span>
           <h3>{s.host}</h3>
           <p class="meta">
             <span>
-              <i />
               {s.note}
             </span>
             <span>{worlds.length} ワールド</span>
@@ -380,7 +352,7 @@ const fediMock = css({
 
   <div class={fediCard}>
     <div>
-      <h3>Misskey や Mastodon から、<br />フォローできる。</h3>
+      <h3>Misskey や Mastodon から、<br />フォローできる</h3>
       <p class="lead">
         <code>@ID@ubichill.com</code> で検索すると、自己紹介と作ったワールドが出てくる。
       </p>

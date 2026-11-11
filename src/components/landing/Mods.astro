@@ -1,5 +1,5 @@
 ---
-/** mod の帯。夜の作業部屋（本体のワールド背景と同じ色）に、ランプの光と星 */
+/** mod の帯。夜の作業部屋（本体のワールド背景と同じ色）の静かな面 */
 import { css } from 'styled-system/css';
 import Icon from '../Icon.astro';
 
@@ -26,29 +26,8 @@ const band = css({
   marginInline: 'auto',
   borderRadius: 'xl',
   bg: 'bg.inverse',
-  backgroundImage: '{gradients.lamp}',
   color: 'fg.inverse',
-  smDown: { borderRadius: '32px' },
-});
-const stars = css({
-  position: 'absolute',
-  inset: 0,
-  zIndex: -1,
-  // 大きさと間隔の違う 3 層を重ねて、格子に見えないようにする
-  backgroundImage:
-    'radial-gradient(rgba(255,255,255,.8) 0.9px, transparent 1.3px), radial-gradient(rgba(255,255,255,.55) 0.7px, transparent 1.1px), radial-gradient(rgba(255,255,255,.35) 0.6px, transparent 1px)',
-  backgroundSize: '233px 181px, 149px 127px, 97px 83px',
-  backgroundPosition: '20px 10px, 70px 50px, 35px 65px',
-  maskImage: 'linear-gradient(180deg, #000 0%, transparent 60%)',
-  _motionSafe: { animation: 'breathe 8s ease-in-out infinite' },
-});
-const grain = css({
-  position: 'absolute',
-  inset: 0,
-  zIndex: -1,
-  pointerEvents: 'none',
-  backgroundImage: 'var(--noise)',
-  opacity: 0.08,
+  smDown: { borderRadius: 'lg' },
 });
 const inner = css({
   position: 'relative',
@@ -56,12 +35,12 @@ const inner = css({
   marginInline: 'auto',
 });
 const h2 = css({ textStyle: 'h2' });
-const lead = css({ marginTop: '14px', color: 'fg.inverseMuted', textStyle: 'lead' });
+const lead = css({ marginTop: '16px', color: 'fg.inverseMuted', textStyle: 'lead' });
 const grid = css({
   marginTop: '48px',
   display: 'grid',
   gridTemplateColumns: '1.15fr 1fr 1fr',
-  gap: '18px',
+  gap: '16px',
   lgDown: { gridTemplateColumns: '1fr 1fr', '& > :first-child': { gridColumn: 'span 2' } },
   smDown: { gridTemplateColumns: '1fr', '& > :first-child': { gridColumn: 'auto' } },
 });
@@ -72,10 +51,10 @@ const card = css({
   overflow: 'hidden',
   display: 'flex',
   flexDirection: 'column',
-  '& h3': { display: 'flex', alignItems: 'center', gap: '10px', padding: '22px 24px 0', textStyle: 'h3' },
+  '& h3': { display: 'flex', alignItems: 'center', gap: '10px', padding: '24px 24px 0', textStyle: 'h3' },
   '& pre': {
-    margin: '18px 0 0',
-    padding: '18px 22px',
+    margin: '20px 0 0',
+    padding: '20px 24px',
     bg: 'rgba(0,0,0,.22)',
     textStyle: 'mono',
     overflowX: 'auto',
@@ -87,9 +66,9 @@ const card = css({
   '& .n': { color: 'brand.peach' },
 });
 const cmds = css({
-  margin: '18px 24px 24px',
+  margin: '20px 24px 24px',
   display: 'grid',
-  gap: '6px',
+  gap: '4px',
   '& li': {
     display: 'flex',
     justifyContent: 'space-between',
@@ -102,19 +81,19 @@ const cmds = css({
   '& span': { fontSize: '12.5px', color: 'fg.inverseMuted', whiteSpace: 'nowrap' },
 });
 const tierList = css({
-  margin: '18px 24px 24px',
+  margin: '20px 24px 24px',
   display: 'grid',
-  gap: '10px',
+  gap: '8px',
   '& li': {
     display: 'grid',
     gridTemplateColumns: 'auto 1fr',
     gap: '12px',
     alignItems: 'center',
-    padding: '14px',
-    borderRadius: 'md',
+    padding: '12px 16px',
+    borderRadius: '12px',
     bg: 'rgba(255,255,255,.045)',
   },
-  '& b': { fontFamily: 'mono', fontSize: '11.5px', padding: '2px 9px', borderRadius: 'full', fontWeight: '500' },
+  '& b': { fontFamily: 'mono', fontSize: '12px', padding: '2px 8px', borderRadius: 'full', fontWeight: '500' },
   '& span': { fontSize: '13px', color: 'rgba(248,243,234,.78)' },
   '& .safe b': { bg: 'rgba(138,210,155,.18)', color: '#a6e3b4' },
   '& .sensitive b': { bg: 'rgba(241,200,108,.18)', color: '#f1c86c' },
@@ -123,10 +102,8 @@ const tierList = css({
 ---
 
 <section class={band} id="mods" aria-labelledby="mods-title">
-  <div class={stars} aria-hidden="true"></div>
-  <div class={grain} aria-hidden="true"></div>
   <div class={inner}>
-    <h2 class={h2} id="mods-title">mod はコードで書く。</h2>
+    <h2 class={h2} id="mods-title">mod はコードで書く</h2>
     <p class={lead}>TypeScript で書いて、Worker のサンドボックスで動く。</p>
     <div class={grid}>
       <article class={card}>
