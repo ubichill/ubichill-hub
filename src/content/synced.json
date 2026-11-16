@@ -1,7 +1,7 @@
 {
   "repo": "https://github.com/ubichill/ubichill",
-  "commit": "8c6176ac",
-  "syncedAt": "2026-11-08",
+  "commit": "fb037db",
+  "syncedAt": "2026-11-16",
   "files": {
     "create/world-as-code.md": "docs/worlds/WORLD_AS_CODE.md",
     "create/world-format.md": "docs/worlds/FORMAT.md",

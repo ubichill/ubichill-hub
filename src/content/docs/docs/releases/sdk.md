@@ -11,6 +11,33 @@ sidebar:
 このページは [`packages/sdk/CHANGELOG.md`](https://github.com/ubichill/ubichill/blob/main/packages/sdk/CHANGELOG.md) を `pnpm sync-docs` で取り込んだもの。直すときは本体リポジトリへ。
 :::
 
+## 4.1.4
+
+### Patch Changes
+
+- Updated dependencies [21923d9]
+- Updated dependencies [50a82bd]
+- Updated dependencies [fc8a52b]
+- Updated dependencies [72b1f61]
+- Updated dependencies [b3c43ad]
+- Updated dependencies [6e3ee64]
+- Updated dependencies [5365069]
+- Updated dependencies [8f0912b]
+- Updated dependencies [88cd7db]
+- Updated dependencies [6317b11]
+  - @ubichill/shared@1.16.0
+
+## 4.1.3
+
+### Patch Changes
+
+- Updated dependencies [be9da67]
+- Updated dependencies [86a3e4f]
+- Updated dependencies [f8c52bb]
+- Updated dependencies [2a500f2]
+- Updated dependencies [833415f]
+  - @ubichill/shared@1.15.0
+
 ## 4.1.2
 
 ### Patch Changes
